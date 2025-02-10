@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View User</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Reports</a>
+      </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 p-8">
+      <nav class="bg-gray-800 py-4">
+        <div class="container mx-auto flex justify-between items-center">
+          <div class="text-2xl font-bold">View User</div>
+          <button class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zM7 9a2 2 0 000 4 2 2 0 002-2 2 2 0 00-2-2z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <div class="bg-gray-800 rounded-lg shadow-md p-6 mt-6">
+        {% comment %} {% for row in user%} {% endcomment %}
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <p class="font-medium">id</p>
+            <p><strong>ID:</strong> {{ user.id }}</p>
+          </div>
+          <div>
+            <p class="font-medium">name</p>
+            <p><strong>Name:</strong> {{ user.name }}</p>
+          </div>
+          <div>
+            <p class="font-medium">Email address</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+          </div>
+          <div>
+            <p class="font-medium">Address</p>
+            <p>4140 Parker road,allentown</p>
+          </div>
+          <div>
+            <p class="font-medium">City</p>
+            <p>California</p>
+          </div>
+          <div>
+            <p class="font-medium">Country</p>
+            <p>United States</p>
+          </div>
+          <div>
+            <p class="font-medium">Uploaded photo</p>
+            <img src="https://via.placeholder.com/150" alt="User photo" class="rounded-full w-24 h-24">
+          </div>
+        </div>
+        
+        <div class="flex justify-end mt-6 space-x-2">
+            {% if user.is_active %}
+                <a href="{% url 'block_user' user.id %}" class="inline-block">
+                    <button class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md">Block</button>
+                </a>
+            {% else %}
+                <a href="{% url 'unblock_user' user.id %}" class="inline-block">
+                    <button class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md">Un block</button>
+                </a>
+            {% endif %}
+            <a href="{% url "admin_users" %}" class="inline-block">
+                <button class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md">Back</button>
+            </a>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

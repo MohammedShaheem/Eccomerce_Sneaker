@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product variance</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <div class="bg-gray-800 p-6 h-screen">
+          <h2 class="text-lg font-bold mb-4">Navigation</h2>
+          <nav>
+            <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+            <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md bg-gray-700">Categories</a>
+            <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+          </nav>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 p-8">
+      <nav class="bg-gray-800 py-4">
+        <div class="container mx-auto flex justify-between items-center">
+          <div class="mb-6">
+            <h1 class="text-2xl font-bold">Product variance</h1>
+            <p class="text-sm text-gray-400">Products > Product variance</p>
+          </div>
+        </div>
+      </nav>
+      <!-- Add this at the top of your template -->
+        {% if product %}
+        <div class="bg-gray-800 p-4 mb-4">
+            <p>Debug - Product: {{ product.name }}</p>
+            <p>Debug - Variances count: {{ variances|length }}</p>
+        </div>
+        {% endif %}
+
+      <div class="bg-gray-800 rounded-lg shadow-md p-6 mt-6">
+        <div class="flex justify-between items-center mb-6">
+          <!-- Search Field -->
+          <form method="GET" action="{% url 'category' %}" class="flex items-center mb-4 w-full max-w-xl mx-auto">
+            <input 
+              type="text" 
+              name="q" 
+              class="bg-gray-700 rounded-md px-4 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+              placeholder="Search categories..." 
+              value="{{ search_query }}" 
+              aria-label="Search categories" />
+            
+            <button type="submit" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md ml-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </form>
+          <!-- Buttons -->
+          <div class="flex items-center">
+            <a href="{% url 'products' %}" class="inline-block">
+              <button class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md">Back</button>
+            </a>
+            <div class="w-4"></div>  
+            <a href="{% url 'add_variant' product.id  %}" class="inline-block">
+              <button class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md">Add Variance</button>
+            </a>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table-auto w-full border-collapse border border-gray-800">
+            <thead>
+                <tr>
+                    <th class="border border-gray-600 px-4 py-2">Product Name</th>
+                    <th class="border border-gray-600 px-4 py-2">Size</th>
+                    <th class="border border-gray-600 px-4 py-2">Color</th>
+                    <th class="border border-gray-600 px-4 py-2">stock</th>
+                    <th class="border border-gray-600 px-4 py-2">price</th>
+                    <th class="border border-gray-600 px-4 py-2">Created_at</th>
+                    <th class="border border-gray-600 px-4 py-2">Action</th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+                {% for variance in variances %}
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2">{{ variance.product.name }}</td>
+                    <td class="border border-gray-600 px-4 py-2">{{ variance.size.size }}</td>
+                    <td class="border border-gray-600 px-4 py-2">{{ variance.color.color }}</td>
+                    <td class="border border-gray-600 px-4 py-2">{{ variance.Stock_Quantity }}</td>
+                    <td class="border border-gray-600 px-4 py-2">{{ variance.product.sale_Price }}</td>
+                    <td class="border border-gray-600 px-4 py-2">{{ variance.product.created_at }}</td>
+                    <td class="border border-gray-600 px-4 py-2">
+                      <a href="#" class="inline-block">
+                      <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-md mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                      </a>
+                    </td>
+                </tr>
+
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <div class="flex justify-end mt-4">
+          <div class="flex items-center space-x-2">
+            <button class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">1</button>
+            <button class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">2</button>
+            <button class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">3</button>
+            <button class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">4</button>
+            <button class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">5</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Products</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+        <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
+        <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md bg-gray-700">Products</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+      </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 p-8">
+      <!-- Header -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Add Products</h1>
+        <p class="text-sm text-gray-400">Products > Add Products</p>
+      </div>
+
+      <!-- Form Section -->
+      <div>
+        <h2 class="text-lg font-bold mb-4">Add Variant for {{ product.name }}</h2>
+        <form method="POST" class="space-y-4">
+          {% csrf_token %}
+
+          <label class="block">
+            <span class="text-gray-300">Size</span>
+            <select name="size" class="block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white">
+              <option value="">Select Size</option>
+              {% for size in form.fields.size.queryset %}
+                <option value="{{ size.id }}">{{ size.size }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="block">
+            <span class="text-gray-300">Color</span>
+            <select name="color" class="block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white">
+              <option value="">Select Color</option>
+              {% for color in form.fields.color.queryset %}
+                <option value="{{ color.id }}">{{ color.color }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="block">
+            <span class="text-gray-300">Stock Quantity</span>
+            <input type="number" name="Stock_Quantity" class="block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white">
+          </label>
+
+
+          <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white">
+            Save Variant
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

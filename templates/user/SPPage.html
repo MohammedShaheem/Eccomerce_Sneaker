@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Product Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    {% comment %} <script src="https://cdn.tailwindcss.com"></script> {% endcomment %}
+    <!-- Splide.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/css/splide.min.css">
+
+<!-- Splide.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/js/splide.min.js"></script>
+
+</head>
+<style>
+    .zoom-container {
+        position: relative;
+        overflow: hidden;
+        cursor: zoom-in;
+    }
+    
+    .zoom-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    
+    .zoom-container.zoomed .zoom-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .zoom-container {
+        @apply relative overflow-hidden cursor-zoom-in;
+    }
+
+    .zoom-overlay {
+        @apply fixed top-0 left-0 w-full h-full bg-black bg-opacity-80 z-50 flex items-center justify-center;
+    }
+
+    .zoomed-image {
+        @apply max-w-[90%] max-h-[90%] object-contain transition-transform duration-300 ease-in-out;
+        will-change: transform;
+    }
+    
+    .zoomed-image {
+        transform: scale(2);
+        transform-origin: 0 0;
+        transition: transform 0.3s ease;
+    }
+    </style>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Navbar -->
+    <header class="w-full bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex items-center justify-between py-4 px-6">
+            <h1 class="text-lg font-bold">StoreName</h1>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="{% url 'home'%}" class="text-gray-700 hover:text-gray-900">Home</a></li>
+                    <li><a href="#" class="text-gray-700 hover:text-gray-900">Shop</a></li>
+                    <li><a href="#" class="text-gray-700 hover:text-gray-900">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-700 hover:text-gray-900">Search</button>
+                <button class="text-gray-700 hover:text-gray-900">Cart</button>
+                <button class="text-gray-700 hover:text-gray-900">Account</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+        <a href="#" class="hover:underline">Home</a> /
+        <a href="#" class="hover:underline">Shop</a> /
+        <span class="text-gray-800">Nike Dunk Low Retro SE</span>
+    </nav>
+
+    <!-- Product Section -->
+    <section class="container mx-auto px-6 py-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <!-- Left Side: Product Images with Zoom -->
+            <div class="relative">
+                <div class="flex">
+                    <!-- Thumbnails Column -->
+                    <div class="flex flex-col space-y-4 mr-4">
+                        {% for image in product.images.all %}
+                            <img src="{{ image.image.url }}" 
+                                 alt="Thumbnail" 
+                                 class="w-16 h-16 border rounded-lg cursor-pointer hover:border-black" 
+                                 onclick="changeImage('{{ image.image.url }}')">
+                        {% endfor %}
+                    </div>
+    
+                    <!-- Main Image with Zoom Container -->
+                    <div class="relative flex-1">
+                        <div class="zoom-container relative w-full h-[500px] overflow-hidden">
+                            <img id="mainImage" 
+                                 class="w-full h-full object-cover cursor-zoom-in" 
+                                 src="{{ product.images.first.image.url }}" 
+                                 alt="Product Image"
+                                 onmousemove="zoomImage(event)"
+                                 onmouseenter="showZoom()"
+                                 onmouseleave="hideZoom()">
+                            
+                            <div id="zoomOverlay" 
+                                 class="zoom-overlay fixed top-0 left-0 w-full h-full bg-white bg-opacity-90 hidden z-50 items-center justify-center">
+                                <div class="zoom-container relative w-3/4 h-3/4">
+                                    <img id="zoomedImage" 
+                                         class="w-full h-full object-contain" 
+                                         src="{{ product.images.first.image.url }}" 
+                                         alt="Zoomed Product Image">
+                                </div>
+                            </div>
+                        </div>
+    
+                        <!-- Navigation Arrows -->
+                        <button id="prevImageBtn" 
+                                class="absolute left-4 bottom-4 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700" 
+                                onclick="prevImage()">
+                            &#8592;
+                        </button>
+                        <button id="nextImageBtn" 
+                                class="absolute right-4 bottom-4 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700" 
+                                onclick="nextImage()">
+                            &#8594;
+                        </button>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Right Side: Product Details -->
+            <div class="flex flex-col space-y-6">
+                <!-- Product Title -->
+                <div>
+                    <h1 class="text-3xl font-bold">{{ product.name }}</h1>
+                    <h6 class="text-sm text-gray-500 font-bold mt-1">
+                        {{ product.category.category_name|default:"Product Category" }}
+                    </h6>
+                </div>
+    
+                <!-- Rating -->
+                <div class="flex items-center space-x-2">
+                    <div class="flex space-x-1 text-yellow-400">
+                        {% for i in "12345" %}
+                            <svg xmlns="http://www.w3.org/2000/svg" 
+                                 fill="{% if forloop.counter <= product.rating %}currentColor{% else %}none{% endif %}" 
+                                 class="w-5 h-5" 
+                                 viewBox="0 0 24 24">
+                                <path d="M12 .587l3.668 7.429 8.2 1.2-5.918 5.763 1.4 8.179-7.35-3.861-7.35 3.861 1.4-8.179-5.918-5.763 8.2-1.2z"/>
+                            </svg>
+                        {% endfor %}
+                    </div>
+                    <span class="text-gray-600">({{ product.description }} Reviews)</span>
+                </div>
+                <div>
+                    <h6 class="text-sm text-gray-500">Availability: </h6>
+                    {% if product.product_quantity == 0 %}
+
+                    <p class="text-2xl font-bold">Out of stock</p>
+                    {% else %}
+                    <p class="text-2xl font-bold">In stock</p>
+
+                    {% endif %}
+
+                    
+                </div>
+    
+                <!-- Price -->
+                <div>
+                    <p class="text-2xl font-bold">₹{{ product.sale_Price|floatformat:2 }}</p>
+                    <h6 class="text-sm text-gray-500">Inclusive of all taxes</h6>
+                </div>
+    
+                <!-- Size Selection -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">Select Size</h2>
+                    <div class="grid grid-cols-3 gap-2">
+                        {% for size in product.size.all %}
+                            <button class="px-4 py-3 border border-gray-300 rounded-lg hover:border-black transition-colors">
+                                UK {{ size.value }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+    
+                <!-- Action Buttons -->
+                <div class="space-y-3 pt-4">
+                    {% comment %} <form method="POST" action="{% url 'add_to_cart' product.id %}"> {% endcomment %}
+                        {% comment %} {% csrf_token %}
+                        <input type="hidden" name="size" id="selected-size"> {% endcomment %}
+                        <button type="submit" class="w-full bg-black text-white py-4 rounded-full hover:bg-black/90 transition-colors">
+                            Add to Bag
+                        </button>
+                    {% comment %} </form> {% endcomment %}
+                    <button class="w-full py-4 rounded-full border border-gray-300 hover:border-black transition-colors flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                        Favourite
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Products -->
+    <section class="container mx-auto py-10 px-6">
+        <h2 class="text-2xl font-bold mb-4 text-center">Related Products</h2>
+        <div id="related-products-slider" class="splide">
+            <div class="splide__track">
+                <ul class="splide__list">
+                    <li class="splide__slide">
+                        
+                        <div class="bg-white border rounded-lg p-4 text-center">
+                        {%load static%}
+                            <img src="{% static 'images/user/singleP/rp1.png' %}" alt="Product" class="w-3/4 h-auto mx-auto mb-4">
+                            <h3 class="text-lg font-bold">Nike Air Max 97</h3>
+                            <p> &#8377;16 147.00</p>
+                        </div>
+                    </li>
+                    <li class="splide__slide">
+                        <div class="bg-white border rounded-lg p-4 text-center">
+                            <img src="{% static 'images/user/singleP/rp.2.avif' %}" alt="Product" class="w-3/4 h-auto mx-auto mb-4">
+                            <h3 class="text-lg font-bold">Forum Low cl Shoes</h3>
+                            <p> &#8377;10 99.00</p>
+                        </div>
+                    </li>
+                    <li class="splide__slide">
+                        <div class="bg-white border rounded-lg p-4 text-center">
+                            <img src="{% static 'images/user/singleP/rp.3.webp' %}" alt="Product" class="w-3/4 h-auto mx-auto mb-4">
+                            <h3 class="text-lg font-bold">550</h3>
+                            <p> &#8377;7000.00</p>
+                        </div>
+                    </li>
+                    <li class="splide__slide">
+                        <div class="bg-white border rounded-lg p-4 text-center">
+                            <img src="{% static 'images/user/singleP/rp4.webp' %}" alt="Product" class="w-3/4 h-auto mx-auto mb-4">
+                            <h3 class="text-lg font-bold">BB550</h3>
+                            <p> &#8377;8000.00</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-10">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 px-6">
+            <div>
+                <h4 class="font-bold">Subscribe</h4>
+                <p class="mt-2 text-gray-400">Get updates on our latest products and offers.</p>
+                <form class="mt-4">
+                    <input type="email" class="w-full border border-gray-400 rounded-lg px-4 py-2 text-gray-800" placeholder="Enter your email">
+                    <button class="mt-2 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Subscribe</button>
+                </form>
+            </div>
+            <div>
+                <h4 class="font-bold">Support</h4>
+                <ul class="mt-4 space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:underline">Contact Us</a></li>
+                    <li><a href="#" class="text-gray-400 hover:underline">FAQs</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold">Account</h4>
+                <ul class="mt-4 space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:underline">Login</a></li>
+                    <li><a href="#" class="text-gray-400 hover:underline">Register</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold">Quick Links</h4>
+                <ul class="mt-4 space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:underline">Privacy Policy</a></li>
+                    <li><a href="#" class="text-gray-400 hover:underline">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+ 
+    <script>
+        // Initial images from the thumbnails
+        const images = [
+            "{% static 'images/user/singleP/pic1.png' %}",
+            "{% static 'images/user/singleP/pic2.png' %}",
+            "{% static 'images/user/singleP/pic3.png' %}",
+            "{% static 'images/user/singleP/pic4.png' %}"
+        ];
+
+        let currentIndex = 0;
+
+        // Function to change the main image when a thumbnail is clicked
+        function changeImage(imageSrc) {
+            // Update the main image source
+            document.getElementById('mainImage').src = imageSrc;
+
+            // Find the index of the selected image and update currentIndex
+            currentIndex = images.indexOf(imageSrc);
+        }
+
+        // Function to cycle to the previous image
+        function prevImage() {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+            document.getElementById('mainImage').src = images[currentIndex];
+        }
+
+        // Function to cycle to the next image
+        function nextImage() {
+            currentIndex = (currentIndex + 1) % images.length;
+            document.getElementById('mainImage').src = images[currentIndex];
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            new Splide('#related-products-slider', {
+                type: 'loop',
+                perPage: 2,
+                perMove: 1,
+                breakpoints: {
+                    768: { perPage: 1 }, // For smaller screens
+                    1024: { perPage: 2 } // For medium screens
+                },
+                gap: '1rem', // Space between slides
+                autoplay: true,
+                interval: 3000, // 3 seconds
+            }).mount();
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const zoomContainer = document.querySelector('.zoom-container');
+            const mainImage = document.getElementById('mainImage');
+            const zoomOverlay = document.getElementById('zoomOverlay');
+            const zoomedImage = document.getElementById('zoomedImage');
+        
+            // Zoom functionality
+            mainImage.addEventListener('click', function() {
+                // Toggle zoom overlay visibility
+                zoomOverlay.classList.toggle('hidden');
+                
+                // Set zoomed image source to match main image
+                zoomedImage.src = mainImage.src;
+            });
+        
+            // Close zoom when clicking outside the image
+            zoomOverlay.addEventListener('click', function(e) {
+                if (e.target === zoomOverlay) {
+                    zoomOverlay.classList.add('hidden');
+                }
+            });
+        
+            // Advanced zoom interaction on zoomed image
+            zoomedImage.addEventListener('mousemove', function(e) {
+                const container = zoomOverlay;
+                const img = zoomedImage;
+                
+                const containerRect = container.getBoundingClientRect();
+                const imgRect = img.getBoundingClientRect();
+                
+                // Calculate mouse position relative to image
+                const x = (e.clientX - imgRect.left) / imgRect.width * 100;
+                const y = (e.clientY - imgRect.top) / imgRect.height * 100;
+                
+                // Apply zoom transform
+                img.style.transform = 'scale(2)';
+                img.style.transformOrigin = `${x}% ${y}%`;
+            });
+        
+            // Reset zoom when mouse leaves
+            zoomedImage.addEventListener('mouseleave', function() {
+                zoomedImage.style.transform = 'scale(1)';
+            });
+        });
+        
+    </script>
+
+</body>
+</html>

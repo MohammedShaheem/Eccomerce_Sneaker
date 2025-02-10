@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Add Products</title>
+</head>
+<body class="bg-gray-900 text-gray-100">
+    <!-- Navigation Header -->
+    <header class="bg-gray-800 p-4 flex justify-between items-center">
+        <div class="flex items-center">
+            <button class="text-gray-400 mr-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+            <input type="search" placeholder="Search" class="bg-gray-700 px-4 py-2 rounded-lg text-gray-300 w-64">
+        </div>
+        <div class="flex items-center space-x-4">
+            <button class="text-gray-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+            </button>
+            <button class="text-gray-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+            </button>
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
+                    <span class="text-white font-semibold">A</span>
+                </div>
+                <span class="ml-2 text-white">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <div class="flex">
+        <aside class="w-64 bg-gray-900 min-h-screen p-4">
+            <nav class="space-y-2">
+                <a href="#" class="flex items-center space-x-2 text-purple-500 p-2 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold mb-2">Add Products</h1>
+                <p class="text-gray-400">Products > Add Products</p>
+            </div>
+
+            <form class="space-y-6" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="bg-red-500 text-white p-4 rounded">
+                    <ul>
+                        {% for field, errors in form.errors.items %}
+                        <li><strong>{{ field }}</strong>: {{ errors|join:", " }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <!-- General Information -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4">General Information</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-400 mb-1">Product Name</label>
+                            {{ form.name }}
+                        </div>
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div>
+                            <label for="stock_quantity" class="block text-sm font-medium text-gray-400 mb-1">Stock Quantity</label>
+                            {{ form.product_quantity }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4">Pricing</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-400 mb-1">Price</label>
+                            {{ form.base_price }}
+                        </div>
+                        <div>
+                            <label for="sale_price" class="block text-sm font-medium text-gray-400 mb-1">Sale Price</label>
+                            {{ form.sale_Price }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Category</h2>
+                    <div class="relative">
+                        <select id="category" name="category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="" disabled {% if not form.category.value %}selected{% endif %}>
+                                Select a category
+                            </option>
+                            {% for option in form.category.field.queryset %}
+                                <option value="{{ option.id }}" {% if option.id == form.category.value %}selected{% endif %}>
+                                    {{ option.category_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Size</h2>
+                    <div class="relative">
+                        {{ form.size }}
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Color</h2>
+                    <div class="relative">
+                        {{ form.color }}
+                    </div>
+                </div>
+                
+
+                {% comment %} <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4">Size</h2>
+                    {{ form.size }}
+                </div> {% endcomment %}
+
+                <!-- Image Upload -->
+                {% comment %} <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4">Product Image</h2>
+                    <input type="file" name="image" 
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100">
+                </div> {% endcomment %}
+
+                <!-- Submit Button -->
+                <button type="submit" 
+                    class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg">
+                    Edit Product
+                </button>
+                <button type="submit" 
+                    class="w-full bg-green-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg">
+                    Unlist
+                </button>
+            </form>
+        </main>
+    </div>
+</body>
+</html>

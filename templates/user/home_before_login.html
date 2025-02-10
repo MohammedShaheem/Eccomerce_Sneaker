@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Styled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Splide.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/css/splide.min.css">
+</head>
+<body class="bg-white text-gray-800">
+
+    <!-- Navbar -->
+    <header class="w-full bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48 flex items-center justify-between py-4">
+            <h1 class="text-lg font-bold">Logo</h1>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="#" class="text-gray-700 hover:text-gray-900">Home</a></li>
+                    <li class="relative">
+                        <button id="shopButton" class="text-gray-700 hover:text-gray-900 flex items-center focus:outline-none">
+                            Shop
+                            <svg class="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown -->
+                        <div id="shopDropdown" class="absolute hidden bg-white shadow-lg rounded-md mt-2 w-40">
+                            <ul>
+                                <li><a href="#" class="block px-4 py-2 text-white-700 hover:bg-gray-100">Men</a></li>
+                                <li><a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Women</a></li>
+                                <li><a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Accessories</a></li>
+                                <li><a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sale</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    
+                    <li><a href="#" class="text-gray-700 hover:text-gray-900">About</a></li>
+                    <li><a href="#" class="text-gray-700 hover:text-gray-900">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'login' %}" class="inline-block">
+                <button class="text-gray-700 hover:text-gray-900">Sign-in</button>
+                </a>
+            </div>
+        </div>
+    </header>
+    
+
+    <!-- Hero Section -->
+    <section class="bg-gray-900 text-white text-center py-20">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48">
+            <h2 class="text-4xl font-bold">Up to 50% off</h2>
+            <p class="text-lg mt-4">Discover the best deals on trending sneakers</p>
+            <div class="mt-6 flex justify-center space-x-4">
+                <button class="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-200">Ladies</button>
+                <button class="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-200">Men</button>
+            </div>
+        </div>
+    </section>
+    
+
+    <!-- Featured Section -->
+    <section class="py-10 bg-white">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48 grid gap-4">
+            <!-- Top Image -->
+            <div class="relative">
+                {% load static %}
+                <img src="{% static 'images/user/home/banner3.png' %}" alt="Banner 3" class="w-full h-auto block">
+            </div>
+            <!-- Bottom Image -->
+            <div class="relative">
+                <img src="{% static 'images/user/home/banner4.avif' %}" alt="Banner 4" class="w-full h-auto block">
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Section -->
+    <section class="py-10 bg-white">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48">
+            <h2 class="text-2xl font-bold mb-6">Best Men's Sneakers</h2>
+            <!-- Splide Carousel -->
+            <div id="carousel" class="splide">
+                <div class="splide__track">
+                    <ul class="splide__list">
+                        <li class="splide__slide">
+                            <div class="p-4 bg-gray-50 rounded-lg shadow">
+                                <img src="{% static 'images/user/home/product1.png' %}" alt="Product 1" class="w-33 h-33 mx-auto mb-4">
+                                <h3 class="font-bold text-lg">Nike Air Force 1 07 Fresh</h3>
+                                <p class="text-gray-700"><del>$99.99</del></p><p class="text-red-700">$90.99  </p>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="p-4 bg-gray-50 rounded-lg shadow">
+                                <img src="{% static 'images/user/home/product2.avif' %}" alt="Product 2" class="w-33 h-33 mx-auto mb-4">
+                                <h3 class="font-bold text-lg">Speedcat Archive Unisex Sneakers</h3>
+                                <p class="text-gray-700"><del>$99.99</del></p><p class="text-red-700">$90.99  </p>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="p-4 bg-gray-50 rounded-lg shadow">
+                                <img src="{% static 'images/user/home/product3.avif' %}" alt="Product 3" class="w-33 h-33 mx-auto mb-4">
+                                <h3 class="font-bold text-lg">Stan Smith Shoes</h3>
+                                <p class="text-gray-700"><del>$99.99</del></p><p class="text-red-700">$90.99  </p>
+                            </div>
+                        </li>
+                    </li>
+                    <li class="splide__slide">
+                        <div class="p-4 bg-gray-50 rounded-lg shadow">
+                            <img src="{% static 'images/user/home/product4.webp' %}" alt="Product 3" class="w-33 h-33 mx-auto mb-4">
+                            <h3 class="font-bold text-lg">Unisex
+1906R</h3>
+                            <p class="text-gray-700"><del>$99.99</del></p><p class="text-red-700">$90.99  </p>
+                        </div>
+                    </li>
+                    <li class="splide__slide">
+                        <div class="p-4 bg-gray-50 rounded-lg shadow">
+                            <img src="{% static 'images/user/home/product7.webp' %}" alt="Product 3" class="w-33 h-33 mx-auto mb-4">
+                            <h3 class="font-bold text-lg">Chuck 70 Sketch</h3>
+                            <p class="text-gray-700"><del>$99.99</del></p><p class="text-red-700">$90.99  </p>
+                        </div>
+                    </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="py-0 bg-white">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48">
+          <!-- Top Image -->
+          <div class="relative">
+            <img src="{% static 'images/user/home/banner2.png' %}" alt="Banner 1" class="w-full h-auto block">
+          </div>
+          <!-- Bottom Image -->
+          <div class="relative">
+            <img src="{% static 'images/user/home/banner1.avif' %}" alt="Banner 2" class="w-full h-auto block">
+          </div>
+        </div>
+      </section>
+
+    <!-- Features Section -->
+    <section class="py-10 bg-gray-100">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48 grid grid-cols-3 gap-6 text-center">
+            <div>
+                {% load static %}
+                <img src="{% static 'icon1.png' %}" alt="Feature 1" class="mx-auto w-10 h-10">
+                <p class="mt-2 font-medium">Free and Fast Delivery</p>
+            </div>
+            <div>
+                <img src="{% static 'icon2.png' %}" alt="Feature 2" class="mx-auto w-10 h-10">
+                <p class="mt-2 font-medium">24/7 Customer Service</p>
+            </div>
+            <div>
+                <img src="{% static 'icon3.png' %}" alt="Feature 3" class="mx-auto w-10 h-10">
+                <p class="mt-2 font-medium">Money Back Guarantee</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-10 bg-gray-900 text-white">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48 grid grid-cols-4 gap-6">
+            <div>
+                <h5 class="font-bold">About</h5>
+                <p class="text-gray-400">Learn more about us</p>
+            </div>
+            <div>
+                <h5 class="font-bold">Support</h5>
+                <p class="text-gray-400">Contact us anytime</p>
+            </div>
+            <div>
+                <h5 class="font-bold">Legal</h5>
+                <p class="text-gray-400">Privacy Policy</p>
+            </div>
+            <div>
+                <h5 class="font-bold">Follow Us</h5>
+                <p class="text-gray-400">Social media links</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Splide.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/js/splide.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new Splide('#carousel', {
+                type: 'loop',
+                perPage: 3,
+                gap: '1rem',
+                breakpoints: {
+                    640: { perPage: 1 },
+                    768: { perPage: 2 }
+                }
+            }).mount();
+        });
+
+        const shopButton = document.getElementById('shopButton');
+        const shopDropdown = document.getElementById('shopDropdown');
+    
+        shopButton.addEventListener('click', () => {
+            shopDropdown.classList.toggle('hidden');
+        });
+    
+        // Close the dropdown if clicked outside
+        document.addEventListener('click', (event) => {
+            if (!shopButton.contains(event.target) && !shopDropdown.contains(event.target)) {
+                shopDropdown.classList.add('hidden');
+            }
+        });
+    </script>
+
+</body>
+</html>

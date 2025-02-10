@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Category</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+        <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md bg-gray-700">Categories</a>
+        <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+      </nav>
+  </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 p-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold">Add Category</h1>
+    <p class="text-sm text-gray-400">Category > Add category</p>
+  </div>
+
+  <!-- Form Section -->
+  <div>
+    <h2 class="text-lg font-bold mb-4">Add Category</h2>
+    <form class="space-y-6" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Messages -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="{% if message.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} px-4 py-2 rounded">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Category Image -->
+      <div>
+        <label for="image" class="block text-sm font-medium text-gray-300">
+            Category Image
+        </label>
+        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-lg">
+            <div class="space-y-1 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <div class="flex text-sm text-gray-400">
+                    <label for="image" class="relative cursor-pointer rounded-md font-medium text-blue-500 hover:text-blue-400 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                        <span>Upload a file</span>
+                        {{ form.image.as_widget }} <!-- Explicitly render only the input widget -->
+                    </label>
+                    {% comment %} <p class="pl-1 text-gray-400">or drag and drop</p> {% endcomment %}
+                </div>
+                <p class="text-xs text-gray-400">
+                    PNG, JPG, GIF up to 5MB
+                </p>
+            </div>
+        </div>
+        {% if form.image.errors %}
+            <div class="mt-1">
+                {% for error in form.image.errors %}
+                    <p class="text-red-500 text-sm">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    
+
+      <!-- Category Name -->
+      <div class="mb-4">
+        <label for="category-name" class="block text-sm font-medium text-gray-400">Category Name</label>
+        {{ form.category_name }}
+        {% if form.category_name.errors %}
+          <ul class="text-red-500 text-sm">
+            {% for error in form.category_name.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      <div class="mb-4">
+        <label for="description" class="block text-sm font-medium text-gray-400">Description</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+          <ul class="text-red-500 text-sm">
+            {% for error in form.description.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white">Add Category</button>
+      
+    </form>
+    <a href="{% url 'category' %}" class="inline-block">
+      <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white">back</button>
+      </a>
+  </div>
+</div>
+
+    
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Changed from 'category' to 'form' since you're selecting a form element
+      const form = document.querySelector('form');  
+      const nameInput = document.getElementById('category_name');
+      const descriptionInput = document.getElementById('description');
+      const imageInput = document.getElementById('image');
+      
+      // Create preview container
+      const previewContainer = document.createElement('div');
+      previewContainer.id = 'image-preview-container';
+      previewContainer.className = 'mt-4';
+      imageInput.parentNode.parentNode.appendChild(previewContainer);
+
+      function clearForm() {
+          form.reset();
+          if (previewContainer) {
+              previewContainer.innerHTML = '';
+          }
+          // Clear all error messages
+          document.querySelectorAll('.text-red-500').forEach(error => {
+              error.classList.add('hidden');
+          });
+          // Remove red borders
+          [nameInput, descriptionInput, imageInput].forEach(input => {
+              if(input) {
+                  input.classList.remove('border-red-500');
+              }
+          });
+      }
+
+      // Clear form on page load if there were previous errors
+      if (document.referrer === window.location.href) {
+          clearForm();
+      }
+
+      // Fixed missing closing bracket and corrected event listener structure
+      form.addEventListener('submit', function(e) {
+          const isNameValid = validateName();
+          const isDescriptionValid = validateDescription();
+          const isImageValid = validateImage();
+
+          if (!isNameValid || !isDescriptionValid || !isImageValid) {
+              e.preventDefault();
+              const firstError = document.querySelector('.text-red-500:not(.hidden)');
+              if (firstError) {
+                  firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+          }
+      });
+
+      window.addEventListener('pageshow', function(event) {
+          if (event.persisted) {
+              clearForm();
+          }
+      });
+
+      // Add error message containers
+      const addErrorContainer = (inputElement, errorId) => {
+          if (!document.getElementById(errorId)) {
+              const errorDiv = document.createElement('div');
+              errorDiv.id = errorId;
+              errorDiv.className = 'text-red-500 text-sm mt-1 hidden';
+              inputElement.parentNode.appendChild(errorDiv);
+          }
+      };
+
+      // Add error containers for all fields
+      addErrorContainer(nameInput, 'nameError');
+      addErrorContainer(descriptionInput, 'descriptionError');
+      addErrorContainer(imageInput, 'imageError');
+
+      // Helper functions 
+      function showError(input, errorElementId, message) {
+          const errorElement = document.getElementById(errorElementId);
+          if (errorElement) {
+              errorElement.textContent = message;
+              errorElement.classList.remove('hidden');
+              input.classList.add('border-red-500');
+          }
+      }
+
+      function clearError(input, errorElementId) {
+          const errorElement = document.getElementById(errorElementId);
+          if (errorElement) {
+              errorElement.classList.add('hidden');
+              input.classList.remove('border-red-500');
+          }
+      }
+
+      // Validation functions
+      function validateName() {
+          const value = nameInput.value.trim();
+          if (!value) {
+              showError(nameInput, 'nameError', 'Category name is required');
+              return false;
+          }
+          if (value.length < 3) {
+              showError(nameInput, 'nameError', 'Category name must be at least 3 characters');
+              return false;
+          }
+          if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
+              showError(nameInput, 'nameError', 'Category name can only contain letters, numbers, spaces, hyphens, and underscores');
+              return false;
+          }
+          
+          // Check for duplicates (case-insensitive)
+          if (existingCategories.includes(value.toLowerCase())) {
+              showError(nameInput, 'nameError', 'This category name already exists');
+              return false;
+          }
+
+          clearError(nameInput, 'nameError');
+          return true;
+      }
+      // Add debounced name validation
+      function debounce(func, wait) {
+          let timeout;
+          return function executedFunction(...args) {
+              const later = () => {
+                  clearTimeout(timeout);
+                  func(...args);
+              };
+              clearTimeout(timeout);
+              timeout = setTimeout(later, wait);
+          };
+      }
+
+      const debouncedNameValidation = debounce(() => {
+          validateName();
+      }, 300);
+
+      function validateDescription() {
+          const value = descriptionInput.value.trim();
+          if (!value) {
+              showError(descriptionInput, 'descriptionError', 'Description is required');
+              return false;
+          }
+          if (value.length > 500) {
+              showError(descriptionInput, 'descriptionError', 'Description cannot exceed 500 characters');
+              return false;
+          }
+          clearError(descriptionInput, 'descriptionError');
+          return true;
+      }
+
+      function validateImage() {
+          const files = imageInput.files;
+          if (files.length === 0) {
+              showError(imageInput, 'imageError', 'Please upload an image');
+              return false;
+          }
+
+          const file = files[0];
+          const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+          const maxSize = 5 * 1024 * 1024; // 5MB
+
+          if (!validTypes.includes(file.type)) {
+              showError(imageInput, 'imageError', 'Please upload only JPG, PNG, or GIF images');
+              return false;
+          }
+
+          if (file.size > maxSize) {
+              showError(imageInput, 'imageError', 'Image must be less than 5MB');
+              return false;
+          }
+
+          clearError(imageInput, 'imageError');
+          return true;
+      }
+
+      // Add event listeners
+      nameInput.addEventListener('input', debouncedNameValidation);
+      descriptionInput.addEventListener('input', validateDescription);
+      imageInput.addEventListener('change', validateImage);
+
+      // Image preview handler
+      imageInput.addEventListener('change', function() {
+          previewContainer.innerHTML = '';
+          if (this.files && this.files[0]) {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                  const preview = document.createElement('div');
+                  preview.className = 'relative';
+                  preview.innerHTML = `
+                      <img src="${e.target.result}" class="w-32 h-32 object-cover rounded">
+                      <button type="button" class="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 transform translate-x-1/2 -translate-y-1/2" onclick="clearImage()">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                      </button>
+                  `;
+                  previewContainer.appendChild(preview);
+              }
+              reader.readAsDataURL(this.files[0]);
+          }
+      });
+  });
+
+  // clearImage 
+  window.clearImage = function() {
+      const imageInput = document.getElementById('image');
+      const previewContainer = document.getElementById('image-preview-container');
+      imageInput.value = '';
+      if (previewContainer) {
+          previewContainer.innerHTML = '';
+      }
+      validateImage();
+  };
+</script>
+
+<script>
+  const existingCategories = {{ existing_categories|safe }};
+</script>  
+    </body>
+    </html>

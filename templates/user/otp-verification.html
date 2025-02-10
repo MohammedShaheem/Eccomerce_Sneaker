@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Code</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-black p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="text-white font-bold">Exclusive</div>
+            <div class="flex space-x-4">
+                <a href="#" class="text-white">Home</a>
+                <a href="#" class="text-white">Contact</a>
+                <a href="#" class="text-white">About</a>
+                <a href="#" class="text-white">Sign up</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-16">
+        <form method="post" class="container mx-auto px-4 py-16">
+            {% csrf_token %}
+            <div class="max-w-md mx-auto text-center">
+                <h2 class="text-2xl font-semibold mb-6">Please verify code</h2>
+            
+            <!-- Counter Circle -->
+            <div class="w-20 h-20 rounded-full border-2 border-gray-300 flex items-center justify-center mx-auto mb-4">
+                <span id="countdown" class="text-2xl font-bold">58</span>
+            </div>
+            
+            <p class="text-gray-600 mb-8">An authentication code has been sent to your phone number</p>
+            
+            <!-- Verification Input -->
+            <div class="mb-6">
+            <input type="text" 
+                   name="email_otp" 
+                   class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-black"
+                   placeholder="Enter OTP code"
+                   required>  <!-- Add required attribute -->
+        </div>
+            
+            <!-- Verify Button -->
+            <button type="submit" class="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-colors">
+                VERIFY
+            </button>
+            
+            <!-- Resend Link -->
+            <p class="mt-4 text-sm">
+                Didn't receive any code? 
+                <a href="#" class="text-red-500 hover:underline">Resend</a>
+            </p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white mt-20 py-12">
+        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Subscribe Section -->
+            <div>
+                <h3 class="font-bold mb-4">Exclusive</h3>
+                <p class="mb-4">Subscribe</p>
+                <p class="text-sm mb-4">Get 10% off your first order</p>
+                <div class="flex">
+                    <input type="email" placeholder="Enter your email" class="p-2 bg-gray-800 rounded-l">
+                    <button class="bg-gray-800 px-4 rounded-r">→</button>
+                </div>
+            </div>
+
+            <!-- Support Section -->
+            <div>
+                <h3 class="font-bold mb-4">Support</h3>
+                <p class="text-sm">111 Bijoy sarani, Dhaka, DH 1515, Bangladesh.</p>
+                <p class="text-sm">exclusive@gmail.com</p>
+                <p class="text-sm">+88015-88888-9999</p>
+            </div>
+
+            <!-- Account Section -->
+            <div>
+                <h3 class="font-bold mb-4">Account</h3>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#" class="hover:underline">My Account</a></li>
+                    <li><a href="#" class="hover:underline">Login / Register</a></li>
+                    <li><a href="#" class="hover:underline">Cart</a></li>
+                    <li><a href="#" class="hover:underline">Shop</a></li>
+                </ul>
+            </div>
+
+            <!-- Quick Link Section -->
+            <div>
+                <h3 class="font-bold mb-4">Quick Link</h3>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:underline">Terms Of Use</a></li>
+                    <li><a href="#" class="hover:underline">FAQ</a></li>
+                    <li><a href="#" class="hover:underline">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Countdown Timer
+        let timeLeft = 58;
+        const countdownElement = document.getElementById('countdown');
+        
+        const timer = setInterval(() => {
+            timeLeft--;
+            countdownElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                countdownElement.textContent = '0';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Shop Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Header -->
+    <header class="w-full bg-black text-white">
+        <!-- Top Bar -->
+        <div class="container mx-auto flex justify-between items-center py-2 px-4 lg:px-6 text-sm">
+            <span>Summer Collection Flat 30% Off + Free Home Delivery on Orders Over $150</span>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="#" class="hover:underline">Shop Now</a></li>
+                    <li><a href="#" class="hover:underline">English</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Header -->
+        <div class="container mx-auto flex flex-wrap items-center justify-between py-4 px-4 lg:px-6">
+            <a href="#" class="text-2xl font-bold">ShopLogo</a>
+            <!-- Search Bar -->
+            <div class="flex-1 mx-4 lg:mx-8">
+                <div class="flex items-center w-full border rounded-md bg-white">
+                    <input type="text" placeholder="What are you looking for?" class="w-full py-2 px-4 focus:outline-none">
+                    <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-r-md">Search</button>
+                </div>
+            </div>
+            <!-- Utility Links -->
+            <div class="flex space-x-4">
+                <a href="#" class="hover:underline">Wishlist</a>
+                <a href="#" class="hover:underline">Account</a>
+                <a href="#" class="hover:underline">Cart</a>
+            </div>
+        </div>
+
+        <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+</head>
+
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto py-6 px-4 lg:px-6">
+        <div class="flex flex-wrap lg:flex-nowrap gap-6">
+            <!-- Sidebar -->
+            <aside class="w-full lg:w-1/5 bg-white shadow-md p-4 h-fit">
+                <h2 class="text-lg font-semibold mb-4">Ladies</h2>
+                <ul class="space-y-2">
+                    <li><a href="#" class="block text-gray-700 hover:text-gray-900">Sneakers</a></li>
+                    <li><a href="#" class="block text-gray-700 hover:text-gray-900">Heels</a></li>
+                    <li><a href="#" class="block text-gray-700 hover:text-gray-900">Flats</a></li>
+                </ul>
+                <h2 class="text-lg font-semibold mt-6 mb-4">Mens</h2>
+                <ul class="space-y-2">
+                    <li><a href="#" class="block text-gray-700 hover:text-gray-900">Sneakers</a></li>
+                    <li><a href="#" class="block text-gray-700 hover:text-gray-900">Boots</a></li>
+                    <li><a href="#" class="block text-gray-700 hover:text-gray-900">Loafers</a></li>
+                </ul>
+            </aside>
+    
+            <!-- Product Grid -->
+            <div class="w-full lg:w-4/5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {% for product in products %}
+                    <div class="relative bg-white shadow-md p-4 rounded-lg">
+                        <!-- Wishlist Icon -->
+                        <button class="absolute top-2 right-2 text-gray-500 hover:text-red-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+                            </svg>
+                        </button>
+    
+                        <!-- Product Image -->
+                        <a href="{% url 'single_product_page' product.id %}" class="block">
+                            <div class="aspect-w-4 aspect-h-3 mb-4">
+                                {% with product.images.first as first_image %}
+                                    {% if first_image %}
+                                        <img src="{{ first_image.image.url }}"
+                                             alt="{{ product.name }}"
+                                             class="w-full h-full object-cover rounded">
+                                    {% else %}
+                                        {% comment %}
+                                        <img src="{% static 'images/default-product.png' %}"
+                                             alt="{{ product.name }}"
+                                             class="w-full h-full object-cover rounded">
+                                        {% endcomment %}
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </a>
+    
+                        <!-- Product Details -->
+                        <h3 class="text-lg font-semibold truncate">{{ product.name }}</h3>
+                        <p class="text-red-600 font-bold">Rs. {{ product.sale_Price }}</p>
+    
+                        <!-- Add to Cart Button -->
+                        <button class="w-full py-2 mt-4 bg-black text-white hover:bg-gray-800 rounded-md transition-colors">
+                            Add to Cart
+                        </button>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-full text-center py-8">
+                        <p class="text-gray-500">No products found</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-6">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 px-4 lg:px-6">
+            <!-- Subscribe -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Subscribe</h3>
+                <input type="email" placeholder="Your Email" class="w-full py-2 px-4 mb-4 rounded-md text-gray-800">
+                <button class="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-md">Subscribe</button>
+            </div>
+            <!-- Support -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Support</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">Shipping Policy</a></li>
+                    <li><a href="#" class="hover:underline">Refund Policy</a></li>
+                    <li><a href="#" class="hover:underline">Contact Us</a></li>
+                </ul>
+            </div>
+            <!-- Quick Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">About Us</a></li>
+                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <!-- App Download -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Download App</h3>
+                <img src="https://via.placeholder.com/100" alt="QR Code" class="mb-4">
+                <div class="flex space-x-2">
+                    <a href="#" class="hover:underline">Facebook</a>
+                    <a href="#" class="hover:underline">Twitter</a>
+                    <a href="#" class="hover:underline">LinkedIn</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
