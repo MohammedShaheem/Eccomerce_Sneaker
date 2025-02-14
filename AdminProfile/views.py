@@ -1,7 +1,7 @@
 from django.shortcuts import render,HttpResponse,redirect,HttpResponseRedirect
 from django.contrib import messages 
 from AdminProfile.forms import ProductForm,CategoryForm,VariantForm
-from AdminProfile.models import Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table
+from AdminProfile.models import Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem
 from UserProfile.models import UserTable
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password,check_password #make password for encrypting and check password for decrypting
@@ -11,7 +11,12 @@ from django.http import JsonResponse
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.hashers import check_password
 import json
-
+from django.db.models import Sum
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
+import json
+from django.contrib.auth.decorators import login_required
 
 def admin_login(request):
     if request.method == 'POST':
@@ -302,23 +307,94 @@ def edit_product(request):
 
 def add_variant(request,product_id):
     product = get_object_or_404(ProductTable , id=product_id)
+    print(f'product:{product}')
     
     if request.method == 'POST':
         form = VariantForm(request.POST)
         if form.is_valid():
-            variant = form.save(commit=False)
-            variant.product = product
-            variant.Price = product.sale_Price
-            variant.save()
+            try:
+                #checking if hte variant twith same size and color exists
+                existing_variant = VarianceTable.objects.filter(
+                    product=product,
+                    size=form.cleaned_data['size'],
+                    color=form.cleaned_data['color']
+                    
+                ).first()
+                
+                if existing_variant:
+                    messages.error(request, "A variant with this size and color combination already exists.")
+                    return render(request,'admin/add_variant.html',{'form':form,'product':product})
+                
+                #creating new variant
+                variant = form.save(commit=False)
+                variant.product = product
+                variant.Price = product.sale_Price
+                variant.save()      
+                
+                # Handle images
+                files = request.FILES.getlist('images')                  
+                for file in files:
+                    if file.content_type.startswith('image'):
+                        if file.size <= 5 * 1024 * 1024:  # 5MB limit
+                            Product_Images_Table.objects.create(
+                                product=product,
+                                image=file
+                                )
+                        else:
+                            raise ValidationError(f'Image {file.name} exceeds 5MB size limit')
+                    else:
+                        raise ValidationError(f'File {file.name} is not a valid image') 
+                    
+                
+                
+                
+                #updating product quantity
+                product.product_quantity = (
+                    VarianceTable.objects.filter(product=product)
+                    .aggregate(total_quantity=Sum('Stock_Quantity'))
+                    ['total_quantity'] or 0
+                )  
+                product.save()   
+                
+                messages.success(request, "Variant added successfully")
+                # return redirect('products')
             
-            product.product_quantity += variant.Stock_Quantity
-            product.save()
-            
-            return redirect('products')
+            except Exception as e:
+                messages.error(request,f"Error saving variant: {str(e)}")
+                return render(request,'admin/add_variant.html', {'form':form,'product':product})
+        
         
     else:
         form = VariantForm()
     
-    return render(request, 'admin/add_variant.html',{'form':form, 'product':product})
+    context = {
+        'form' : form,
+        'product' : product,
+        'existing_images' : Product_Images_Table.objects.filter(product=product)
+    }
+    
+    return render(request, 'admin/add_variant.html',context)
 
-###############################################################################################################################################################################
+############################################################################################################################################################################### 
+
+def single_product_view(request,variance_id):
+    print(variance_id)
+    #Getting the variance records
+    variance = get_object_or_404(VarianceTable.objects.select_related(
+        'product',
+        'size',
+        'color'
+    ),id=variance_id)
+    print(id)
+    
+    product_images = Product_Images_Table.objects.filter(product=variance.product)
+    
+    context = {
+        'variance': variance,
+        'product_images': product_images,
+        
+    }
+    return render(request, 'admin/single_product_view.html', context)
+
+########################################################################################################################################################################################
+

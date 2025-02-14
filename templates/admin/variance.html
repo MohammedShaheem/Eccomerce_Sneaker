@@ -98,7 +98,7 @@
                     <td class="border border-gray-600 px-4 py-2">{{ variance.product.sale_Price }}</td>
                     <td class="border border-gray-600 px-4 py-2">{{ variance.product.created_at }}</td>
                     <td class="border border-gray-600 px-4 py-2">
-                      <a href="#" class="inline-block">
+                      <a href="{% url 'single_product_view' variance.id  %}" class="inline-block">
                       <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-md mr-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />

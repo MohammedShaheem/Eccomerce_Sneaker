@@ -150,6 +150,7 @@ class ProductForm(forms.ModelForm):
         fields = ['name', 'description', 'product_quantity', 'base_price', 
                   'sale_Price', 'category', 'size', 'color']
 
+
     def clean_product_quantity(self):
         quantity = self.cleaned_data.get('product_quantity')
         if quantity is not None:
@@ -229,7 +230,31 @@ class ProductForm(forms.ModelForm):
 
 
 ###############################################################Variant Form###############################################################################################
-    
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    def __init__(self, attrs=None):
+        default_attrs = {'multiple': 'multiple'}
+        if attrs:
+            default_attrs.update(attrs)
+        super().__init__(default_attrs)
+        
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+        
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+ 
+ 
+ 
+   
 class VariantForm(forms.ModelForm):
     size = forms.ModelChoiceField(
         queryset=Size.objects.all(),
@@ -245,10 +270,19 @@ class VariantForm(forms.ModelForm):
             'class': 'w-full bg-gray-100 border border-gray-300 text-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-200 appearance-none',
         })
     )
+    
+    Stock_Quantity = forms.IntegerField(
+        widget=forms.NumberInput(attrs={
+            'class': 'block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white',
+            'min': '0',
+        }),
+        required=True
+    )
+
 
     class Meta:
         model = VarianceTable
-        fields = ['size', 'color', 'Stock_Quantity', 'Price']
+        fields = ['size', 'color', 'Stock_Quantity']
 
 
 ################################################################Category Form##################################################################    

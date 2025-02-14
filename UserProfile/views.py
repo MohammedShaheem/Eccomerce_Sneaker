@@ -3,7 +3,7 @@ from django.contrib import messages  # for setting passages if user logedin
 from UserProfile.forms import UserRegForm
 from UserProfile.models import UserTable
 from django.contrib.auth.hashers import make_password,check_password #make password for encrypting and check password for decrypting
-from AdminProfile.models import ProductTable
+from AdminProfile.models import ProductTable,Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem
 from .utils import generate_otp, verify_otp
 from django.core.mail import send_mail
 from django.conf import settings
@@ -12,7 +12,11 @@ from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 import random
-
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
+import json
+from decimal import Decimal
 
 
 # Create your views here.
@@ -187,6 +191,7 @@ def logout(request):
     messages.success(request, "You have been logged out successfully.")
     return redirect('home_before_login')
 
+
 #############################################################################################################################################################################
 def MenPage(request):
     products = ProductTable.objects.prefetch_related(
@@ -200,13 +205,37 @@ def MenPage(request):
 
 def single_product_page(request, product_id):
     product = get_object_or_404(ProductTable, id=product_id)#model name and the the id of the product to display whic comes from the url pattern.
-    return render(request,'user/SPPage.html',{'product':product})
-    """Tries to find a product in the database where id matches product_id,
-        if found return the product object, if not found automatically 
-        returns a 404 error page. This is safer than using product.object.get()
-        which would raise an error if product isn't found"""
     
+    # get all variants for this product with thier stock informations
+    variants = VarianceTable.objects.filter(
+        product=product
+    ).select_related(
+        'size' # fetching size
+    ).order_by(
+        'size__size' # order by size value
+    )
     
+    # check if product is completely out of stock
+    is_out_of_stock = not variants.filter(Stock_Quantity__gt=0).exists()
+    
+    context = {
+        'product': product,
+        'variants': variants,
+        'is_out_of_stock': is_out_of_stock,
+        'available_sizes': [
+            {
+                'id': variant.id,
+                'size': variant.size.size,
+                'stock': variant.Stock_Quantity,
+                'is_available': variant.Stock_Quantity > 0
+            }
+            for variant in variants
+        ]
+    }
+    
+    return render(request, 'user/SPPage.html', context)
+    
+################################################################################################################################################################################
 
 def home_before_login(request):
      # Redirect authenticated users to home
@@ -215,4 +244,219 @@ def home_before_login(request):
     return render(request, 'user/home_before_login.html')
 
 
-   
+################################################################################################################################################################################
+@require_POST
+@login_required
+
+def add_to_cart(request):
+    print("hello")
+    try:
+        data = json.loads(request.body)
+        variant_id = data.get('variant_id')
+        quantity = int(data.get('quantity',1))
+        print(f"data:{data}")
+        
+        #validate inputs
+        if not variant_id or quantity < 1:
+            return JsonResponse({
+                'success':False,
+                'message':'Invalid input data'
+            })
+            
+            # get variant
+        try:
+            variant = VarianceTable.objects.get(id=variant_id)
+        except VarianceTable.DoesNotExist:
+            return JsonResponse({
+                'success':False,
+                'message':'Product variant not found'
+            })
+            
+        # check stock
+        if variant.Stock_Quantity < quantity:
+            return JsonResponse({
+                'success':False,
+                'message':f'Only {variant.Stock_Quantity} items available'
+            })
+            
+        # get or create cart
+        cart , _ = Cart.objects.get_or_create(user=request.user)
+        
+        # get or create cart item
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product_variant=variant,
+            defaults={'quantity':0}
+        )
+            
+        # update quantity
+        new_quantity = cart_item.quantity + quantity
+        if new_quantity > variant.Stock_Quantity:
+            return JsonResponse({
+                'success': False,
+                'message': f'Cannot add {quantity} more items. Stock limit reached.'
+            })
+        cart_item.quantity = new_quantity
+        cart_item.save()
+        cart.update_total()
+            
+            
+        #return success response with updated cart info
+        return JsonResponse({
+                'success':False,
+                'message':'Product added to cart sucessfully',
+                'cart_count':cart.total_items,
+                'cart_total':float(cart.grand_total)
+            })
+        
+        
+    except (ValueError, ValidationError) as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'An error occurred while adding to cart'
+        })
+#######################################################################################################################################################################################################################
+@login_required
+def cart(request):
+    cart,created = Cart.objects.get_or_create(
+        user=request.user,
+        defaults={'grand_total':0.00}
+    )
+    print(f"user:{request.user}")
+    print(f"cart:{cart}")
+    
+    
+    cart_items = cart.items.select_related(
+        'product_variant',
+        'product_variant__product',
+        'product_variant__size',
+        'product_variant__color'
+    ).prefetch_related(
+        'product_variant__product__images'
+    ).all()
+    
+    print("Cart Items:", cart_items.count())
+    
+    subtotal = cart.grand_total
+    tax_rate = Decimal(0.10)
+    tax_amount = subtotal * tax_rate
+    total = subtotal + tax_amount
+    
+    context = {
+        "cart_items":cart_items,
+        'cart':cart,
+        "cart_total":cart.grand_total,
+        "subtotal": subtotal,
+        "tax_amount": tax_amount,
+        "total": total,
+        "item_count" : cart.total_items,
+    }
+    
+    
+    return render(request,'user/cart.html',context)
+
+
+@login_required
+def update_cart_item(request, item_id):
+    if request.method == 'POST':
+        try:
+            quantity = int(request.POST.get('quantity', 1))
+            cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+            
+            # Validateing quantity against stock
+            if quantity > cart_item.product_variant.Stock_Quantity:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Requested quantity exceeds available stock'
+                })
+            
+            if quantity < 1:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Quantity cannot be less than 1'
+                })
+            
+            cart_item.quantity = quantity
+            cart_item.save()
+            cart = cart_item.cart
+            cart.update_total()
+            
+            # use float for JSON serialization
+            return JsonResponse({
+                'success': True,
+                'message': 'Quantity updated successfully',
+                'new_total': float(cart.grand_total),
+                'item_count': int(cart.total_items),
+                'item_total': float(cart_item.total_price)
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method'
+    })
+    
+    
+@login_required
+def remove_from_cart(request, item_id):
+    
+    try:
+        cart_item = get_object_or_404(CartItem,
+                                      id=item_id,
+                                      cart__user=request.user)
+        
+        cart = cart_item.cart
+        cart_item.delete()
+        cart.update_total()
+        
+        return JsonResponse({
+            "success":True,
+            "message":'Item removed form cart',
+            'new total':cart.grand_total,
+            "item_count":cart.total_items,
+            
+            
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success':False,
+            'message':'Error removing item from cart'
+            
+        })
+        
+
+@login_required
+def clear_cart(request):
+    if request.method == 'POST':
+        try:
+            cart = Cart.objects.get(user=request.user)
+            cart.items.all().delete()
+            cart.update_total()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Cart cleared successfully',
+                'new_total': cart.grand_total,
+                'item_count': cart.total_items
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': 'Error clearing cart'
+            })
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method'
+        })
