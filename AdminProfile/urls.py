@@ -18,7 +18,8 @@ urlpatterns = [
     path('edit_product/', views.edit_product, name='edit_product'),
     path('products/<int:product_id>/add-variant/', views.add_variant, name='add_variant'),
     path('products/<int:variance_id>/single_product_view/', views.single_product_view, name='single_product_view'),
-    
-     
-    
+    path('edit-category/<int:category_id>/', views.edit_category, name='edit_category'),
+    path('block_category/<int:category_id>/', views.block_category, name='block_category'),
+    path('unblock_category/<int:category_id>/', views.unblock_category, name='unblock_category'),
+    path('products/edit/<int:product_id>/', views.edit_product, name='edit_product'),
 ]

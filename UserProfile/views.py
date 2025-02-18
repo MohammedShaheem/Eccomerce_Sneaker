@@ -1,9 +1,9 @@
 from django.shortcuts import render,HttpResponse,redirect,get_object_or_404
 from django.contrib import messages  # for setting passages if user logedin
-from UserProfile.forms import UserRegForm
-from UserProfile.models import UserTable
+from UserProfile.forms import UserRegForm,AddressForm
+from UserProfile.models import UserTable,Address
 from django.contrib.auth.hashers import make_password,check_password #make password for encrypting and check password for decrypting
-from AdminProfile.models import ProductTable,Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem
+from AdminProfile.models import ProductTable,Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem,Order,OrderItem
 from .utils import generate_otp, verify_otp
 from django.core.mail import send_mail
 from django.conf import settings
@@ -17,6 +17,11 @@ from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 import json
 from decimal import Decimal
+from django.db.models import Sum
+from django.db import transaction
+from django.contrib import messages
+from django.utils import timezone
+import uuid
 
 
 # Create your views here.
@@ -151,13 +156,141 @@ def verify_otp(request, user_id):
 
 #######################################################################################################################################################################################
 
-def forgetpsswrd(request):
-    return render(request,'user/forgot password.html')
+def forgot_password(request):
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = UserTable.objects.get(email=email)
+            
+            #generating otp
+            email_otp = generate_otp(email)
+            print(f'otp:{email_otp}')
+            
+            #store otp in session
+            request.session[f'pwd_otp_{user.id}'] = email_otp
+            #set session expiy for otp(10minutes)
+            request.session.set_expiry(600)
+            
+            #sent the otp via email
+            subject = 'Password reset OTP'
+            message = 'Your password reset OTP is: {}'.format(email_otp)
+            
+            send_mail(
+                subject,
+                message,
+                'mohammedshaheemtk2@gmail.com',#from eamil
+                [email],#to eamil
+                fail_silently=False,
+            )
+            
+            messages.success(request, 'OTP sent to your email')
+            return redirect('verify_reset_otp',user_id=user.id)
+        
+        except UserTable.DoesNotExist:
+            messages.error(request, 'Email not found')
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            messages.error(request, 'Failed to send OTP')
+    
+    
+    
+    
+    return render(request,'user/forgot_password.html')
 
+
+
+def verify_reset_otp(request, user_id):
+    try:
+        user = UserTable.objects.get(id=user_id)
+        
+        if request.method == 'POST':
+            submitted_otp = request.POST.get('email_otp')
+            stored_otp = request.session.get(f'pwd_otp_{user_id}')
+            
+            print(f"Debug - submitted_otp: {submitted_otp}")
+            print(f"Debug - stored_otp: {stored_otp}")
+            
+            if submitted_otp and stored_otp and submitted_otp == stored_otp:
+                # Clear OTP from session after successful verification
+                request.session.pop(f'pwd_otp_{user_id}', None)
+                
+                # Store that user is allowed to reset password
+                request.session[f'can_reset_pwd_{user_id}'] = True
+                request.session.modified = True  # Ensure session is saved
+                request.session.set_expiry(300)  # 5 minutes to reset password
+                
+                print(f"Debug - Set can_reset_pwd_{user_id} to True")
+                print(f"Debug - All session keys: {request.session.keys()}")
+                
+                messages.success(request, 'OTP verified successfully. Set your new password.')
+                return redirect('reset_password', user_id=user_id)
+            else:
+                messages.error(request, 'Invalid or expired OTP. Please try again.')
+        
+        return render(request, 'user/reset_otp_verification.html', {'user': user})
+        
+    except UserTable.DoesNotExist:
+        messages.error(request, 'Invalid user')
+        return redirect('forgot_password')
+    except Exception as e:
+        print(f"Error in verify_reset_otp: {str(e)}")
+        messages.error(request, 'An error occurred')
+        return redirect('forgot_password')
+    
 #########################################################################################################################################################################################
 
-def setnewtpsswrd(request):
-    return render(request,'user/setnewpsswrd.html')
+def reset_password(request, user_id):
+    print(f"Debug - Entered reset_password with user_id: {user_id}")
+    print(f"Debug - Session keys: {request.session.keys()}")
+    print(f"Debug - Can reset password: {request.session.get(f'can_reset_pwd_{user_id}')}")
+    
+    try:
+        user = UserTable.objects.get(id=user_id)
+        
+        # Special case: Allow access if the request method is GET and coming from OTP verification
+        referer = request.META.get('HTTP_REFERER', '')
+        coming_from_otp = 'verify-reset-otp' in referer
+        
+        # Check if user is allowed to reset password
+        if not request.session.get(f'can_reset_pwd_{user_id}') and not (request.method == 'GET' and coming_from_otp):
+            print(f"Debug - Unauthorized access: can_reset_pwd_{user_id} not in session")
+            messages.error(request, 'Unauthorized access. Please complete OTP verification first.')
+            return redirect('forgot_password')
+        
+        if request.method == 'POST':
+            password = request.POST.get('password')
+            confirm_password = request.POST.get('confirm_password')
+            
+            if password and password == confirm_password:
+                # Check if new password is the same as current password
+                if user.check_password(password):
+                    messages.error(request, 'New password cannot be the same as your current password.')
+                    return render(request, 'user/reset_password.html', {'user': user})
+                
+                user.set_password(password)
+                user.save()
+                
+                # Clear reset permission from session
+                request.session.pop(f'can_reset_pwd_{user_id}', None)
+                request.session.modified = True  # Ensure session is saved
+                
+                messages.success(request, 'Password reset successfully')
+                return redirect('login')
+            else:
+                messages.error(request, 'Passwords do not match')
+        
+        # If we got here, either it's GET and authorized, or it's POST with matching passwords
+        return render(request, 'user/reset_password.html', {'user': user})
+    
+    except UserTable.DoesNotExist:
+        print(f"Debug - User with id {user_id} not found")
+        messages.error(request, 'Invalid user')
+        return redirect('forgot_password')
+    except Exception as e:
+        print(f"Error in reset_password: {str(e)}")
+        messages.error(request, 'An error occurred')
+        return redirect('forgot_password')
 
 #################################################################################################################################################################################
 @login_required
@@ -200,8 +333,38 @@ def MenPage(request):
         'variancetable_set__size',
         'variancetable_set__color'
     )
-    return render(request,'user/menPage.html',{'products':products})
-
+    
+    # Get the sort parameter from the request
+    sort_option = request.GET.get('sort', 'default')
+    
+    # Apply sorting based on user selection
+    if sort_option == 'price_low_high':
+        products = products.order_by('sale_Price')
+    elif sort_option == 'price_high_low':
+        products = products.order_by('-sale_Price')
+    elif sort_option == 'new_arrival':
+        products = products.order_by('-created_at')
+    elif sort_option == 'name_asc':
+        products = products.order_by('name')
+    elif sort_option == 'name_desc':
+        products = products.order_by('-name')
+    
+    # Get cart count
+    cart_count = 0
+    if request.user.is_authenticated:
+        # If you have a Cart model with user relation, use this approach
+        cart_count = CartItem.objects.filter(cart__user=request.user).count()
+    else:
+        # For session-based cart
+        cart = request.session.get('cart', {})
+        cart_count = sum(item.get('quantity', 0) for item in cart.values())
+    
+    return render(request, 'user/menPage.html', {
+        'products': products,
+        'current_sort': sort_option,
+        'cart_count': cart_count
+    })
+######################################################################################################################################################################################
 
 def single_product_page(request, product_id):
     product = get_object_or_404(ProductTable, id=product_id)#model name and the the id of the product to display whic comes from the url pattern.
@@ -359,7 +522,7 @@ def cart(request):
     
     
     return render(request,'user/cart.html',context)
-
+#######################################################################################################################################################################################
 
 @login_required
 def update_cart_item(request, item_id):
@@ -386,7 +549,7 @@ def update_cart_item(request, item_id):
             cart = cart_item.cart
             cart.update_total()
             
-            # use float for JSON serialization
+            
             return JsonResponse({
                 'success': True,
                 'message': 'Quantity updated successfully',
@@ -405,7 +568,7 @@ def update_cart_item(request, item_id):
         'success': False,
         'message': 'Invalid request method'
     })
-    
+#################################################################################################################################################################################
     
 @login_required
 def remove_from_cart(request, item_id):
@@ -434,7 +597,7 @@ def remove_from_cart(request, item_id):
             'message':'Error removing item from cart'
             
         })
-        
+################################################################################################################################################################################        
 
 @login_required
 def clear_cart(request):
@@ -460,3 +623,434 @@ def clear_cart(request):
             'success': False,
             'message': 'Invalid request method'
         })
+        
+##############################################################################################################################################################################################        
+        
+def add_address(request):
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user = request.user
+            
+            #checking for default address logic before saving
+            if address.is_default:
+                #setting all other addresses to non-default
+                Address.objects.filter(user=request.user).update(is_default=False)
+            elif not Address.objects.filter(user=request.user, is_default=True).exists():
+                #if no default exists, set this as default
+                address.is_default = True
+                
+            address.save()
+            return redirect('checkout') 
+            
+    else:
+        form = AddressForm()
+    
+    return render(request, 'user/add_address.html', {'form': form})
+#####################################################################################################################################################################################################
+@login_required
+def checkout(request):
+    #getting the user's cart
+    try:
+        cart = Cart.objects.get(user=request.user)
+        #getting cart items associated with that cart
+        cart_items = CartItem.objects.filter(cart=cart)
+    except Cart.DoesNotExist:
+        cart_items = []
+        cart = None
+
+    # Get user's addresses
+    user_addresses = Address.objects.filter(user=request.user)
+    
+    # Calculate totals
+    cart_total = 0
+    if cart_items:
+        cart_total = cart_items.aggregate(
+            total=Sum('total_price')
+        )['total'] or 0
+    
+    delivery_charge = 40  
+    coupon_discount = 100
+    # request.session.get('coupon_discount', 0)
+    
+    total_amount = cart_total + delivery_charge - coupon_discount
+    
+    context = {
+        'user_addresses': user_addresses,
+        'cart_items': cart_items,
+        'cart_total': cart_total,
+        'delivery_charge': delivery_charge,
+        'coupon_discount': coupon_discount,
+        'total_amount': total_amount,
+        'address_form': AddressForm()
+    }
+    
+    return render(request, 'user/checkout.html', context)
+##############################################################################################################################################################################################################################
+
+@login_required
+def create_order(request):
+    if request.method == 'POST':
+        try:
+            print("Debug: POST data:", request.POST)
+            print(f"Debug: User ID: {request.user.id}")
+            print(f"Debug: Username: {request.user.username}")
+            
+            # Check if user has an active cart
+            cart_exists = Cart.objects.filter(user=request.user, is_active=True).exists()
+            print(f"Debug: Active cart exists: {cart_exists}")
+            
+            # with transaction.atomic():
+            print("Debug: Starting order creation")
+                
+                #getting the cart
+            try:
+                    
+                    cart = Cart.objects.select_related('user').prefetch_related(
+                        'items', # Prefetch all related CartItem objects 
+                        'items__product_variant' # prefetch the product variants for those CartItems
+                    ).get(
+                        user=request.user,
+                        is_active=True
+                        )
+                    
+                    print(f"Debug: Cart ID: {cart.id}")
+                    print(f"Debug: Cart items count: {cart.items.count()}")
+                    
+            except Cart.DoesNotExist:
+                    print("Debug: No active cart found")
+                    messages.error(request, "No active cart found")
+                    return redirect('cart')
+            except Exception as e:
+                    print(f"Debug: Error fetching cart: {str(e)}")
+                    raise
+                
+                #getting address 
+            address_id = request.POST.get('address')
+            print(f"Debug: Address ID received: {address_id}")
+            if not address_id:
+                    messages.error(request, "Please select a delivery address")
+                    return redirect('checkout')
+                
+            address = Address.objects.get(id=address_id, user=request.user)
+            print(address)
+                
+            #getting payment method
+            payment_method = request.POST.get('payment_method')
+            print(f"Debug: Payment method received: {payment_method}")
+            if payment_method not in ['COD','CARD','UPI']:
+                messages.error(request,"Invalid payment method")
+                return redirect('checkout')
+                
+                
+                #calculating total amount
+            total_amount = sum(
+                item.quantity * item.product_variant.Price 
+                for item in cart.items.all()
+                )
+            print(f"Debug:total={total_amount}")
+                
+            #generate unique order ID
+            order_id = f"ORD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+            print(f"Debug:orderid={order_id}")
+                
+                #creating order
+            order = Order.objects.create(
+                    order_id = order_id,
+                    user = request.user,
+                    shipping_address=address,
+                    payment_method = payment_method,
+                    total_amount = total_amount,
+                    order_status = 'PENDING',
+                    payment_status = 'PENDING' if payment_method == 'COD' else 'PAID'
+                )
+            print(f"Debug:order={order.user}{order.shipping_address}")
+                
+                
+            #creating order items
+            order_items = []
+            print("Debug: Starting order items creation...")
+               
+                
+            print(f"Debug: Number of cart items: {cart.items.count()}")
+            cart_items = list(cart.items.all())
+            print(f"Debug: Cart items list: {cart_items}")
+                
+            for cart_item in cart_items:
+                    try:
+                        print(f"Debug: Cart Item: {cart_item}")
+                        print(f"Debug: Variant: {cart_item.product_variant}")
+                    
+                        
+                        print(f"Debug: Has product reference: {hasattr(cart_item.product_variant, 'product')}")
+                    
+                    
+                        product_name = getattr(cart_item.product_variant.product, 'name', 'Unknown') if hasattr(cart_item.product_variant, 'product') else 'No Product Reference'
+                        print(f"Debug: Product name: {product_name}")
+                    
+
+                    # Check stock
+                        if cart_item.product_variant.Stock_Quantity < cart_item.quantity:
+                            raise ValueError(f"Sorry, {cart_item.product_variant} is out of stock")
+                    
+                    
+                        try:
+                            
+                            # Create order item
+                            order_item = OrderItem(
+                                order=order,
+                                variant=cart_item.product_variant,
+                                quantity=cart_item.quantity,
+                                price_per_item=cart_item.product_variant.Price,
+                                total_amount=cart_item.quantity * cart_item.product_variant.Price
+                            )
+                            order_items.append(order_item)
+                            
+                            print(f"Debug: Successfully created order item for variant: {cart_item.product_variant}")
+                        except Exception as item_error:
+                            print(f"Debug: Error creating order item: {str(item_error)}")
+                        
+                    except Exception as e:
+                        print(f"Error processing cart item: {e}")
+    
+            #bulk creating the items
+            print(f"Debug: About to create {len(order_items)} order items")
+            OrderItem.objects.bulk_create(order_items)
+            print("Debug: Finished creating order items")
+                
+            #clearing cart
+            for cart_item in cart_items:
+                cart_item.delete()
+            print("Debug: Purchased items deleted from cart")   
+            
+            
+                
+                
+            messages.success(request, f"Order placed successfully orderid: {order_id}")
+            return redirect('order_confirmation', order_id=order_id)
+                
+            
+                              
+        except Address.DoesNotExist:
+            messages.error(request, "Invalid delivery address")
+            return redirect('checkout')
+            
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('checkout')
+            
+        except Exception as e:
+            messages.error(request, "Something went wrong. Please try again.")
+            return redirect('checkout')
+
+    return redirect('checkout')
+##################################################################################################################################################################################
+
+@login_required
+def order_confirmation(request, order_id):
+    try:
+        order = Order.objects.prefetch_related('items__product').get(
+            order_id=order_id,
+            user=request.user
+        )
+        
+        context = {
+            'order': order,
+            'items': order.items.all(),
+            'address': order.shipping_address,
+        }
+        
+        return render(request, 'user/order_confirmation.html', context)
+    except Order.DoesNotExist:
+        messages.error(request, "Order not found")
+        return redirect('home')
+##########################################################################################################################################################################################
+
+@login_required
+def user_profile(request):
+    return render(request,'user/user_profile.html',{'user':request.user})
+##################################################################################################################################################################################################
+
+@login_required
+def user_address(request):
+    addresses = Address.objects.filter(user=request.user)
+    return render(request,'user/user_address.html',{'addresses':addresses})
+##################################################################################################################################################################################
+
+
+@login_required
+def update_address(request, address_id):
+    address = get_object_or_404(Address, id=address_id,user=request.user)
+    
+    if request.method == 'POST':
+        address.name = request.POST.get('name')
+        address.house_name = request.POST.get('house_name')
+        address.street = request.POST.get('street')
+        address.city = request.POST.get('city')
+        address.state = request.POST.get('state')
+        address.pincode = request.POST.get('pincode')
+        address.email = request.POST.get('email')
+        address.phone = request.POST.get('phone')
+        address.address_type = request.POST.get('address_type')
+        address.landmark = request.POST.get('landmark')
+        
+        try:
+            address.save()
+            messages.success(request,'Address updated successfully')
+            return redirect('user_address')
+        except Exception as e:
+            messages.error(request,f"Error updating address: {str(e)}")
+            
+    return render(request, 'user/update_user_address.html', {'address': address})
+################################################################################################################################################################################################
+import re
+from django.contrib.auth import update_session_auth_hash
+
+
+@login_required
+def user_profile_edit(request):
+    user = request.user
+    
+    if request.method == 'POST':
+        
+        #getting the form data
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        phone_number = request.POST.get('phone_number')
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        
+        #validate phone number
+        if not re.match(r'^[6-9]\d{9}$', phone_number):
+            messages.error(request, 'Enter a valid 10-digit phone number starting with 6, 7, 8, or 9.')
+            return render(request, 'user/user_profile_edit.html', {'user': user})
+        
+        #update the profile info
+        user.username = username
+        user.email = email
+        user.phone_number = phone_number
+        
+        
+        #password change
+        if current_password and new_password and confirm_password:
+            #verify current password
+            if not user.check_password(current_password):
+                messages.error(request, 'Current password is incorrect.')
+                return render(request, 'user/user_profile_edit.html', {'user': user})
+                
+            #validate new password
+            if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$', new_password):
+                messages.error(request, 'Password must be at least 8 characters long and include a letter and a number.')
+                return render(request, 'user/user_profile_edit.html', {'user': user})
+            
+            #confirm password match
+            if new_password != confirm_password:
+                messages.error(request, 'New passwords do not match.')
+                return render(request, 'user/user_profile_edit.html', {'user': user})
+            
+            #set new password
+            user.set_password(new_password)
+            password_changed = True
+        else:
+            password_changed = False
+        try:
+            user.save()
+            messages.success(request, 'Profile updated successfully')
+            
+            # If password was changed, re-authenticate the user
+            if password_changed:
+                update_session_auth_hash(request, user)  # Keep user logged in
+                
+            return redirect('user_profile')  
+            
+        except Exception as e:
+            messages.error(request, f"Error updating profile: {str(e)}")
+    
+    
+    return render(request, 'user/user_profile_edit.html', {'user': user})
+            
+#########################################################################################################################
+@login_required
+@require_POST
+def set_default_address(request, address_id):
+    
+    if Address.set_default(address_id, request.user):
+        messages.success(request, 'Default address updated successfully.')
+    else:
+        messages.error(request, 'Unable to update default address.')
+    
+    
+    return redirect('user_address')  
+##################################################################################################################################################################################
+
+
+
+@login_required
+def user_orders(request):
+    orders = Order.objects.filter(user=request.user).order_by('-ordered_date')
+    return render(request, 'user/user_orders.html', {'orders': orders})
+
+
+@login_required
+def order_detail(request, order_id):
+    try:
+        order = Order.objects.get(order_id=order_id, user=request.user)
+        return render(request, 'user/order_detail.html', {'order': order})
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found')
+        return redirect('user_orders')
+    
+
+@login_required
+@require_POST
+def cancel_order(request):
+    order_id = request.POST.get('order_id')
+    cancel_reason = request.POST.get('cancel_reason')
+    other_reason = request.POST.get('other_reason')
+    
+    try:
+         order = Order.objects.get(order_id=order_id, user=request.user)
+         
+         #checking if the order can be cancelled
+         if order.order_status not in ['PENDING', 'PROCESSING']:
+             messages.error(request, 'This order cannot be canceled.')
+             return redirect('order_detail', order_id=order_id)
+         
+         
+         final_reason = other_reason if cancel_reason == 'Other' else cancel_reason
+         
+         
+         #update order
+         order.order_status = 'CANCELED'
+         order.canceled_date = timezone.now()
+         order.cancellation_reason = final_reason
+         
+         
+         #if payment was already made, set status to REFUNDED
+         if order.payment_status == 'PAID':
+            order.payment_status = 'REFUNDED'
+            order.refund_amount = order.total_amount
+            order.refund_date = timezone.now()
+            
+            
+         order.save()
+        
+         # Return items to inventory (restore stock quantities)
+         for item in order.items.all():
+            if item.variant:
+                item.variant.Stock_Quantity += item.quantity
+                item.variant.save()
+        
+         messages.success(request, 'Your order has been canceled successfully.')
+         return redirect('order_detail', order_id=order_id)
+    
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('user_orders')
+    
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        return redirect('order_detail', order_id=order_id)  

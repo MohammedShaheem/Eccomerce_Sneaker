@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Category</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+        <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md bg-gray-700">Categories</a>
+        <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+      </nav>
+  </div>
+
+    <!-- Main Content Area -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-gray-900 rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold mb-6 text-white">Edit Category</h1>
+            
+            <form method="POST" enctype="multipart/form-data" id="editCategoryForm">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="{{ form.category_name.id_for_label }}" class="block text-white font-medium mb-2">Category Name</label>
+                    <input type="text" name="{{ form.category_name.name }}" id="{{ form.category_name.id_for_label }}" 
+                           value="{{ category.category_name }}" 
+                           class="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           required>
+                    <p id="category-name-error" class="text-red-400 text-sm mt-1 hidden"></p>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.description.id_for_label }}" class="block text-white font-medium mb-2">Description</label>
+                    <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" 
+                              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                              rows="4" placeholder="Category Description">{{ category.description }}</textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-white font-medium mb-2">Category Image</label>
+                    {% if category.image %}
+                    <div class="border border-dashed border-gray-700 p-4 rounded-md mb-2">
+                        <img src="{{ category.image.url }}" alt="{{ category.category_name }}" class="h-32 w-auto object-cover rounded-md">
+                        <p class="text-sm text-gray-400 mt-2">Current image</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="border border-dashed border-gray-700 p-4 rounded-md">
+                        <div class="flex items-center justify-center flex-col">
+                            <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-blue-400 mb-1 cursor-pointer font-medium" id="file-name">Upload a file</p>
+                            <p class="text-sm text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                            <input type="file" name="{{ form.image.name }}" id="{{ form.image.id_for_label }}" 
+                                   class="hidden" accept="image/*">
+                        </div>
+                        <button type="button" id="uploadBtn" class="mt-4 w-full bg-transparent border border-gray-700 text-white rounded-md py-2 hover:bg-gray-800 transition">Choose File</button>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">Upload a new image (leave empty to keep current image)</p>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-start mt-6 space-x-2">
+                        {% if category.status %}
+                            <form method="post" action="{% url 'block_category' category.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md">Unlist Category</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'unblock_category' category.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">List Category</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-gray-400 mt-1">Click the button to list or unlist this category</p>
+                </div>
+                
+                <div class="flex justify-start space-x-4 mt-8">
+                    <a href="{% url 'category' %}" class="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition">
+                        Back
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                        Update Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryNameInput = document.getElementById('{{ form.category_name.id_for_label }}');
+            const categoryNameError = document.getElementById('category-name-error');
+            const form = document.getElementById('editCategoryForm');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const fileInput = document.getElementById('{{ form.image.id_for_label }}');
+            const fileNameDisplay = document.getElementById('file-name');
+            
+            // Get existing categories from the server
+            const existingCategories = {{ existing_categories|safe }};
+            const originalName = '{{ category.category_name|lower }}';
+            
+            form.addEventListener('submit', function(e) {
+                const categoryName = categoryNameInput.value.trim().toLowerCase();
+                
+                // Only check for duplicates if the name has changed
+                if (categoryName !== originalName && existingCategories.includes(categoryName)) {
+                    e.preventDefault();
+                    categoryNameError.textContent = 'This category name already exists.';
+                    categoryNameError.classList.remove('hidden');
+                    categoryNameInput.classList.add('border-red-500');
+                } else {
+                    categoryNameError.classList.add('hidden');
+                    categoryNameInput.classList.remove('border-red-500');
+                }
+            });
+        
+            uploadBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    fileNameDisplay.textContent = fileInput.files[0].name;
+                    // Show preview if desired
+                    if (fileInput.files[0].type.match('image.*')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            // If you want to add an image preview:
+                            // const previewImage = document.createElement('img');
+                            // previewImage.src = e.target.result;
+                            // previewImage.classList.add('mt-2', 'max-h-40', 'mx-auto');
+                            // fileNameDisplay.parentNode.appendChild(previewImage);
+                        }
+                        reader.readAsDataURL(fileInput.files[0]);
+                    }
+                } else {
+                    fileNameDisplay.textContent = 'Upload a file';
+                }
+            });
+            
+            // Real-time validation
+            categoryNameInput.addEventListener('input', function() {
+                const categoryName = this.value.trim().toLowerCase();
+                
+                if (categoryName !== originalName && existingCategories.includes(categoryName)) {
+                    categoryNameError.textContent = 'This category name already exists.';
+                    categoryNameError.classList.remove('hidden');
+                    this.classList.add('border-red-500');
+                } else {
+                    categoryNameError.classList.add('hidden');
+                    this.classList.remove('border-red-500');
+                }
+            });
+            
+            // Show/hide "List/Unlist" text based on checkbox state
+            const statusCheckbox = document.getElementById('status');
+            const statusLabel = statusCheckbox.nextElementSibling;
+            
+            statusCheckbox.addEventListener('change', function() {
+                statusLabel.textContent = this.checked ? 'List Category' : 'Unlist Category';
+            });
+        });
+        </script> 
+    </body>
+    </html>

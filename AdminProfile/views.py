@@ -398,3 +398,194 @@ def single_product_view(request,variance_id):
 
 ########################################################################################################################################################################################
 
+@never_cache
+def edit_category(request, category_id):
+    try:
+        category = Category.objects.get(id=category_id)
+    except Category.DoesNotExist:
+        messages.error(request, 'Category not found')
+        return redirect('category')
+    
+    
+    #creating a list of existing category names for javascript validation (excluding this category)
+    existing_categories = list(Category.objects.exclude(id=category_id).values_list('category_name', flat=True))
+    existing_categories = [cat.lower() for cat in existing_categories]
+    
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, request.FILES, instance=category)
+        if form.is_valid():
+            try:
+                #handling status
+                if 'status' in request.POST:
+                    category.status = request.POST.get('status') == 'on'
+                    
+                
+                #save the form
+                category = form.save()
+                messages.success(request, 'Category updated successfully')
+                return redirect('category')
+            except Exception as e:
+                messages.error(request,f'Error updating category: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request,f"{field}:{error}")
+    else:
+        form = CategoryForm(instance=category)
+        
+        
+    context = {
+        'form': form,
+        'category': category,
+        'existing_categories': json.dumps(existing_categories)
+    }
+    
+    return render(request, 'admin/edit_category.html', context)
+
+
+@never_cache
+def block_category(request, category_id):
+    if request.method == 'POST':
+        category = get_object_or_404(Category, id=category_id)
+        print(f"Blocking category. Current status: {category.status}")
+        category.status = False
+        category.save()
+        print(f"New status after blocking: {category.status}")
+        messages.success(request, 'Category unlisted successfully')
+    return redirect('edit_category', category_id=category_id)
+
+
+@never_cache
+def unblock_category(request, category_id):
+    if request.method == 'POST':
+        category = get_object_or_404(Category, id=category_id)
+        print(f"Unblocking category. Current status: {category.status}")
+        category.status = True
+        category.save()
+        print(f"New status after unblocking: {category.status}")
+        messages.success(request, 'Category listed successfully')
+    return redirect('edit_category', category_id=category_id)
+
+
+def edit_product(request, product_id):
+    try:
+        product = get_object_or_404(ProductTable, id=product_id, Is_deleted = False)
+        
+        
+        #getting the related data
+        product_images = product.images.all()
+        variance = VarianceTable.objects.filter(product=product).first()
+        
+        
+        if request.method == 'POST':
+            #creating an copy of POST data that for modifying
+            
+            post_data = request.POST.copy()
+            
+            #preserving the orginal category,color,and size values
+            
+            if product.category:
+                post_data['category'] = product.category.id
+                
+            if variance and variance.color:
+                post_data['color'] = variance.color.color
+                
+            if variance and variance.size:
+                post_data['size'] = variance.size.id
+                
+            form = ProductForm(post_data, request.FILES, instance=product)
+            
+            
+            if form.is_valid():
+                try:
+                    #checking hte product name exist not for this product
+                    product_name = form.cleaned_data.get('name')
+                    if ProductTable.objects.filter(name__iexact=product_name).exclude(id=product_id).exists():
+                         messages.error(request, f'Product "{product_name}" already exists')
+                         return render(request, 'admin/edit-product.html', {
+                                'form': form,
+                                'product': product,
+                                'product_images': product_images,
+                                'existing_products': json.dumps(list(ProductTable.objects.exclude(id=product_id).values_list('name', flat=True)))
+                            })
+                    
+                    
+                    #saving the product
+                    updated_product = form.save()
+                    
+                    #handiling product images
+                    
+                    files = request.FILES.getlist('product_images')
+                    
+                    images_to_delete = request.POST.getlist('delete_images')
+                    if images_to_delete:
+                        Product_Images_Table.objects.filter(id__in=images_to_delete).delete()
+                        
+                    
+                    for file in files:
+                            if file.content_type.startswith('image'):
+                                if file.size <= 5 * 1024 * 1024:  # 5MB limit
+                                    Product_Images_Table.objects.create(
+                                        product=updated_product,
+                                        image=file
+                                    )
+                                else:
+                                    raise ValidationError(f'Image {file.name} exceeds 5MB size limit')
+                            else:
+                                raise ValidationError(f'File {file.name} is not a valid image')
+                        
+                            #updating the quantity and price
+                            if variance:
+                                variance.Stock_Quantity = form.cleaned_data['product_quantity']
+                                variance.Price = form.cleaned_data['base_price']
+                                variance.save()
+                            
+                                messages.success(request, f'Product "{product_name}" updated successfully')
+                                return redirect('products')  
+                        
+                except ValidationError as e:
+                    messages.error(request, str(e))
+                    
+                except Exception as e:
+                    messages.error(request, f'Error updating product: {str(e)}')
+                    
+            else:
+                # Form validation errors
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f'{field}: {error}')
+        else:
+            # Populate form with existing data
+            initial_data = {
+                'name': product.name,
+                'description': product.description,
+                'product_quantity': product.product_quantity,
+                'base_price': product.base_price,
+                'sale_Price': product.sale_Price,
+                'category': product.category.id if product.category else None,
+                'color': variance.color.color if variance and variance.color else '',
+                'size': variance.size.id if variance and variance.size else None,
+            }
+            form = ProductForm(initial=initial_data, instance=product)
+        
+        # Get existing products for the template
+        try:
+            existing_products = list(ProductTable.objects.exclude(id=product_id).values_list('name', flat=True))
+        except Exception as e:
+            existing_products = []
+            messages.error(request, f'Error fetching existing products: {str(e)}')
+        
+        context = {
+            'form': form,
+            'product': product,
+            'product_images': product_images,
+            'existing_products': json.dumps(existing_products),
+            'title': 'Edit Product'  # For template title
+        }
+        
+        return render(request, 'admin/edit_product.html', context)
+    
+    except ProductTable.DoesNotExist:
+        messages.error(request, 'Product not found')
+        return redirect('products')

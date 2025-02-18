@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +11,7 @@
     <!-- Splide.js CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/css/splide.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="{% static 'js/main.js' %}" defer></script>
 </head>
 <body class="bg-white text-gray-800">
 
@@ -26,15 +28,15 @@
                 <div class="flex space-x-6">
                     <a href="#" class="text-gray-600">Home</a>
                     <!-- Shop Dropdown -->
-                    <div class="relative group">
-                        <button class="text-gray-600 flex items-center space-x-1">
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
                             <span>Shop</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <!-- Dropdown Menu -->
-                        <div class="absolute hidden group-hover:block w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
                             <a href="{% url 'MenPage' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Men</a>
                             <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Women</a>
                             <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Kids</a>
@@ -48,11 +50,37 @@
                     <button class="p-2"><i class="fas fa-heart"></i></button>
                     <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                         <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
-                        </a>
-                    <button class="p-2"><i class="fas fa-user"></i></button>
+                    </a>
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'user_orders' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        {% if messages %}
+    <div class="fixed top-4 right-4 z-50">
+        {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                       px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     </nav>
     <!-- Breadcrumb -->
     <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
@@ -125,7 +153,7 @@
                         <div class="p-4 bg-gray-50 rounded-lg shadow">
                             <img src="{% static 'images/user/home/product4.webp' %}" alt="Product 3" class="w-33 h-33 mx-auto mb-4">
                             <h3 class="font-bold text-lg">Unisex
-1906R</h3>
+                                1906R</h3>
                             <p class="text-gray-700"><del>$99.99</del></p><p class="text-red-700">$90.99  </p>
                         </div>
                     </li>
@@ -198,6 +226,7 @@
     <!-- Splide.js Script -->
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/js/splide.min.js"></script>
     <script>
+
         document.addEventListener('DOMContentLoaded', function () {
             new Splide('#carousel', {
                 type: 'loop',
@@ -210,19 +239,54 @@
             }).mount();
         });
 
-        const shopButton = document.getElementById('shopButton');
-        const shopDropdown = document.getElementById('shopDropdown');
+            // Shop dropdown
+            const shopButton = document.getElementById('shopButton');
+            const shopDropdown = document.getElementById('shopDropdown');
     
-        shopButton.addEventListener('click', () => {
-            shopDropdown.classList.toggle('hidden');
-        });
-    
-        // Close the dropdown if clicked outside
-        document.addEventListener('click', (event) => {
-            if (!shopButton.contains(event.target) && !shopDropdown.contains(event.target)) {
+            // User dropdown
+            const userButton = document.getElementById('userDropdownButton');
+            const userDropdown = document.getElementById('userDropdownMenu');
+            
+            // Function to close all dropdowns
+            function closeAllDropdowns() {
                 shopDropdown.classList.add('hidden');
+                userDropdown.classList.add('hidden');
             }
-        });
+            
+            // Toggle shop dropdown
+            shopButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.add('hidden'); // Close user dropdown
+                shopDropdown.classList.toggle('hidden');
+            });
+            
+            // Toggle user dropdown
+            userButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                shopDropdown.classList.add('hidden'); // Close shop dropdown
+                userDropdown.classList.toggle('hidden');
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (event) => {
+                const isClickInside = shopButton.contains(event.target) || 
+                                    shopDropdown.contains(event.target) ||
+                                    userButton.contains(event.target) || 
+                                    userDropdown.contains(event.target);
+                
+                if (!isClickInside) {
+                    closeAllDropdowns();
+                }
+            });
+            
+            // Close dropdowns when pressing Escape key
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeAllDropdowns();
+                }
+            });
+        
+      
     </script>
 
 </body>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Styled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Splide.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/css/splide.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-800">
+
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <nav class="border-b relative">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Sneakers</div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-600">Home</a>
+                    <!-- Shop Dropdown -->
+                    <div class="relative group">
+                        <button class="text-gray-600 flex items-center space-x-1">
+                            <span>Shop</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute hidden group-hover:block w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                            <a href="{% url 'MenPage' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Men</a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Women</a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Kids</a>
+                        </div>
+                    </div>
+                    <a href="#" class="text-gray-600">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
+                    <button class="p-2"><i class="fas fa-search"></i></button>
+                    <button class="p-2"><i class="fas fa-heart"></i></button>
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
+                        </a>
+                    <button class="p-2"><i class="fas fa-user"></i></button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Breadcrumb -->
+    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+        <a href="#" class="hover:underline">Home</a> /
+        <a href="#" class="hover:underline">Shop</a> /
+        <span class="text-gray-800">Nike Dunk Low Retro SE</span>
+    </nav>
+    </header>
+
+    <form method="POST" class="max-w-lg mx-auto p-6 space-y-4">
+        {% csrf_token %}
+        
+        <div class="space-y-4">
+            {% for field in form %}
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs italic">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    
+        <div class="flex items-center justify-end mt-6">
+            <button type="submit" 
+            class="bg-black text-white px-6 py-2 rounded-lg 
+                hover:bg-gray-800 focus:outline-none focus:ring-2 
+                focus:ring-gray-600 focus:ring-offset-2">
+            Save Address
+            </button>
+            
+
+        </div>
+    </form>
+
+
+    
+
+    <!-- Footer -->
+    <footer class="py-10 bg-gray-900 text-white">
+        <div class="container mx-auto px-8 xl:px-32 2xl:px-48 grid grid-cols-4 gap-6">
+            <div>
+                <h5 class="font-bold">About</h5>
+                <p class="text-gray-400">Learn more about us</p>
+            </div>
+            <div>
+                <h5 class="font-bold">Support</h5>
+                <p class="text-gray-400">Contact us anytime</p>
+            </div>
+            <div>
+                <h5 class="font-bold">Legal</h5>
+                <p class="text-gray-400">Privacy Policy</p>
+            </div>
+            <div>
+                <h5 class="font-bold">Follow Us</h5>
+                <p class="text-gray-400">Social media links</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Splide.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/js/splide.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new Splide('#carousel', {
+                type: 'loop',
+                perPage: 3,
+                gap: '1rem',
+                breakpoints: {
+                    640: { perPage: 1 },
+                    768: { perPage: 2 }
+                }
+            }).mount();
+        });
+
+        const shopButton = document.getElementById('shopButton');
+        const shopDropdown = document.getElementById('shopDropdown');
+    
+        shopButton.addEventListener('click', () => {
+            shopDropdown.classList.toggle('hidden');
+        });
+    
+        // Close the dropdown if clicked outside
+        document.addEventListener('click', (event) => {
+            if (!shopButton.contains(event.target) && !shopDropdown.contains(event.target)) {
+                shopDropdown.classList.add('hidden');
+            }
+        });
+    </script>
+
+</body>
+</html>

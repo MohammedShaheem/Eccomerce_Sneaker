@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-white">
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <div class="min-h-screen bg-gray-100 py-8">
+        <div class="container mx-auto px-4">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="text-center mb-6">
+                        <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        {% if messages %}
+                            {% for msg in messages %}
+                                <div class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} px-4 py-2 rounded">
+                                    {{ msg }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        <h1 class="text-2xl font-bold">Order Confirmed!</h1>
+                        <p class="text-gray-600">Order ID: {{ order.order_id }}</p>
+                    </div>
+    
+                    <div class="border-t pt-6">
+                        <h2 class="text-xl font-semibold mb-4">Order Details</h2>
+                        {% for item in items %}
+                        <div class="flex items-center justify-between py-4 border-b">
+                            <div class="flex items-center space-x-4">
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover rounded">
+                                <div>
+                                    <h3 class="font-medium">{{ item.product.name }}</h3>
+                                    <p class="text-gray-600">Quantity: {{ item.quantity }}</p>
+                                </div>
+                            </div>
+                            <p class="font-medium">₹{{ item.total_amount }}</p>
+                        </div>
+                        {% endfor %}
+    
+                        <div class="mt-6">
+                            <h2 class="text-xl font-semibold mb-4">Delivery Address</h2>
+                            <div class="p-4 bg-gray-50 rounded">
+                                <p class="font-medium">{{ address.full_name }}</p>
+                                <p class="text-gray-600">
+                                    {{ address.street_address }},<br>
+                                    {{ address.city }},<br>
+                                    {{ address.state }} - {{ address.pincode }}
+                                </p>
+                                <p class="text-gray-600">Phone: {{ address.phone }}</p>
+                            </div>
+                        </div>
+    
+                        <div class="mt-6">
+                            <h2 class="text-xl font-semibold mb-4">Payment Information</h2>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Payment Method</span>
+                                    <span>{{ order.payment_method }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Payment Status</span>
+                                    <span class="{% if order.payment_status == 'PAID' %}text-green-600{% else %}text-yellow-600{% endif %}">
+                                        {{ order.payment_status }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between font-semibold pt-2 border-t">
+                                    <span>Total Amount</span>
+                                    <span>₹{{ order.total_amount }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <div class="mt-8 text-center">
+                        <a href="{% url 'MenPage' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md font-medium hover:bg-blue-700">
+                            Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        
+
+    <!-- Footer -->
+    <footer class="bg-black text-white mt-16">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-4 gap-8">
+                <!-- Subscribe -->
+                <div>
+                    <h3 class="font-medium mb-4">Subscribe</h3>
+                    <p class="text-sm mb-4">Get 10% off your first order</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Enter your email" class="bg-transparent border px-4 py-2 flex-grow">
+                        <button class="bg-white text-black px-4">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h3 class="font-medium mb-4">Support</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>111 Bijay sarani, Dhaka,</p>
+                        <p>DH 1515, Bangladesh.</p>
+                        <p>exclusive@gmail.com</p>
+                        <p>+88015-88888-9999</p>
+                    </div>
+                </div>
+
+                <!-- Account -->
+                <div>
+                    <h3 class="font-medium mb-4">Account</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>My Account</p>
+                        <p>Login / Register</p>
+                        <p>Cart</p>
+                        <p>Wishlist</p>
+                        <p>Shop</p>
+                    </div>
+                </div>
+
+                <!-- Quick Link -->
+                <div>
+                    <h3 class="font-medium mb-4">Quick Link</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>Privacy Policy</p>
+                        <p>Terms Of Use</p>
+                        <p>FAQ</p>
+                        <p>Contact</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download App Section -->
+            <div class="mt-12">
+                <h3 class="font-medium mb-4">Download App</h3>
+                <div class="flex items-center space-x-4">
+                    <img src="/api/placeholder/120/40" alt="QR Code" class="w-24 h-24">
+                    <div class="space-y-2">
+                        <img src="/api/placeholder/120/40" alt="Google Play" class="h-10">
+                        <img src="/api/placeholder/120/40" alt="App Store" class="h-10">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Icons -->
+            <div class="flex space-x-4 mt-8">
+                <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

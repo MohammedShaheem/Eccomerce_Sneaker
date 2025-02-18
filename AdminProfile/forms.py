@@ -4,6 +4,7 @@ from django.forms.widgets import FileInput
 from django.core.exceptions import ValidationError
 import re
 from decimal import Decimal
+import os
 
 ##################################################################################################################################################################################
 
@@ -324,7 +325,7 @@ class CategoryForm(forms.ModelForm):
             'class': 'sr-only',  # Hidden but accessible
             'accept': 'image/*'
         }),
-        required=True,
+        required=False,
         error_messages={
             'required': 'Please upload a category image.',
             'invalid_image': 'Please upload a valid image file.'
@@ -348,26 +349,34 @@ class CategoryForm(forms.ModelForm):
                 raise forms.ValidationError("Category name can only contain letters, numbers, spaces, hyphens, and underscores")
             
             # Check if category name already exists (case-insensitive)
-            if Category.objects.filter(category_name__iexact=category_name).exists():
-                if self.instance.pk:
-                    # Exclude current instance when editing
-                    if not Category.objects.filter(category_name__iexact=category_name).filter(pk=self.instance.pk).exists():
-                        raise forms.ValidationError("This category name already exists")
-                else:
-                    raise forms.ValidationError("This category name already exists")
+            if Category.objects.filter(category_name__iexact=category_name).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError("This category name already exists")
                     
         return category_name
 
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if image:
-            # Check file size
-            if image.size > 5 * 1024 * 1024:  # 5 MB limit
-                raise forms.ValidationError("Image size should not exceed 5 MB")
             
-            # Check file type
-            valid_types = ['image/jpeg', 'image/png', 'image/gif']
-            if image.content_type not in valid_types:
-                raise forms.ValidationError("Please upload only JPEG, PNG, or GIF images")
+            
+            #checking if itis a new upload 
+            if hasattr(image, 'content_type'):
+                
+                # Check file size
+                if image.size > 5 * 1024 * 1024:  # 5 MB limit
+                    raise forms.ValidationError("Image size should not exceed 5 MB")
+            
+                # Check file type
+                valid_types = ['image/jpeg', 'image/png', 'image/gif']
+                if image.content_type not in valid_types:
+                    raise forms.ValidationError("Please upload only JPEG, PNG, or GIF images")
+            
+            else:
+                #if itis an existing file
+                valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+                ext = os.path.splitext(image.name)[1].lower()
+                if ext not in valid_extensions:
+                    raise forms.ValidationError("Invalid file extension. Only JPEG, PNG, or GIF images are allowed")
+            
             
         return image

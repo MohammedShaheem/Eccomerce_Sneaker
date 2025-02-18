@@ -2,6 +2,7 @@ from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.contrib import messages
+from AdminProfile.models import Cart
 
 class NoCacheMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
@@ -27,3 +28,5 @@ class NoCacheMiddleware(MiddlewareMixin):
             
 #         response = self.get_response(request)
 #         return response
+
+

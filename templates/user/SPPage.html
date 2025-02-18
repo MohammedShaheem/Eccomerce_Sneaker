@@ -18,43 +18,66 @@
 <style>
     .zoom-container {
         position: relative;
+        width: 100%;
+        height: 500px;
         overflow: hidden;
+    }
+    
+    .main-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
         cursor: zoom-in;
+        transition: transform 0.3s ease;
     }
     
     .zoom-overlay {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: white;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        display: none;
+        justify-content: center;
+        align-items: center;
     }
     
-    .zoom-container.zoomed .zoom-overlay {
-        opacity: 1;
-        pointer-events: auto;
-    }
-    .zoom-container {
-        @apply relative overflow-hidden cursor-zoom-in;
-    }
-
-    .zoom-overlay {
-        @apply fixed top-0 left-0 w-full h-full bg-black bg-opacity-80 z-50 flex items-center justify-center;
-    }
-
-    .zoomed-image {
-        @apply max-w-[90%] max-h-[90%] object-contain transition-transform duration-300 ease-in-out;
-        will-change: transform;
+    .zoom-view {
+        position: relative;
+        width: 90vw;
+        height: 90vh;
+        overflow: hidden;
     }
     
     .zoomed-image {
-        transform: scale(2);
+        position: absolute;
+        max-width: none;
+        max-height: none;
+        cursor: zoom-out;
         transform-origin: 0 0;
-        transition: transform 0.3s ease;
+    }
+    
+    .zoom-lens {
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        border: 2px solid #fff;
+        background-color: rgba(255, 255, 255, 0.2);
+        cursor: move;
+        display: none;
+    }
+    
+    /* Close button for zoom overlay */
+    .zoom-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: white;
+        font-size: 30px;
+        cursor: pointer;
+        z-index: 1001;
     }
     </style>
     <div id="notificationContainer" class="fixed right-4 z-50" style="top: 80px;"></div>
@@ -113,23 +136,18 @@
     
                     <!-- Main Image with Zoom Container -->
                     <div class="relative flex-1">
-                        <div class="zoom-container relative w-full h-[500px] overflow-hidden">
+                        <div class="zoom-container">
                             <img id="mainImage" 
-                                 class="w-full h-full object-cover cursor-zoom-in" 
+                                 class="main-image" 
                                  src="{{ product.images.first.image.url }}" 
-                                 alt="Product Image"
-                                 onmousemove="zoomImage(event)"
-                                 onmouseenter="showZoom()"
-                                 onmouseleave="hideZoom()">
-                            
-                            <div id="zoomOverlay" 
-                                 class="zoom-overlay fixed top-0 left-0 w-full h-full bg-white bg-opacity-90 hidden z-50 items-center justify-center">
-                                <div class="zoom-container relative w-3/4 h-3/4">
-                                    <img id="zoomedImage" 
-                                         class="w-full h-full object-contain" 
-                                         src="{{ product.images.first.image.url }}" 
-                                         alt="Zoomed Product Image">
-                                </div>
+                                 alt="Product Image">
+                            <div class="zoom-lens" id="zoomLens"></div>
+                        </div>
+                        
+                        <div class="zoom-overlay" id="zoomOverlay">
+                            <span class="zoom-close">&times;</span>
+                            <div class="zoom-view">
+                                <img id="zoomedImage" class="zoomed-image" src="" alt="Zoomed Product Image">
                             </div>
                         </div>
     
@@ -596,40 +614,99 @@
     }
 
     // Zoom functionality initialization
-    function initializeZoom() {
-        const zoomContainer = document.querySelector('.zoom-container');
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.querySelector('.zoom-container');
         const mainImage = document.getElementById('mainImage');
+        const zoomLens = document.getElementById('zoomLens');
         const zoomOverlay = document.getElementById('zoomOverlay');
         const zoomedImage = document.getElementById('zoomedImage');
-
-        if (mainImage && zoomOverlay && zoomedImage) {
-            mainImage.addEventListener('click', function() {
-                zoomOverlay.classList.toggle('hidden');
-                zoomedImage.src = mainImage.src;
-            });
-
-            zoomOverlay.addEventListener('click', function(e) {
-                if (e.target === zoomOverlay) {
-                    zoomOverlay.classList.add('hidden');
+        const closeButton = document.querySelector('.zoom-close');
+        
+        let isZooming = false;
+        
+        // Initialize lens size based on zoom ratio
+        const zoomRatio = 2.5;
+        
+        function initZoom() {
+            // Mouse enter on main image
+            mainImage.addEventListener('mouseenter', function(e) {
+                if (!isZooming) {
+                    zoomLens.style.display = 'block';
+                    updateLensPosition(e);
                 }
             });
-
-            zoomedImage.addEventListener('mousemove', function(e) {
-                const containerRect = zoomOverlay.getBoundingClientRect();
-                const imgRect = zoomedImage.getBoundingClientRect();
-                
-                const x = (e.clientX - imgRect.left) / imgRect.width * 100;
-                const y = (e.clientY - imgRect.top) / imgRect.height * 100;
-                
-                this.style.transform = 'scale(2)';
-                this.style.transformOrigin = `${x}% ${y}%`;
+    
+            // Mouse leave from main image
+            mainImage.addEventListener('mouseleave', function() {
+                if (!isZooming) {
+                    zoomLens.style.display = 'none';
+                }
             });
-
-            zoomedImage.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1)';
+    
+            // Mouse move on main image
+            mainImage.addEventListener('mousemove', function(e) {
+                if (!isZooming) {
+                    updateLensPosition(e);
+                }
+            });
+    
+            // Click on main image to open overlay
+            mainImage.addEventListener('click', function() {
+                isZooming = true;
+                zoomLens.style.display = 'none';
+                zoomOverlay.style.display = 'flex';
+                zoomedImage.src = mainImage.src;
+                
+                // Calculate initial zoom
+                const rect = mainImage.getBoundingClientRect();
+                const scaleX = zoomedImage.width / rect.width;
+                const scaleY = zoomedImage.height / rect.height;
+                zoomedImage.style.transform = `scale(${zoomRatio})`;
+            });
+    
+            // Mouse move on zoomed image
+            zoomedImage.addEventListener('mousemove', function(e) {
+                if (isZooming) {
+                    const rect = this.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) / rect.width * 100;
+                    const y = (e.clientY - rect.top) / rect.height * 100;
+                    this.style.transformOrigin = `${x}% ${y}%`;
+                }
+            });
+    
+            // Close overlay
+            closeButton.addEventListener('click', function() {
+                isZooming = false;
+                zoomOverlay.style.display = 'none';
+                zoomedImage.style.transform = 'none';
+            });
+    
+            // Close on overlay click
+            zoomOverlay.addEventListener('click', function(e) {
+                if (e.target === zoomOverlay) {
+                    isZooming = false;
+                    zoomOverlay.style.display = 'none';
+                    zoomedImage.style.transform = 'none';
+                }
             });
         }
-    }
+    
+        function updateLensPosition(e) {
+            const rect = mainImage.getBoundingClientRect();
+            const x = e.clientX - rect.left - zoomLens.offsetWidth / 2;
+            const y = e.clientY - rect.top - zoomLens.offsetHeight / 2;
+    
+            // Boundary checks
+            const maxX = rect.width - zoomLens.offsetWidth;
+            const maxY = rect.height - zoomLens.offsetHeight;
+    
+            zoomLens.style.left = Math.min(Math.max(0, x), maxX) + 'px';
+            zoomLens.style.top = Math.min(Math.max(0, y), maxY) + 'px';
+        }
+    
+        // Initialize zoom functionality
+        initZoom();
+    });
         
     </script>
 

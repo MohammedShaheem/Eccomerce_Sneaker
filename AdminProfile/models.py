@@ -2,6 +2,7 @@ from django.db import models
 from UserProfile.models import UserTable
 from decimal import Decimal
 from django.core.validators import MinValueValidator
+from UserProfile.models import UserTable,Address
 
 class Product(models.Model):
     name = models.CharField(max_length=150, null=False, blank=False)
@@ -92,7 +93,7 @@ class VarianceTable(models.Model):
     Price = models.DecimalField(max_digits=10, decimal_places=2)
     
     def __str__(self):
-        return f"{self.product.Product_Name}{self.color.color} - {self.size.size}"
+        return f"{self.product.name}{self.color.color} - {self.size.size}"
     
     class Meta:
         db_table = 'variance_table'
@@ -110,7 +111,7 @@ class Product_Images_Table(models.Model):
         
 
 class Cart(models.Model):
-    user = models.OneToOneField("UserProfile.UserTable",
+    user = models.OneToOneField(UserTable,
                                 on_delete=models.CASCADE,
                                 related_name="cart",
                                 null=True,blank=True)
@@ -118,6 +119,9 @@ class Cart(models.Model):
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"Cart for {self.user.username} - Active: {self.is_active}"
     
     def update_total(self):
         "Calculate the grand total price of the product"
@@ -180,6 +184,7 @@ class Cart(models.Model):
 
 
 class CartItem(models.Model):
+    
     cart = models.ForeignKey("Cart",
                             on_delete=models.CASCADE,
                             related_name="items")
@@ -227,3 +232,103 @@ class CartItem(models.Model):
         #for preventing duplications
         unique_together = ['cart','product_variant']
         ordering = ['-added_at']
+        
+class Order(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('PROCESSING', 'Processing'),
+        ('SHIPPED', 'Shipped'),
+        ('DELIVERED', 'Delivered'),
+        ('CANCELED', 'Canceled'),
+        ('RETURNED', 'Returned')
+    )
+    
+    PAYMENT_STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('PAID', 'Paid'),
+        ('FAILED', 'Failed'),
+        ('REFUNDED', 'Refunded')
+    )
+    
+    PAYMENT_METHOD_CHOICES = (
+        ('CARD', 'Credit/Debit Card'),
+        ('UPI', 'UPI'),
+        ('WALLET', 'Wallet'),
+        ('COD', 'Cash on Delivery')
+    )
+    
+    
+    order_id = models.CharField(max_length=50, unique=True)#custom order id
+    user = models.ForeignKey(UserTable,on_delete=models.CASCADE,related_name='orders',null=True,blank=True)
+    ordered_date = models.DateTimeField(auto_now_add=True)
+    
+    #status and payments
+    order_status = models.CharField(max_length=20, 
+                                    choices=STATUS_CHOICES,
+                                    default='PENDING')
+    payment_status = models.CharField(max_length=20,
+                                      choices=PAYMENT_STATUS_CHOICES,
+                                      default='PENDING')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2) 
+    
+    
+    #cancellation details
+    canceled_date = models.DateTimeField(null=True,blank=True)
+    cancellation_reason = models.TextField(null=True,blank=True)
+    
+    #return and refund
+    return_date = models.DateTimeField(null=True,blank=True)
+    return_reason = models.TextField(null = True,blank=True)
+    refund_amount = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
+    refund_date = models.DateTimeField(null=True,blank=True)
+    
+    #discounts and offers
+    
+    
+    shipping_address = models.ForeignKey(Address,on_delete=models.SET_NULL,null=True,blank=True)
+    tracking_id = models.CharField(max_length=100,null=True,blank=True)
+    estimated_delivery_date = models.DateField(null=True,blank=True)
+    
+    #cart and wallet
+    cart = models.OneToOneField(Cart,on_delete=models.SET_NULL,null=True)
+    
+    class Meta:
+        ordering = ['-ordered_date']
+        db_table = 'Order'
+        
+    def __str__(self):
+        return f"order{self.order_id} - {self.user.username}"
+    
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order,related_name='items', on_delete=models.CASCADE,blank=True,null=True)
+    product = models.ForeignKey(Product,on_delete=models.PROTECT,blank=True,null=True)
+    variant = models.ForeignKey(VarianceTable,on_delete=models.PROTECT,blank=True,null=True)
+    quantity = models.PositiveIntegerField()
+    price_per_item = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    #discount informations
+    discount_applied = models.BooleanField(default = False)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+    discount_prcentage = models.DecimalField(max_digits=5, decimal_places=2,default=0)
+    
+    #statuses
+    is_returned = models.BooleanField(default=False)
+    return_date = models.DateTimeField(null=True,blank=True)
+    return_reason = models.TextField(null=True,blank=True)
+    
+    
+    class Meta:
+        ordering = ['id']
+        db_table = 'OrderItem'
+        
+    def __str__(self):
+        return f"{self.quantity}x{self.product.name}in order {self.order.order_id}"
+    
+    def save(self, *args, **kwargs):
+        #calculatting total amount
+        self.total_amount = Decimal(self.quantity) * self.price_per_item - self.discount_amount
+        super().save(*args, **kwargs)

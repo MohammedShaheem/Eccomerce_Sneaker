@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Shop Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <nav class="border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Sneakers</div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-600">Home</a>
+                    <a href="#" class="text-gray-600">Latest</a>
+                    <a href="#" class="text-gray-600">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
+                    <button class="p-2"><i class="fas fa-search"></i></button>
+                    <button class="p-2"><i class="fas fa-heart"></i></button>
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
+                    </a>
+                    {% if messages %}
+                    <div class="fixed top-4 right-4 z-50">
+                        {% for msg in messages %}
+                            <div id="message-{{ forloop.counter }}" 
+                                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                                       px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                                {{ msg }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- User dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Inbox</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Experiences</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Account Settings</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+        <a href="#" class="hover:underline">Home</a> /
+        <a href="#" class="hover:underline">Shop</a> /
+        <span class="text-gray-800">Nike Dunk Low Retro SE</span>
+    </nav>
+        <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+</head>
+
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex">
+            <!-- Sidebar -->
+            <div class="w-1/4 pr-8">
+                <h2 class="text-lg font-semibold mb-4">Manage My Account</h2>
+                <nav class="space-y-2">
+                    <a href="{% url 'user_profile' %}" class="block text-gray-600">My Profile</a>
+                    <a href="#" class="block text-red-600">Address Book</a>
+                    <a href="#" class="block text-gray-600">My Payment Options</a>
+                    <a href="#" class="block text-gray-600">My Wishlist</a>
+                </nav>
+                
+                <h2 class="text-lg font-semibold mt-8 mb-4">My Orders</h2>
+                <nav class="space-y-2">
+                    <a href="#" class="block text-gray-600">My Orders & Returns</a>
+                    <a href="#" class="block text-gray-600">My Cancellations</a>
+                </nav>
+            </div>
+    
+            <!-- Main Content -->
+            <div class="container mx-auto px-4 py-8">
+                <div class="max-w-2xl mx-auto">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h1 class="text-2xl font-semibold mb-6">Update Address</h1>
+            
+                        <form method="POST" class="space-y-4">
+                            {% csrf_token %}
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                    <input type="text" name="name" value="{{ address.name }}" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Address Type</label>
+                                    <select name="address_type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                        {% for type, label in address.ADDRESS_TYPE_CHOICES %}
+                                        <option value="{{ type }}" {% if address.address_type == type %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+            
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">House Name</label>
+                                    <input type="text" name="house_name" value="{{ address.house_name }}" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Street</label>
+                                    <input type="text" name="street" value="{{ address.street }}" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                    <input type="text" name="city" value="{{ address.city }}" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                    <input type="text" name="state" value="{{ address.state }}" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                                    <input type="text" name="pincode" value="{{ address.pincode }}" required pattern="\d{6}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <input type="tel" name="phone" value="{{ address.phone }}" required pattern="\d{10}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" name="email" value="{{ address.email }}" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+            
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Landmark (Optional)</label>
+                                    <input type="text" name="landmark" value="{{ address.landmark }}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black">
+                                </div>
+                            </div>
+            
+                            <div class="flex justify-end space-x-4 mt-6">
+                                <a href="{% url 'user_address' %}" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-900">
+                                    Update Address
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-6">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 px-4 lg:px-6">
+            <!-- Subscribe -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Subscribe</h3>
+                <input type="email" placeholder="Your Email" class="w-full py-2 px-4 mb-4 rounded-md text-gray-800">
+                <button class="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-md">Subscribe</button>
+            </div>
+            <!-- Support -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Support</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">Shipping Policy</a></li>
+                    <li><a href="#" class="hover:underline">Refund Policy</a></li>
+                    <li><a href="#" class="hover:underline">Contact Us</a></li>
+                </ul>
+            </div>
+            <!-- Quick Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">About Us</a></li>
+                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <!-- App Download -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Download App</h3>
+                <img src="https://via.placeholder.com/100" alt="QR Code" class="mb-4">
+                <div class="flex space-x-2">
+                    <a href="#" class="hover:underline">Facebook</a>
+                    <a href="#" class="hover:underline">Twitter</a>
+                    <a href="#" class="hover:underline">LinkedIn</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+
+        // JavaScript to toggle dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownButton = document.getElementById('userDropdownButton');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+            
+            // Toggle dropdown on button click
+            dropdownButton.addEventListener('click', function() {
+                dropdownMenu.classList.toggle('hidden');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>

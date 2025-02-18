@@ -1,0 +1,340 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Shop Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <nav class="border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Sneakers</div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-600">Home</a>
+                    <a href="#" class="text-gray-600">Latest</a>
+                    <a href="#" class="text-gray-600">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
+                    <button class="p-2"><i class="fas fa-search"></i></button>
+                    <button class="p-2"><i class="fas fa-heart"></i></button>
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
+                    </a>
+                    {% if messages %}
+                    <div class="fixed top-4 right-4 z-50">
+                        {% for msg in messages %}
+                            <div id="message-{{ forloop.counter }}" 
+                                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                                       px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                                {{ msg }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- User dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Inbox</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Experiences</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Account Settings</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+        <a href="#" class="hover:underline">Home</a> /
+        <a href="#" class="hover:underline">Shop</a> /
+        <span class="text-gray-800">Nike Dunk Low Retro SE</span>
+    </nav>
+        <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+</head>
+
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center mb-6">
+                <a href="{% url 'user_orders' %}" class="flex items-center text-gray-600 hover:text-black">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to orders
+                </a>
+            </div>
+            
+            <div class="bg-white border rounded-lg shadow overflow-hidden">
+                <div class="p-6 border-b bg-gray-50">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center">
+                        <div>
+                            <h1 class="text-2xl font-semibold">Order Details</h1>
+                            <p class="text-gray-600 mt-1">Placed on {{ order.ordered_date|date:"F d, Y, h:i A" }}</p>
+                        </div>
+                        <div class="mt-4 md:mt-0">
+                            <span class="text-sm uppercase tracking-wide">Order ID</span>
+                            <p class="font-medium">{{ order.order_id }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <h3 class="font-medium text-lg mb-2">Shipping Address</h3>
+                            <div class="bg-gray-50 rounded p-3">
+                                <p class="font-medium">{{ order.shipping_address.name }}</p>
+                                <p>{{ order.shipping_address.house_name }}</p>
+                                <p>{{ order.shipping_address.street }}</p>
+                                <p>{{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.pincode }}</p>
+                                <p>Phone: {{ order.shipping_address.phone }}</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-medium text-lg mb-2">Payment Information</h3>
+                            <div class="bg-gray-50 rounded p-3">
+                                <p>Method: {{ order.get_payment_method_display }}</p>
+                                <p>Status: 
+                                    <span class="
+                                        {% if order.payment_status == 'PAID' %}text-green-600
+                                        {% elif order.payment_status == 'FAILED' %}text-red-600
+                                        {% else %}text-orange-500{% endif %}
+                                    ">
+                                        {{ order.get_payment_status_display }}
+                                    </span>
+                                </p>
+                                {% if order.payment_status == 'REFUNDED' %}
+                                    <p class="mt-2 text-green-600">Refunded: ₹{{ order.refund_amount }} on {{ order.refund_date|date:"M d, Y" }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-medium text-lg mb-2">Order Status</h3>
+                            <div class="bg-gray-50 rounded p-3">
+                                <p>
+                                    Status:
+                                    <span class="
+                                        {% if order.order_status == 'DELIVERED' %}text-green-600
+                                        {% elif order.order_status == 'CANCELED' or order.order_status == 'RETURNED' %}text-red-600
+                                        {% elif order.order_status == 'PENDING' %}text-orange-500
+                                        {% else %}text-blue-500{% endif %}
+                                    ">
+                                        {{ order.get_order_status_display }}
+                                    </span>
+                                </p>
+                                
+                                {% if order.estimated_delivery_date and order.order_status != 'CANCELED' %}
+                                    <p class="mt-2">
+                                        Estimated delivery: {{ order.estimated_delivery_date|date:"F d, Y" }}
+                                    </p>
+                                {% endif %}
+                                
+                                {% if order.tracking_id %}
+                                    <p class="mt-2">Tracking ID: {{ order.tracking_id }}</p>
+                                {% endif %}
+                                
+                                {% if order.order_status == 'CANCELED' %}
+                                    <div class="mt-2">
+                                        <p class="text-red-600">Canceled on {{ order.canceled_date|date:"F d, Y" }}</p>
+                                        <p class="text-sm mt-1">Reason: {{ order.cancellation_reason }}</p>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if order.order_status == 'RETURNED' %}
+                                    <div class="mt-2">
+                                        <p class="text-red-600">Returned on {{ order.return_date|date:"F d, Y" }}</p>
+                                        <p class="text-sm mt-1">Reason: {{ order.return_reason }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h3 class="font-medium text-lg mb-4">Order Items</h3>
+                        
+                        <div class="border rounded overflow-hidden">
+                            {% for item in order.items.all %}
+                                <div class="flex flex-col md:flex-row p-4 {% if not forloop.last %}border-b{% endif %}">
+                                    <div class="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
+                                        {% if item.variant.image %}
+                                            <img src="{{ item.variant.image.url }}" alt="{{ item.variant }}" class="w-32 h-32 object-cover rounded">
+                                        {% else %}
+                                            <div class="w-32 h-32 bg-gray-200 rounded flex items-center justify-center">
+                                                <span class="text-gray-500">No image</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="flex-grow">
+                                        <h4 class="font-medium">{{ item.variant.product.name }}</h4>
+                                        <p class="text-sm text-gray-600">{{ item.variant }}</p>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <div>
+                                                <p>Quantity: {{ item.quantity }}</p>
+                                                <p class="font-medium mt-1">₹{{ item.price_per_item }} each</p>
+                                                
+                                                {% if item.discount_applied %}
+                                                    <p class="text-sm text-green-600 mt-1">
+                                                        Discount: {{ item.discount_prcentage }}% (₹{{ item.discount_amount }})
+                                                    </p>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="text-right">
+                                                <p class="font-medium">Subtotal: ₹{{ item.total_amount }}</p>
+                                                
+                                                {% if item.is_returned %}
+                                                    <p class="text-sm text-red-600 mt-1">Returned on {{ item.return_date|date:"M d, Y" }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-gray-50 rounded border">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">Order Total:</span>
+                            <span class="font-semibold text-lg">₹{{ order.total_amount }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if order.order_status == 'PENDING' or order.order_status == 'PROCESSING' %}
+                        <div class="mt-8 flex justify-end">
+                            <button 
+                                onclick="showCancelModal('{{ order.order_id }}')"
+                                class="px-4 py-2 border border-red-300 rounded text-sm font-medium text-red-600 hover:bg-red-50">
+                                Cancel Order
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cancel Order Modal (same as in order_list.html) -->
+        <div id="cancelOrderModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+            <!-- Modal content - copy from order_list.html -->
+            <!-- ... -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-6">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 px-4 lg:px-6">
+            <!-- Subscribe -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Subscribe</h3>
+                <input type="email" placeholder="Your Email" class="w-full py-2 px-4 mb-4 rounded-md text-gray-800">
+                <button class="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-md">Subscribe</button>
+            </div>
+            <!-- Support -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Support</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">Shipping Policy</a></li>
+                    <li><a href="#" class="hover:underline">Refund Policy</a></li>
+                    <li><a href="#" class="hover:underline">Contact Us</a></li>
+                </ul>
+            </div>
+            <!-- Quick Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">About Us</a></li>
+                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <!-- App Download -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Download App</h3>
+                <img src="https://via.placeholder.com/100" alt="QR Code" class="mb-4">
+                <div class="flex space-x-2">
+                    <a href="#" class="hover:underline">Facebook</a>
+                    <a href="#" class="hover:underline">Twitter</a>
+                    <a href="#" class="hover:underline">LinkedIn</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript to toggle dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownButton = document.getElementById('userDropdownButton');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+            
+            // Toggle dropdown on button click
+            dropdownButton.addEventListener('click', function() {
+                dropdownMenu.classList.toggle('hidden');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        });
+
+        function showCancelModal(orderId) {
+            document.getElementById('cancel_order_id').value = orderId;
+            document.getElementById('cancelOrderModal').classList.remove('hidden');
+        }
+        
+        function hideCancelModal() {
+            document.getElementById('cancelOrderModal').classList.add('hidden');
+            document.getElementById('cancelOrderForm').reset();
+        }
+        
+        // Show/hide the "other reason" field based on selection
+        document.querySelector('select[name="cancel_reason"]').addEventListener('change', function() {
+            const otherContainer = document.getElementById('otherReasonContainer');
+            if (this.value === 'Other') {
+                otherContainer.classList.remove('hidden');
+            } else {
+                otherContainer.classList.add('hidden');
+            }
+        });
+    </script>
+
+</body>
+
+</html>

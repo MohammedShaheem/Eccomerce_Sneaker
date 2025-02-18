@@ -107,6 +107,7 @@ MIDDLEWARE = [
     # 'UserProfile.middleware.AuthenticationMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     
+    
 ]
 
 ROOT_URLCONF = 'EccomerceProject.urls'
@@ -122,6 +123,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                
             ],
         },
     },
@@ -198,6 +200,7 @@ SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
 SESSION_COOKIE_SECURE = True  # Use only with HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session expires when browser closes
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Cache settings
 # CACHES = {

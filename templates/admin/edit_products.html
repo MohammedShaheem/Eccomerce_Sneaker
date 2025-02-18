@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Category</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+        <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md bg-gray-700">Categories</a>
+        <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+      </nav>
+  </div>
+
+    <!-- Main Content Area -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold mb-6">{{ title }}</h1>
+            
+            <form method="POST" enctype="multipart/form-data" id="product-form">
+                {% csrf_token %}
+                
+                <!-- Product Name -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_name">Product Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.name.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Description -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_description">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.description.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Hidden fields to preserve values -->
+                {{ form.category.as_hidden }}
+                {% if form.size %}{{ form.size.as_hidden }}{% endif %}
+                {% if form.color %}{{ form.color.as_hidden }}{% endif %}
+                
+                <!-- Product Quantity -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_product_quantity">Stock Quantity</label>
+                    {{ form.product_quantity }}
+                    {% if form.product_quantity.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.product_quantity.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Price Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="id_base_price">Base Price</label>
+                        {{ form.base_price }}
+                        {% if form.base_price.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.base_price.errors }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="id_sale_Price">Sale Price</label>
+                        {{ form.sale_Price }}
+                        {% if form.sale_Price.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.sale_Price.errors }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Current Images -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2">Current Images</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {% for image in product_images %}
+                        <div class="relative border rounded p-2">
+                            <img src="{{ image.image.url }}" class="h-32 w-full object-cover rounded" alt="Product image">
+                            <div class="flex items-center mt-2">
+                                <input type="checkbox" name="delete_images" value="{{ image.id }}" id="delete_image_{{ image.id }}" class="mr-2">
+                                <label for="delete_image_{{ image.id }}" class="text-xs text-red-500">Delete</label>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500 col-span-full">No images available</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Upload New Images -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_product_images">Upload New Images</label>
+                    <input type="file" name="product_images" multiple class="border rounded p-2 w-full" accept="image/*">
+                    <p class="text-gray-500 text-xs mt-1">You can select multiple images. Maximum size: 5MB per image.</p>
+                </div>
+                
+                <!-- Submit Buttons -->
+                <div class="flex justify-end space-x-2">
+                    <a href="{% url 'products' %}" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</a>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // JavaScript for handling form validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const productForm = document.getElementById('product-form');
+        const productNameInput = document.getElementById('id_name');
+        const existingProducts = {{ existing_products|safe }};
+        
+        productForm.addEventListener('submit', function(e) {
+            let valid = true;
+            
+            // Check product name uniqueness
+            const productName = productNameInput.value.trim().toLowerCase();
+            if (existingProducts.includes(productName)) {
+                e.preventDefault();
+                alert(`Product name "${productName}" already exists. Please choose a different name.`);
+                valid = false;
+            }
+            
+            // Check file sizes
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput.files.length > 0) {
+                for (const file of fileInput.files) {
+                    if (file.size > 5 * 1024 * 1024) { // 5MB
+                        e.preventDefault();
+                        alert(`File "${file.name}" exceeds 5MB size limit.`);
+                        valid = false;
+                        break;
+                    }
+                    
+                    if (!file.type.startsWith('image/')) {
+                        e.preventDefault();
+                        alert(`File "${file.name}" is not a valid image.`);
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+            
+            return valid;
+        });
+    });
+    </script> 
+    </body>
+    </html>

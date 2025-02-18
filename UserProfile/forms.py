@@ -1,5 +1,5 @@
 from django import forms
-from UserProfile.models import UserTable
+from UserProfile.models import UserTable,Address
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 import re
@@ -87,3 +87,77 @@ class UserRegForm(forms.ModelForm):
     class Meta:
         model = UserTable
         fields = ['username', 'email', 'Phone_number', 'password', 'confirm_password']
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = Address
+        exclude = ['user','created_at']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'Full Name'
+            }),
+            'house_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'House/Apartment Name'
+            }),
+            'street': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'Street Address'
+            }),
+            'landmark': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'Landmark (Optional)'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'City'
+            }),
+            'state': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'State'
+            }),
+            'pincode': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'Pincode',
+                'maxlength': '6',
+                'pattern': '[0-9]{6}'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'Email'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500',
+                'placeholder': 'Phone Number',
+                'maxlength': '10',
+                'pattern': '[0-9]{10}'
+            }),
+            'address_type': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500'
+            }),
+            'is_default': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500'
+            })
+        }
+    
+    def clean_pincode(self):
+        pincode = self.cleaned_data.get('pincode')
+        if not pincode.isdigit() or len(pincode) != 6:
+            raise forms.ValidationError("Phone number must be 10 digits")
+        return pincode
+    
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if not phone.isdigit() or len(phone) != 10:
+            raise forms.ValidationError("Phone number must be 10 digits")
+        return phone
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+    
+        if commit:
+        
+            instance.save()
+    
+        return instance
