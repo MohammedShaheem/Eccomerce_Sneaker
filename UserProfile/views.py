@@ -349,6 +349,7 @@ def MenPage(request):
     elif sort_option == 'name_desc':
         products = products.order_by('-name')
     
+    
     # Get cart count
     cart_count = 0
     if request.user.is_authenticated:
