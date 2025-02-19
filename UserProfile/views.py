@@ -1,6 +1,6 @@
 from django.shortcuts import render,HttpResponse,redirect,get_object_or_404
 from django.contrib import messages  # for setting passages if user logedin
-from UserProfile.forms import UserRegForm,AddressForm
+from UserProfile.forms import UserRegForm,AddressForm,CancellationForm
 from UserProfile.models import UserTable,Address
 from django.contrib.auth.hashers import make_password,check_password #make password for encrypting and check password for decrypting
 from AdminProfile.models import ProductTable,Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem,Order,OrderItem
@@ -22,6 +22,9 @@ from django.db import transaction
 from django.contrib import messages
 from django.utils import timezone
 import uuid
+import re
+from django.contrib.auth import update_session_auth_hash
+import datetime
 
 
 # Create your views here.
@@ -87,18 +90,23 @@ def signin(request):
         form = UserRegForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save(commit=False)
-                user.set_password(form.cleaned_data['password'])
-                user.is_active = False
-                user.save()
-
+                #storing form data in session 
+                user_data = {
+                    'username': form.cleaned_data['username'],
+                    'email': form.cleaned_data['email'],
+                    'password': form.cleaned_data['password'],
+                    'Phone_number':form.cleaned_data['Phone_number']
+                }
+                
+                request.session['user_registration_data'] = user_data
+                
                 email = form.cleaned_data['email']
                 email_otp = generate_otp(email)
                 print(f"email_otp:{email_otp}")
                 
-                # Store OTP in session with user_id as key
-                request.session[f'otp_{user.id}'] = email_otp
-                # Set session expiry for OTP (e.g., 10 minutes)
+                #storing OTP in session
+                request.session['registration_otp'] = email_otp
+                #set session expiry for OTP (e.g., 10 minutes)
                 request.session.set_expiry(600)
 
                 subject = 'OTP Verification'
@@ -112,11 +120,10 @@ def signin(request):
                     fail_silently=False,
                 )
                 
-                return redirect('verify_otp', user_id=user.id)
+                return redirect('verify_otp')
                 
             except Exception as e:
                 print(f"Error: {str(e)}")
-                user.delete()
                 messages.error(request, 'Email sending failed')
                 
         messages.error(request, 'Please check your form')
@@ -125,34 +132,44 @@ def signin(request):
     
     return render(request, 'user/signin.html', {'form': form})
 
-def verify_otp(request, user_id):
-    try:
-        user = UserTable.objects.get(id=user_id)
+def verify_otp(request):
+    #checking the registration data in session
+    user_data = request.session.get('user_registration_data')
+    
+    if not user_data:
+        messages.error(request, 'Registration session expired')
+        return redirect('signin')
+    
+    if request.method == 'POST':
+        submitted_otp = request.POST.get('email_otp')
+        stored_otp = request.session.get('registration_otp')
+        print(f"submitted_otp:{submitted_otp}")
+        print(f"stored_otp:{stored_otp}")
         
-        if request.method == 'POST':
-            submitted_otp = request.POST.get('email_otp')
-            stored_otp = request.session.get(f'otp_{user_id}')
-            print(f"submitted_otp:{submitted_otp}")
-            print(f"stored_otp:{stored_otp}")
-            
-            if submitted_otp and stored_otp and submitted_otp == stored_otp:
+        if submitted_otp and stored_otp and submitted_otp == stored_otp:
+            #create and save user only after OTP verification
+            try:
+                user = UserTable()
+                user.username = user_data['username']
+                user.email = user_data['email']
+                user.set_password(user_data['password'])
                 user.is_active = True
                 user.is_email_verified = True
                 user.save()
                 
-                # Clear OTP from session after successful verification
-                request.session.pop(f'otp_{user_id}', None)
+                #clear session data
+                request.session.pop('user_registration_data', None)
+                request.session.pop('registration_otp', None)
                 
-                messages.success(request, 'Email verified successfully!')
+                messages.success(request, 'Registration successful! You can now log in.')
                 return redirect('login')
-            else:
-                messages.error(request, 'Invalid or expired OTP. Please try again.')
-        
-        return render(request, 'user/otp-verification.html', {'user': user})
-        
-    except UserTable.DoesNotExist:
-        messages.error(request, 'Invalid user')
-        return redirect('signin')
+            except Exception as e:
+                print(f"Error creating user: {str(e)}")
+                messages.error(request, 'Failed to create user account')
+        else:
+            messages.error(request, 'Invalid or expired OTP. Please try again.')
+    
+    return render(request, 'user/otp-verification.html')
 
 #######################################################################################################################################################################################
 
@@ -198,7 +215,7 @@ def forgot_password(request):
     
     return render(request,'user/forgot_password.html')
 
-
+#############################################################################################################################################################################################3
 
 def verify_reset_otp(request, user_id):
     try:
@@ -794,6 +811,12 @@ def create_order(request):
                     # Check stock
                         if cart_item.product_variant.Stock_Quantity < cart_item.quantity:
                             raise ValueError(f"Sorry, {cart_item.product_variant} is out of stock")
+                        
+                        # Decrease the stock quantity
+                        cart_item.product_variant.Stock_Quantity -= cart_item.quantity
+                        cart_item.product_variant.save()  # Save the updated quantity
+                        print(f"Debug: Decreased stock for {product_name}. New quantity: {cart_item.product_variant.Stock_Quantity}")
+        
                     
                     
                         try:
@@ -879,7 +902,6 @@ def user_address(request):
     return render(request,'user/user_address.html',{'addresses':addresses})
 ##################################################################################################################################################################################
 
-
 @login_required
 def update_address(request, address_id):
     address = get_object_or_404(Address, id=address_id,user=request.user)
@@ -905,9 +927,35 @@ def update_address(request, address_id):
             
     return render(request, 'user/update_user_address.html', {'address': address})
 ################################################################################################################################################################################################
-import re
-from django.contrib.auth import update_session_auth_hash
 
+@login_required
+def delete_address(request, address_id):
+    address = get_object_or_404(Address,id=address_id)
+    
+    
+    try:
+        #if this is the default address and there other address make other address default
+        if address.is_default:
+            other_address = Address.objects.filter(
+                user=request.user
+            ).exclude(id=address_id).first()
+            
+            if other_address:
+                other_address.is_default = True
+                other_address.save()
+        
+        #deleting
+        address.delete()
+        messages.success(request, 'Address deleted successfully')
+        
+        return redirect('user_address')
+    
+    except Exception as e:
+        messages.error(request,f"Error deleting address:{str(e)}")
+
+        return redirect('user_address')
+
+########################################################################################################################################################################
 
 @login_required
 def user_profile_edit(request):
@@ -923,6 +971,35 @@ def user_profile_edit(request):
         new_password = request.POST.get('new_password')
         confirm_password = request.POST.get('confirm_password')
         
+        
+        
+        #username validation
+        if not username or len(username) < 3 or len(username) > 30:
+            messages.error(request, "Username must be between 3 and 30 characters")
+            return render(request, 'user/user_profile_edit.html', {'user': user})
+        
+        if not re.match(r'^[a-zA-Z]+$', username):
+            messages.error(request, 'Username can only contain letters.')
+            return render(request, 'user/user_profile_edit.html', {'user': user})
+        
+        #check if username is already taken by another user
+        if UserTable.objects.exclude(id=user.id).filter(username=username).exists():
+            messages.error(request, 'This username is already taken.')
+            return render(request, 'user/user_profile_edit.html', {'user': user})
+        
+        # Email validation
+        if not email:
+            messages.error(request, 'Email is required.')
+            return render(request, 'user/user_profile_edit.html', {'user': user})
+            
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            messages.error(request, 'Please enter a valid email address.')
+            return render(request, 'user/user_profile_edit.html', {'user': user})
+            
+        # Check if email is already taken by another user
+        if UserTable.objects.exclude(id=user.id).filter(email=email).exists():
+            messages.error(request, 'This email is already registered.')
+            return render(request, 'user/user_profile_edit.html', {'user': user})
         
         #validate phone number
         if not re.match(r'^[6-9]\d{9}$', phone_number):
@@ -990,68 +1067,99 @@ def set_default_address(request, address_id):
 
 
 @login_required
-def user_orders(request):
+def order_list(request):
     orders = Order.objects.filter(user=request.user).order_by('-ordered_date')
-    return render(request, 'user/user_orders.html', {'orders': orders})
+    return render(request, 'user/order_list.html', {'orders': orders})
 
-
+    
 @login_required
 def order_detail(request, order_id):
-    try:
-        order = Order.objects.get(order_id=order_id, user=request.user)
-        return render(request, 'user/order_detail.html', {'order': order})
-    except Order.DoesNotExist:
-        messages.error(request, 'Order not found')
-        return redirect('user_orders')
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
+    items = order.items.all()
+    return render(request, 'user/order_detail.html', {
+        'order': order,
+        'items': items
+    })
     
-
 @login_required
-@require_POST
-def cancel_order(request):
-    order_id = request.POST.get('order_id')
-    cancel_reason = request.POST.get('cancel_reason')
-    other_reason = request.POST.get('other_reason')
+def cancel_order(request, order_id):
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
     
-    try:
-         order = Order.objects.get(order_id=order_id, user=request.user)
-         
-         #checking if the order can be cancelled
-         if order.order_status not in ['PENDING', 'PROCESSING']:
-             messages.error(request, 'This order cannot be canceled.')
-             return redirect('order_detail', order_id=order_id)
-         
-         
-         final_reason = other_reason if cancel_reason == 'Other' else cancel_reason
-         
-         
-         #update order
-         order.order_status = 'CANCELED'
-         order.canceled_date = timezone.now()
-         order.cancellation_reason = final_reason
-         
-         
-         #if payment was already made, set status to REFUNDED
-         if order.payment_status == 'PAID':
-            order.payment_status = 'REFUNDED'
-            order.refund_amount = order.total_amount
-            order.refund_date = timezone.now()
+    # Check if order can be canceled
+    if order.order_status in ['DELIVERED', 'CANCELED', 'RETURNED']:
+        messages.error(request, 'This order cannot be canceled.')
+        return redirect('order_detail', order_id=order_id)
+    
+    if request.method == 'GET':
+        form = CancellationForm()
+    else:
+        form = CancellationForm(request.POST)
+        if form.is_valid():
+            order.order_status = 'CANCELED'
+            order.canceled_date = datetime.datetime.now()
+            order.cancellation_reason = form.cleaned_data['reason']
+            order.save()
             
+            # Handle payment refund logic if needed
+            if order.payment_status == 'PAID':
+                order.payment_status = 'REFUNDED'
+                order.refund_amount = order.total_amount
+                order.refund_date = datetime.datetime.now()
+                order.save()
             
-         order.save()
-        
-         # Return items to inventory (restore stock quantities)
-         for item in order.items.all():
-            if item.variant:
-                item.variant.Stock_Quantity += item.quantity
-                item.variant.save()
-        
-         messages.success(request, 'Your order has been canceled successfully.')
-         return redirect('order_detail', order_id=order_id)
+            messages.success(request, 'Your order has been canceled successfully.')
+            return redirect('order_list')
     
-    except Order.DoesNotExist:
-        messages.error(request, 'Order not found.')
-        return redirect('user_orders')
+    return render(request, 'user/cancel_order.html', {
+        'order': order,
+        'form': form
+    })
     
-    except Exception as e:
-        messages.error(request, f'An error occurred: {str(e)}')
-        return redirect('order_detail', order_id=order_id)  
+@login_required
+def cancel_order_item(request, order_id, item_id):
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
+    item = get_object_or_404(OrderItem, id=item_id, order=order)
+    
+    # Check if order item can be canceled
+    if order.order_status in ['DELIVERED', 'CANCELED', 'RETURNED'] or item.is_returned:
+        messages.error(request, 'This item cannot be canceled.')
+        return redirect('order_detail', order_id=order_id)
+    
+    if request.method == 'GET':
+        form = CancellationForm()
+    else:
+        form = CancellationForm(request.POST)
+        if form.is_valid():
+            # Mark item as returned (being used for cancellation in this case)
+            item.is_returned = True
+            item.return_date = datetime.datetime.now()
+            item.return_reason = form.cleaned_data['reason']
+            item.save()
+            
+            # Recalculate order total
+            remaining_items = order.items.filter(is_returned=False)
+            if remaining_items.count() == 0:
+                # Cancel entire order if no items left
+                order.order_status = 'CANCELED'
+                order.canceled_date = datetime.datetime.now()
+                order.cancellation_reason = "All items canceled"
+            else:
+                # Update order total
+                new_total = sum(item.total_amount for item in remaining_items)
+                order.total_amount = new_total
+            
+            # Handle refund for the specific item
+            if order.payment_status == 'PAID':
+                order.refund_amount = (order.refund_amount or 0) + item.total_amount
+                order.refund_date = datetime.datetime.now()
+            
+            order.save()
+            
+            messages.success(request, 'The item has been canceled successfully.')
+            return redirect('order_detail', order_id=order_id)
+    
+    return render(request, 'user/cancel_order_item.html', {
+        'order': order,
+        'item': item,
+        'form': form
+    })

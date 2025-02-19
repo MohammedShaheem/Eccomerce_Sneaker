@@ -26,9 +26,17 @@
   </div>
 
     <!-- Main Content Area -->
+    
     <div class="container mx-auto px-4 py-8">
         <div class="bg-gray-900 rounded-lg shadow-md p-6">
             <h1 class="text-2xl font-bold mb-6 text-white">Edit Category</h1>
+            {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} px-4 py-2 rounded mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            {% endif %}
             
             <form method="POST" enctype="multipart/form-data" id="editCategoryForm">
                 {% csrf_token %}
@@ -38,7 +46,9 @@
                     <input type="text" name="{{ form.category_name.name }}" id="{{ form.category_name.id_for_label }}" 
                            value="{{ category.category_name }}" 
                            class="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           required>
+                           required
+                           minlength="3"
+                           maxlength="20">
                     <p id="category-name-error" class="text-red-400 text-sm mt-1 hidden"></p>
                 </div>
                 
@@ -46,14 +56,18 @@
                     <label for="{{ form.description.id_for_label }}" class="block text-white font-medium mb-2">Description</label>
                     <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" 
                               class="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                              rows="4" placeholder="Category Description">{{ category.description }}</textarea>
+                              rows="4" 
+                              minlength="10"
+                              maxlength="200"
+                              required>{{ category.description }}</textarea>
+                    <p id="description-error" class="text-red-400 text-sm mt-1 hidden"></p>
                 </div>
                 
                 <div class="mb-4">
                     <label class="block text-white font-medium mb-2">Category Image</label>
                     {% if category.image %}
                     <div class="border border-dashed border-gray-700 p-4 rounded-md mb-2">
-                        <img src="{{ category.image.url }}" alt="{{ category.category_name }}" class="h-32 w-auto object-cover rounded-md">
+                        <img src="{{ category.image.url }}" alt="{{ category.category_name }}" class="h-32 w-auto object-cover rounded-md" id="current-image">
                         <p class="text-sm text-gray-400 mt-2">Current image</p>
                     </div>
                     {% endif %}
@@ -64,30 +78,26 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                             <p class="text-blue-400 mb-1 cursor-pointer font-medium" id="file-name">Upload a file</p>
-                            <p class="text-sm text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                            <p class="text-sm text-gray-400">PNG, JPG, JPEG, WEBP up to 2MB</p>
                             <input type="file" name="{{ form.image.name }}" id="{{ form.image.id_for_label }}" 
-                                   class="hidden" accept="image/*">
+                                   class="hidden" accept="image/png,image/jpeg,image/jpg,image/webp">
                         </div>
                         <button type="button" id="uploadBtn" class="mt-4 w-full bg-transparent border border-gray-700 text-white rounded-md py-2 hover:bg-gray-800 transition">Choose File</button>
+                        <div id="image-preview" class="mt-4 hidden">
+                            <img src="" alt="Preview" class="h-32 w-auto object-cover rounded-md">
+                        </div>
                     </div>
                     <p class="text-sm text-gray-400 mt-2">Upload a new image (leave empty to keep current image)</p>
+                    <p id="image-error" class="text-red-400 text-sm mt-1 hidden"></p>
                 </div>
                 
                 <div class="mb-6">
-                    <div class="flex justify-start mt-6 space-x-2">
-                        {% if category.status %}
-                            <form method="post" action="{% url 'block_category' category.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md">Unlist Category</button>
-                            </form>
-                        {% else %}
-                            <form method="post" action="{% url 'unblock_category' category.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">List Category</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                    <p class="text-sm text-gray-400 mt-1">Click the button to list or unlist this category</p>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" name="status" id="status" class="form-checkbox text-blue-600" 
+                               {% if category.status %}checked{% endif %}>
+                        <span class="text-white">Category Status</span>
+                    </label>
+                    <p class="text-sm text-gray-400 mt-1">Toggle to list or unlist this category</p>
                 </div>
                 
                 <div class="flex justify-start space-x-4 mt-8">
@@ -104,78 +114,180 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Form elements
+            const form = document.getElementById('editCategoryForm');
             const categoryNameInput = document.getElementById('{{ form.category_name.id_for_label }}');
             const categoryNameError = document.getElementById('category-name-error');
-            const form = document.getElementById('editCategoryForm');
+            const descriptionInput = document.getElementById('{{ form.description.id_for_label }}');
+            const descriptionError = document.getElementById('description-error');
             const uploadBtn = document.getElementById('uploadBtn');
             const fileInput = document.getElementById('{{ form.image.id_for_label }}');
             const fileNameDisplay = document.getElementById('file-name');
+            const imagePreview = document.getElementById('image-preview');
+            const imageError = document.getElementById('image-error');
             
             // Get existing categories from the server
             const existingCategories = {{ existing_categories|safe }};
             const originalName = '{{ category.category_name|lower }}';
             
-            form.addEventListener('submit', function(e) {
-                const categoryName = categoryNameInput.value.trim().toLowerCase();
+            // Validation functions
+            function validateCategoryName(categoryName) {
+                if (!categoryName) {
+                    categoryNameError.textContent = 'Category name is required.';
+                    categoryNameError.classList.remove('hidden');
+                    categoryNameInput.classList.add('border-red-500');
+                    return false;
+                }
                 
-                // Only check for duplicates if the name has changed
+                if (categoryName.length < 3) {
+                    categoryNameError.textContent = 'Category name must be at least 3 characters long.';
+                    categoryNameError.classList.remove('hidden');
+                    categoryNameInput.classList.add('border-red-500');
+                    return false;
+                }
+                
+                if (categoryName.length > 20) {
+                    categoryNameError.textContent = 'Category name must be less than 20 characters.';
+                    categoryNameError.classList.remove('hidden');
+                    categoryNameInput.classList.add('border-red-500');
+                    return false;
+                }
+                
                 if (categoryName !== originalName && existingCategories.includes(categoryName)) {
-                    e.preventDefault();
                     categoryNameError.textContent = 'This category name already exists.';
                     categoryNameError.classList.remove('hidden');
                     categoryNameInput.classList.add('border-red-500');
-                } else {
-                    categoryNameError.classList.add('hidden');
-                    categoryNameInput.classList.remove('border-red-500');
+                    return false;
+                }
+                
+                categoryNameError.classList.add('hidden');
+                categoryNameInput.classList.remove('border-red-500');
+                return true;
+            }
+            
+            function validateDescription(description) {
+                if (!description) {
+                    descriptionError.textContent = 'Description is required.';
+                    descriptionError.classList.remove('hidden');
+                    descriptionInput.classList.add('border-red-500');
+                    return false;
+                }
+                
+                if (description.length < 10) {
+                    descriptionError.textContent = 'Description must be at least 10 characters long.';
+                    descriptionError.classList.remove('hidden');
+                    descriptionInput.classList.add('border-red-500');
+                    return false;
+                }
+                
+                if (description.length > 200) {
+                    descriptionError.textContent = 'Description must be less than 200 characters.';
+                    descriptionError.classList.remove('hidden');
+                    descriptionInput.classList.add('border-red-500');
+                    return false;
+                }
+                
+                descriptionError.classList.add('hidden');
+                descriptionInput.classList.remove('border-red-500');
+                return true;
+            }
+            
+            function validateImage(file) {
+                if (!file) return true; // Skip validation if no file
+                
+                const fileSize = file.size / (1024 * 1024); // Convert to MB
+                if (fileSize > 2) {
+                    imageError.textContent = 'Image size must be less than 2MB.';
+                    imageError.classList.remove('hidden');
+                    return false;
+                }
+                
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    imageError.textContent = 'Only JPG, JPEG, PNG, and WEBP files are allowed.';
+                    imageError.classList.remove('hidden');
+                    return false;
+                }
+                
+                imageError.classList.add('hidden');
+                return true;
+            }
+            
+            // Real-time category name validation
+            categoryNameInput.addEventListener('input', function() {
+                validateCategoryName(this.value.trim().toLowerCase());
+                
+                // Show remaining characters
+                const remainingChars = 20 - this.value.length;
+                if (remainingChars >= 0) {
+                    categoryNameError.textContent = `${remainingChars} characters remaining`;
+                    categoryNameError.classList.remove('hidden', 'text-red-400');
+                    categoryNameError.classList.add('text-gray-400');
                 }
             });
-        
+            
+            // Real-time description validation
+            descriptionInput.addEventListener('input', function() {
+                validateDescription(this.value.trim());
+                
+                // Show remaining characters
+                const remainingChars = 200 - this.value.length;
+                if (remainingChars >= 0) {
+                    descriptionError.textContent = `${remainingChars} characters remaining`;
+                    descriptionError.classList.remove('hidden', 'text-red-400');
+                    descriptionError.classList.add('text-gray-400');
+                }
+            });
+            
+            // Image upload handling with real-time validation
             uploadBtn.addEventListener('click', function() {
                 fileInput.click();
             });
             
             fileInput.addEventListener('change', function() {
                 if (fileInput.files.length > 0) {
-                    fileNameDisplay.textContent = fileInput.files[0].name;
-                    // Show preview if desired
-                    if (fileInput.files[0].type.match('image.*')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            // If you want to add an image preview:
-                            // const previewImage = document.createElement('img');
-                            // previewImage.src = e.target.result;
-                            // previewImage.classList.add('mt-2', 'max-h-40', 'mx-auto');
-                            // fileNameDisplay.parentNode.appendChild(previewImage);
-                        }
-                        reader.readAsDataURL(fileInput.files[0]);
+                    const file = fileInput.files[0];
+                    fileNameDisplay.textContent = file.name;
+                    
+                    if (!validateImage(file)) {
+                        fileInput.value = ''; // Clear the file input
+                        imagePreview.classList.add('hidden');
+                        return;
                     }
+                    
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (!imagePreview.querySelector('img')) {
+                            const img = document.createElement('img');
+                            img.className = 'h-32 w-auto object-cover rounded-md';
+                            imagePreview.appendChild(img);
+                        }
+                        imagePreview.querySelector('img').src = e.target.result;
+                        imagePreview.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
                 } else {
                     fileNameDisplay.textContent = 'Upload a file';
+                    imagePreview.classList.add('hidden');
                 }
             });
             
-            // Real-time validation
-            categoryNameInput.addEventListener('input', function() {
-                const categoryName = this.value.trim().toLowerCase();
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                const categoryName = categoryNameInput.value.trim().toLowerCase();
+                const description = descriptionInput.value.trim();
+                const file = fileInput.files[0];
                 
-                if (categoryName !== originalName && existingCategories.includes(categoryName)) {
-                    categoryNameError.textContent = 'This category name already exists.';
-                    categoryNameError.classList.remove('hidden');
-                    this.classList.add('border-red-500');
-                } else {
-                    categoryNameError.classList.add('hidden');
-                    this.classList.remove('border-red-500');
+                const isNameValid = validateCategoryName(categoryName);
+                const isDescriptionValid = validateDescription(description);
+                const isImageValid = validateImage(file);
+                
+                if (!isNameValid || !isDescriptionValid || !isImageValid) {
+                    e.preventDefault();
                 }
-            });
-            
-            // Show/hide "List/Unlist" text based on checkbox state
-            const statusCheckbox = document.getElementById('status');
-            const statusLabel = statusCheckbox.nextElementSibling;
-            
-            statusCheckbox.addEventListener('change', function() {
-                statusLabel.textContent = this.checked ? 'List Category' : 'Unlist Category';
             });
         });
-        </script> 
+    </script> 
     </body>
     </html>

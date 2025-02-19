@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>Add Products</title>
+    <script>
+        window.existingProducts = {{ existing_products|safe }};
+    </script>
+    
 </head>
 <body class="bg-gray-900 text-gray-100">
     <!-- Navigation Header -->
@@ -52,23 +56,34 @@
 
         <!-- Main Content -->
         <main class="flex-1 p-8">
-            <div class="mb-8">
-                <h1 class="text-2xl font-bold mb-2">Add Products</h1>
-                <p class="text-gray-400">Products > Add Products</p>
+            <!-- Header with Back Button -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold mb-2">Edit Product</h1>
+                    <p class="text-gray-400">Products > Edit Product</p>
+                </div>
+                <a href="{% url 'products' %}" 
+                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Back to Products
+                </a>
             </div>
-
+        
+            <!-- Display Messages -->
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="message-alert {% if message.tags == 'error' %}bg-red-500{% else %}bg-green-500{% endif %} text-white p-4 rounded mb-2 transition-opacity duration-500">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        
             <form class="space-y-6" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-                
-                {% if form.errors %}
-                <div class="bg-red-500 text-white p-4 rounded">
-                    <ul>
-                        {% for field, errors in form.errors.items %}
-                        <li><strong>{{ field }}</strong>: {{ errors|join:", " }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
                 
                 <!-- General Information -->
                 <div class="bg-gray-800 rounded-lg p-6">
@@ -77,87 +92,335 @@
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-400 mb-1">Product Name</label>
                             {{ form.name }}
+                            {% if form.name.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.name.errors|join:", " }}</p>
+                            {% endif %}
                         </div>
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-400 mb-1">Description</label>
                             {{ form.description }}
+                            {% if form.description.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.description.errors|join:", " }}</p>
+                            {% endif %}
                         </div>
                         <div>
                             <label for="stock_quantity" class="block text-sm font-medium text-gray-400 mb-1">Stock Quantity</label>
                             {{ form.product_quantity }}
+                            {% if form.product_quantity.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.product_quantity.errors|join:", " }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-
+        
                 <!-- Pricing -->
                 <div class="bg-gray-800 rounded-lg p-6">
                     <h2 class="text-lg font-semibold mb-4">Pricing</h2>
                     <div class="space-y-4">
                         <div>
-                            <label for="price" class="block text-sm font-medium text-gray-400 mb-1">Price</label>
+                            <label for="base_price" class="block text-sm font-medium text-gray-400 mb-1">Base Price</label>
                             {{ form.base_price }}
+                            {% if form.base_price.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.base_price.errors|join:", " }}</p>
+                            {% endif %}
                         </div>
                         <div>
-                            <label for="sale_price" class="block text-sm font-medium text-gray-400 mb-1">Sale Price</label>
+                            <label for="sale_Price" class="block text-sm font-medium text-gray-400 mb-1">Sale Price</label>
                             {{ form.sale_Price }}
+                            {% if form.sale_Price.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.sale_Price.errors|join:", " }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-
+        
                 <!-- Category -->
                 <div class="bg-gray-800 rounded-lg p-6">
                     <h2 class="text-lg font-semibold mb-4 text-gray-100">Category</h2>
                     <div class="relative">
                         <select id="category" name="category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="" disabled {% if not form.category.value %}selected{% endif %}>
-                                Select a category
-                            </option>
+                            <option value="" disabled {% if not form.category.value %}selected{% endif %}>Select a category</option>
                             {% for option in form.category.field.queryset %}
-                                <option value="{{ option.id }}" {% if option.id == form.category.value %}selected{% endif %}>
-                                    {{ option.category_name }}
-                                </option>
+                            <option value="{{ option.id }}" {% if option.id == form.category.value %}selected{% endif %}>
+                                {{ option.category_name }}
+                            </option>
                             {% endfor %}
                         </select>
+                        {% if form.category.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.category.errors|join:", " }}</p>
+                        {% endif %}
                     </div>
                 </div>
+        
+                <!-- Variants -->
                 <div class="bg-gray-800 rounded-lg p-6">
-                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Size</h2>
-                    <div class="relative">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Product Variants</h2>
+                    
+                    <!-- Size -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Size</label>
                         {{ form.size }}
+                        {% if form.size.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.size.errors|join:", " }}</p>
+                        {% endif %}
                     </div>
-                </div>
-                
-                <div class="bg-gray-800 rounded-lg p-6">
-                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Color</h2>
-                    <div class="relative">
+                    
+                    <!-- Color -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Color</label>
                         {{ form.color }}
+                        {% if form.color.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.color.errors|join:", " }}</p>
+                        {% endif %}
                     </div>
                 </div>
-                
-
-                {% comment %} <div class="bg-gray-800 rounded-lg p-6">
-                    <h2 class="text-lg font-semibold mb-4">Size</h2>
-                    {{ form.size }}
-                </div> {% endcomment %}
-
-                <!-- Image Upload -->
-                {% comment %} <div class="bg-gray-800 rounded-lg p-6">
-                    <h2 class="text-lg font-semibold mb-4">Product Image</h2>
-                    <input type="file" name="image" 
-                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100">
-                </div> {% endcomment %}
-
-                <!-- Submit Button -->
-                <button type="submit" 
-                    class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg">
-                    Edit Product
-                </button>
-                <button type="submit" 
-                    class="w-full bg-green-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg">
-                    Unlist
-                </button>
+        
+                <!-- Product Images -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Product Images</h2>
+                    
+                    <!-- Existing Images -->
+                    {% if product_images %}
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                        {% for image in product_images %}
+                        <div class="relative group">
+                            <img src="{{ image.image.url }}" alt="Product image" class="w-full h-32 object-cover rounded-lg">
+                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" name="delete_images" value="{{ image.id }}" class="form-checkbox text-red-500">
+                                    <span class="text-white text-sm">Delete</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- New Images Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Add New Images</label>
+                        <input type="file" name="product_images" multiple accept="image/*" 
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100">
+                        <p class="text-gray-400 text-sm mt-1">You can select multiple images. Maximum size: 5MB per image</p>
+                    </div>
+                </div>
+        
+                <!-- Action Buttons -->
+                <div class="flex space-x-4">
+                    <button type="submit" name="action" value="update"
+                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                        Update Product
+                    </button>
+                    <button type="submit" name="action" value="unlist"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                        Unlist Product
+                    </button>
+                </div>
             </form>
         </main>
     </div>
+    <script>
+        window.existingProducts = {{ existing_products|safe }};
+    </script>
+    <script>
+                // Message handling functionality
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Message handling functionality
+                    const messages = document.querySelectorAll('.message-alert');
+                    messages.forEach(message => {
+                        setTimeout(() => {
+                            message.style.opacity = '1';
+                            fadeOut(message);
+                        }, 1000);
+                    });
+                
+                    function fadeOut(element) {
+                        let opacity = 1;
+                        const timer = setInterval(() => {
+                            if (opacity <= 0.1) {
+                                clearInterval(timer);
+                                element.style.display = 'none';
+                            }
+                            element.style.opacity = opacity;
+                            opacity -= opacity * 0.1;
+                        }, 50);
+                    }
+                
+                    // Get form elements - using more reliable selectors
+                    const form = document.querySelector('form');
+                    const productNameInput = document.querySelector('input[name="name"]');
+                    const descriptionInput = document.querySelector('textarea[name="description"]');
+                    const quantityInput = document.querySelector('input[name="product_quantity"]');
+                    const basePriceInput = document.querySelector('input[name="base_price"]');
+                    const salePriceInput = document.querySelector('input[name="sale_Price"]');
+                    const categorySelect = document.querySelector('select[name="category"]');
+                
+                    // Access existing products from the window object
+                    const existingProducts = window.existingProducts || [];
+                
+                    // Validation rules
+                    const validationRules = {
+                        name: {
+                            pattern: /^[a-zA-Z0-9\s\-_]+$/,
+                            minLength: 3,
+                            maxLength: 100,
+                            validate: function(value) {
+                                if (!value.trim()) return 'Product name is required';
+                                if (value.length < this.minLength) return `Product name must be at least ${this.minLength} characters`;
+                                if (value.length > this.maxLength) return `Product name cannot exceed ${this.maxLength} characters`;
+                                if (!this.pattern.test(value)) return 'Product name can only contain letters, numbers, spaces, hyphens and underscores';
+                                return '';
+                            }
+                        },
+                        description: {
+                            minLength: 10,
+                            maxLength: 2000,
+                            validate: function(value) {
+                                if (!value.trim()) return 'Product description is required';
+                                if (value.length < this.minLength) return `Description must be at least ${this.minLength} characters`;
+                                if (value.length > this.maxLength) return `Description cannot exceed ${this.maxLength} characters`;
+                                return '';
+                            }
+                        },
+                        quantity: {
+                            validate: function(value) {
+                                const num = parseInt(value);
+                                if (isNaN(num)) return 'Invalid quantity format';
+                                if (num < 0) return 'Quantity cannot be negative';
+                                if (num > 99999) return 'Quantity cannot exceed 99,999 units';
+                                return '';
+                            }
+                        },
+                        basePrice: {
+                            validate: function(value) {
+                                const num = parseFloat(value);
+                                if (isNaN(num)) return 'Invalid base price format';
+                                if (num <= 0) return 'Base price must be greater than 0';
+                                if (num > 999999.99) return 'Base price cannot exceed 999,999.99';
+                                return '';
+                            }
+                        },
+                        salePrice: {
+                            validate: function(value, basePrice) {
+                                if (!value) return '';
+                                const num = parseFloat(value);
+                                const base = parseFloat(basePrice);
+                                if (isNaN(num)) return 'Invalid sale price format';
+                                if (num >= base) return 'Sale price must be less than base price';
+                                if (num < 0) return 'Sale price cannot be negative';
+                                return '';
+                            }
+                        }
+                    };
+                
+                    // Function to show validation message
+                    function showValidationMessage(input, message) {
+                        let messageElement = input.parentElement.querySelector('.validation-message');
+                        
+                        // Create message element if it doesn't exist
+                        if (!messageElement) {
+                            messageElement = document.createElement('p');
+                            messageElement.className = 'validation-message text-red-500 text-sm mt-1';
+                            input.parentElement.appendChild(messageElement);
+                        }
+                        
+                        messageElement.textContent = message;
+                        input.classList.toggle('border-red-500', message !== '');
+                        
+                        // Add/remove error styling
+                        if (message) {
+                            input.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                            input.classList.remove('border-gray-600', 'focus:border-blue-500', 'focus:ring-blue-500');
+                        } else {
+                            input.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                            input.classList.add('border-gray-600', 'focus:border-blue-500', 'focus:ring-blue-500');
+                        }
+                    }
+                
+                    // Add event listeners if elements exist
+                    if (productNameInput) {
+                        productNameInput.addEventListener('input', function() {
+                            const error = validationRules.name.validate(this.value);
+                            showValidationMessage(this, error);
+                        });
+                    }
+                
+                    if (descriptionInput) {
+                        descriptionInput.addEventListener('input', function() {
+                            const error = validationRules.description.validate(this.value);
+                            showValidationMessage(this, error);
+                        });
+                    }
+                
+                    if (quantityInput) {
+                        quantityInput.addEventListener('input', function() {
+                            const error = validationRules.quantity.validate(this.value);
+                            showValidationMessage(this, error);
+                        });
+                    }
+                
+                    if (basePriceInput) {
+                        basePriceInput.addEventListener('input', function() {
+                            const error = validationRules.basePrice.validate(this.value);
+                            showValidationMessage(this, error);
+                            
+                            // Revalidate sale price when base price changes
+                            if (salePriceInput) {
+                                const salePriceError = validationRules.salePrice.validate(salePriceInput.value, this.value);
+                                showValidationMessage(salePriceInput, salePriceError);
+                            }
+                        });
+                    }
+                
+                    if (salePriceInput) {
+                        salePriceInput.addEventListener('input', function() {
+                            const error = validationRules.salePrice.validate(this.value, basePriceInput?.value);
+                            showValidationMessage(this, error);
+                        });
+                    }
+                
+                    // Form submission validation
+                    if (form) {
+                        form.addEventListener('submit', function(e) {
+                            let hasErrors = false;
+                            
+                            // Validate all fields
+                            if (productNameInput) {
+                                const nameError = validationRules.name.validate(productNameInput.value);
+                                showValidationMessage(productNameInput, nameError);
+                                hasErrors = hasErrors || nameError;
+                            }
+                            
+                            if (descriptionInput) {
+                                const descError = validationRules.description.validate(descriptionInput.value);
+                                showValidationMessage(descriptionInput, descError);
+                                hasErrors = hasErrors || descError;
+                            }
+                            
+                            if (quantityInput) {
+                                const quantityError = validationRules.quantity.validate(quantityInput.value);
+                                showValidationMessage(quantityInput, quantityError);
+                                hasErrors = hasErrors || quantityError;
+                            }
+                            
+                            if (basePriceInput) {
+                                const priceError = validationRules.basePrice.validate(basePriceInput.value);
+                                showValidationMessage(basePriceInput, priceError);
+                                hasErrors = hasErrors || priceError;
+                            }
+                            
+                            if (salePriceInput && basePriceInput) {
+                                const salePriceError = validationRules.salePrice.validate(salePriceInput.value, basePriceInput.value);
+                                showValidationMessage(salePriceInput, salePriceError);
+                                hasErrors = hasErrors || salePriceError;
+                            }
+                
+                            if (hasErrors) {
+                                e.preventDefault();
+                            }
+                        });
+                    }
+                });
+    </script>    
 </body>
 </html>

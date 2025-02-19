@@ -65,7 +65,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'mohammedshaheemtk2@gmail.com'
 EMAIL_HOST_PASSWORD = 'iickllsglnvobktx'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 #Google authentication
 ACCOUNT_EMAIL_REQUIRED = True

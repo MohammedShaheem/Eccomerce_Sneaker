@@ -1,7 +1,7 @@
 from django.shortcuts import render,HttpResponse,redirect,HttpResponseRedirect
 from django.contrib import messages 
 from AdminProfile.forms import ProductForm,CategoryForm,VariantForm
-from AdminProfile.models import Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem
+from AdminProfile.models import Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem,OrderItem,Order
 from UserProfile.models import UserTable
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password,check_password #make password for encrypting and check password for decrypting
@@ -17,40 +17,67 @@ from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 import json
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.db.models import Q
+from django.core.paginator import Paginator
+import os
+from decimal import Decimal
+from .validators import FormValidator
 
 def admin_login(request):
+    if request.user.is_authenticated:
+        return redirect('admin_home')
+    
     if request.method == 'POST':
-        mail = request.POST.get('email')
-        psswrd = request.POST.get('password')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
         
         try:
-            data = UserTable.objects.get(email=mail)
-        except UserTable.DoesNotExist:
-            messages.error(request,"Invalid email or password")
-            return redirect('admin_login')
-        
-        if data.is_superuser == False and data.is_staff == False:
-            messages.error(request,f"User {data.username} does'nt have an admin permission")
-            return redirect('admin_login')
-        else:
-            if check_password(psswrd, data.password):
-                request.session['userMail'] = data.email
-                messages.success(request,"Login Successfull")
-                return redirect('admin_home')
+            user = UserTable.objects.get(email=email)
+            
+            
+            if user.is_superuser == False and user.is_staff == False:
+                messages.error(request,f"User {user.username} does'nt have an admin permission")
+                redirect("admin_login")
+                
+            auth_user = authenticate(username=email,password=password)
+                
+            if auth_user is not None:
+                auth_login(request, auth_user)
+                request.session['userMail'] = email
+                messages.success(request, "Login successfull")
+                return redirect("admin_home")
+            
             else:
-                messages.error(request,"Invalid email or password")
-                return redirect("admin_login")
+                if not user.check_password(password):
+                    messages.error(request, "Incorrect password")
+                else:
+                    messages.error(request, "Authentication failed,Please try again")     
         
-        if 'userMail' in request.session:
-            return redirect('home')
-    
+        
+        except UserTable.DoesNotExist:
+            messages.error(request, "No account found with this email")
+        except Exception as e:
+            print(f"unexcpected error:{str(e)}")
+            messages.error(request,'An unexpected error occured')    
+        
     return render(request, 'admin/login.html')            
-        
+#################################################################################################################################
+def logout(request):
+    # Clear both authentication and session
+    if request.user.is_authenticated:
+        auth_logout(request)
+    
+    if 'userMail' in request.session:
+        request.session.flush()  # Clear all session data
+    
+    messages.success(request, "You have been logged out successfully.")
+    return redirect('admin_login')        
         
    
 ######################################################################################################################################################################################
 
-def home(request):
+def admin_home(request):
     return render(request,'admin/home.html')
         
 #############################################################Admin_Users######################################################################################################     
@@ -406,35 +433,93 @@ def edit_category(request, category_id):
         messages.error(request, 'Category not found')
         return redirect('category')
     
-    
-    #creating a list of existing category names for javascript validation (excluding this category)
+    #creating a list of existing category names for  validation (excluding this category)
     existing_categories = list(Category.objects.exclude(id=category_id).values_list('category_name', flat=True))
     existing_categories = [cat.lower() for cat in existing_categories]
     
-    
     if request.method == 'POST':
         form = CategoryForm(request.POST, request.FILES, instance=category)
-        if form.is_valid():
-            try:
-                #handling status
-                if 'status' in request.POST:
-                    category.status = request.POST.get('status') == 'on'
-                    
+        valid_data = True  #flag to track if all validations pass
+        
+        try:
+            #validating category name
+            category_name = request.POST.get('category_name', '').strip()
+            
+            if not category_name:
+                messages.error(request, 'Category name is required')
+                valid_data = False
+            
+            if len(category_name) < 3:
+                messages.error(request, 'Category name must be at least 3 characters long')
+                valid_data = False
+            
+            if len(category_name) > 20:
+                messages.error(request, 'Category name must be less than 20 characters')
+                valid_data = False
+            
+            #checking to existing category name
+            if category_name.lower() in existing_categories:
+                messages.error(request, "Category name already exists")
+                valid_data = False
+            
+            #validating description
+            description = request.POST.get('description', '').strip()
+            if not description:
+                messages.error(request, 'Description is required')
+                valid_data = False
+            
+            if len(description) < 10:
+                messages.error(request, 'Description must be at least 10 characters long')
+                valid_data = False
+            
+            if len(description) > 200:
+                messages.error(request, 'Description must be less than 200 characters')
+                valid_data = False
+            
+            #validating image if a new one is uploaded
+            if 'image' in request.FILES:
+                image = request.FILES['image']
+                print(f"image:{image}")
                 
-                #save the form
-                category = form.save()
+                #validateing file size 
+                if image.size > 2 * 1024 * 1024:
+                    messages.error(request, 'Image size should be less than 2MB')
+                    valid_data = False
+                
+                #validateing file extension
+                allowed_extensions = ['jpg', 'jpeg', 'png']
+                ext = image.name.split('.')[-1].lower()
+                if ext not in allowed_extensions:
+                    messages.error(request, f'Only {", ".join(allowed_extensions)} files are allowed')
+                    valid_data = False
+            
+            
+            if valid_data:
+                #deleteing old image if new one is uploaded
+                if 'image' in request.FILES and category.image:
+                    if os.path.isfile(category.image.path):
+                        os.remove(category.image.path)
+                
+                #updateing category fields
+                category.category_name = category_name
+                category.description = description
+                if 'image' in request.FILES:
+                    category.image = request.FILES['image']
+                
+                
+                category.status = request.POST.get('status') == 'on'
+                
+                #saveing the category
+                category.save()
                 messages.success(request, 'Category updated successfully')
                 return redirect('category')
-            except Exception as e:
-                messages.error(request,f'Error updating category: {str(e)}')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request,f"{field}:{error}")
+                
+        except Exception as e:
+            messages.error(request, f'Error updating category: {str(e)}')
+    
     else:
         form = CategoryForm(instance=category)
-        
-        
+    
     context = {
         'form': form,
         'category': category,
@@ -466,14 +551,11 @@ def unblock_category(request, category_id):
         print(f"New status after unblocking: {category.status}")
         messages.success(request, 'Category listed successfully')
     return redirect('edit_category', category_id=category_id)
-
-
+ 
+################################################################################################################################################################################
 def edit_product(request, product_id):
     try:
         product = get_object_or_404(ProductTable, id=product_id, Is_deleted = False)
-        
-        
-        #getting the related data
         product_images = product.images.all()
         variance = VarianceTable.objects.filter(product=product).first()
         
@@ -496,6 +578,78 @@ def edit_product(request, product_id):
                 
             form = ProductForm(post_data, request.FILES, instance=product)
             
+            #initializing the validator
+            validator = FormValidator()
+            
+            
+            #validate product fields
+            validator.validate_text_field(
+                post_data.get('name'),
+                'Product name',
+                min_length=3,
+                max_length=100,
+                pattern="^[a-zA-Z0-9\s\-_]+$"
+            )
+            
+            validator.validate_text_field(
+                post_data.get('description'),
+                'Product description',
+                min_length=10,
+                max_length=2000
+            )
+            
+            validator.validate_decimal(
+                post_data.get('base_price'),
+                'Base price',
+                min_value=Decimal('0.01'),
+                max_value=Decimal('999999.99')
+            )
+            
+            
+            if post_data.get('sale_Price'):
+                validator.validate_decimal(
+                    post_data.get('sale_Price'),
+                    'Sale price',
+                    required=False,
+                    max_value=Decimal(post_data.get('base_price', '0')) - Decimal('0.01')
+                )
+            
+            validator.validate_integer(
+                post_data.get('product_quantity'),
+                'Quantity',
+                min_value=0,
+                max_value=99999
+            )
+            
+            validator.validate_text_field(
+                post_data.get('category'),
+                'Product category'
+            )
+            
+            #validating the new image
+            for image in request.FILES.getlist('product_images'):
+                validator.validate_file(
+                    image,
+                    f'Image {image.name}',
+                    required=False,
+                    allowed_types=['image'],
+                    allowed_extensions = ['jpg', 'jpeg', 'png'],
+                    max_size=5 * 1024 * 1024
+                )
+            
+            
+            #checking for validation error
+            validation_errors = validator.get_errors()
+            if validation_errors:
+                for error in validation_errors:
+                    messages.error(request, error)
+                return render(request, 'admin/edit_product.html', {
+                    'form': form,
+                    'product': product,
+                    'product_images': product_images,
+                    'existing_products': json.dumps(list(ProductTable.objects.exclude(id=product_id).values_list('name', flat=True)))
+                })
+                        
             
             if form.is_valid():
                 try:
@@ -503,7 +657,7 @@ def edit_product(request, product_id):
                     product_name = form.cleaned_data.get('name')
                     if ProductTable.objects.filter(name__iexact=product_name).exclude(id=product_id).exists():
                          messages.error(request, f'Product "{product_name}" already exists')
-                         return render(request, 'admin/edit-product.html', {
+                         return render(request, 'admin/edit_product.html', {
                                 'form': form,
                                 'product': product,
                                 'product_images': product_images,
@@ -523,40 +677,31 @@ def edit_product(request, product_id):
                         Product_Images_Table.objects.filter(id__in=images_to_delete).delete()
                         
                     
-                    for file in files:
-                            if file.content_type.startswith('image'):
-                                if file.size <= 5 * 1024 * 1024:  # 5MB limit
-                                    Product_Images_Table.objects.create(
-                                        product=updated_product,
-                                        image=file
-                                    )
-                                else:
-                                    raise ValidationError(f'Image {file.name} exceeds 5MB size limit')
-                            else:
-                                raise ValidationError(f'File {file.name} is not a valid image')
+                    # Handle new images
+                    for file in request.FILES.getlist('product_images'):
+                        Product_Images_Table.objects.create(
+                            product=updated_product,
+                            image=file
+                            )
                         
-                            #updating the quantity and price
-                            if variance:
-                                variance.Stock_Quantity = form.cleaned_data['product_quantity']
-                                variance.Price = form.cleaned_data['base_price']
-                                variance.save()
+                    #updating the quantity and price
+                    if variance:
+                        variance.Stock_Quantity = form.cleaned_data['product_quantity']
+                        variance.Price = form.cleaned_data['base_price']
+                        variance.save()
                             
-                                messages.success(request, f'Product "{product_name}" updated successfully')
-                                return redirect('products')  
+                        messages.success(request, f'Product "{product_name}" updated successfully')
+                        return redirect('products')  
                         
-                except ValidationError as e:
-                    messages.error(request, str(e))
-                    
                 except Exception as e:
                     messages.error(request, f'Error updating product: {str(e)}')
                     
             else:
-                # Form validation errors
                 for field, errors in form.errors.items():
                     for error in errors:
                         messages.error(request, f'{field}: {error}')
         else:
-            # Populate form with existing data
+            # GET request - populate form with existing data
             initial_data = {
                 'name': product.name,
                 'description': product.description,
@@ -569,19 +714,12 @@ def edit_product(request, product_id):
             }
             form = ProductForm(initial=initial_data, instance=product)
         
-        # Get existing products for the template
-        try:
-            existing_products = list(ProductTable.objects.exclude(id=product_id).values_list('name', flat=True))
-        except Exception as e:
-            existing_products = []
-            messages.error(request, f'Error fetching existing products: {str(e)}')
-        
         context = {
             'form': form,
             'product': product,
             'product_images': product_images,
-            'existing_products': json.dumps(existing_products),
-            'title': 'Edit Product'  # For template title
+            'existing_products': json.dumps(list(ProductTable.objects.exclude(id=product_id).values_list('name', flat=True))),
+            'title': 'Edit Product'
         }
         
         return render(request, 'admin/edit_product.html', context)
@@ -589,3 +727,62 @@ def edit_product(request, product_id):
     except ProductTable.DoesNotExist:
         messages.error(request, 'Product not found')
         return redirect('products')
+    
+############################################################################################################################################
+
+@login_required
+def admin_orders(request):
+    
+    #getting the filter parameters from request
+    status_filter = request.GET.get('status','')
+    payment_filter = request.GET.get('payment','')
+    search_query = request.GET.get('search','')
+    
+    
+    orders = Order.objects.all().select_related('user','shipping_address').prefetch_related('items','items__variant','items__product')
+    
+    
+    
+    #applying filters
+    if status_filter:
+        orders = orders.filter(order_status=status_filter)
+        
+    if payment_filter:
+        orders = orders.filter(payment_status=payment_filter)
+        
+    if search_query:
+        orders = orders.filter(
+            Q(order_id__icontains=search_query) |
+            Q(user__username__icontains=search_query) |
+            Q(items__product__name__icontains=search_query)
+        ).distinct()
+        
+        
+    #getting the count for summary cards
+    pending_payment_count = Order.objects.filter(payment_status='PENDING').count()
+    processing_count = Order.objects.filter(order_status='PROCESSING').count()
+    delivered_count = Order.objects.filter(order_status='DELIVERED').count()
+    canceled_count = Order.objects.filter(order_status='CANCELED').count()
+    
+    
+    #for pagination
+    paginator = Paginator(orders, 15)
+    page_number = request.GET.get('page',1)
+    page_obj = paginator.get_page(page_number)
+    
+    
+    
+    context = {
+        'page_obj': page_obj,
+        'total_orders': paginator.count,
+        'pending_payment_count': pending_payment_count,
+        'processing_count': processing_count,
+        'delivered_count': delivered_count,
+        'canceled_count': canceled_count,
+        'status_filter': status_filter,
+        'payment_filter': payment_filter,
+        'search_query': search_query,
+        'Order': Order,
+    }
+    
+    return render(request, 'admin/admin_orders.html', context)
