@@ -76,12 +76,12 @@ def logout(request):
         
    
 ######################################################################################################################################################################################
-
+@login_required
 def admin_home(request):
     return render(request,'admin/home.html')
         
 #############################################################Admin_Users######################################################################################################     
-
+@login_required
 def admin_users(request):
     users = UserTable.objects.all()
     users_per_page = request.GET.get('users_per_page', 5)
@@ -96,7 +96,7 @@ def admin_users(request):
     return render(request,'admin/users.html',{'users':users, 'search_query':search_query,'users_per_page':users_per_page}) 
 
 ###############################################################################################################################################################################
-    
+@login_required
 def admin_users_edit(request,user_id):#parameter because to pass to it dynamically
     user = get_object_or_404(UserTable, id=user_id)# dynamic value passed in the url
     #if the object exists,it return the object,
@@ -105,7 +105,7 @@ def admin_users_edit(request,user_id):#parameter because to pass to it dynamical
     return render(request,'admin/edit_user.html',{'user':user}) 
 
 ########################################################################################################################################################################################
-
+@login_required
 def block_user(request,user_id):
     user = get_object_or_404(UserTable,id = user_id)
     if user.is_active == True:
@@ -114,7 +114,7 @@ def block_user(request,user_id):
     return redirect('admin_users')
 
 ######################################################################################################################################################################################
-
+@login_required
 def unblock_user(request,user_id):
     user = get_object_or_404(UserTable,id = user_id)
     if user.is_active == False:
@@ -124,7 +124,7 @@ def unblock_user(request,user_id):
 
 
 ################################################################################################################################################################################################################################    
-
+@login_required
 @never_cache
 def add_category(request):
     
@@ -162,7 +162,7 @@ def add_category(request):
     return render(request, 'admin/add_category.html',context) 
 
 ##############################################################################################################################################################################
-
+@login_required
 def category(request):
     categories = Category.objects.all()
     categories_per_page = request.GET.get('categories_per_page', 5)
@@ -177,7 +177,7 @@ def category(request):
     return render(request,'admin/category.html',{'categories':categories, 'search_query':search_query,'categories_per_page':categories_per_page})
 
 ###############################################################################################################################################################################
-
+@login_required
 def view_category(request,category_id):
     category = get_object_or_404(Category, id=category_id)
     
@@ -193,7 +193,7 @@ from django.core.exceptions import ValidationError
 from .forms import ProductForm
 from .models import ProductTable, VarianceTable, Color, Product_Images_Table
 import json
-
+@login_required
 def add_products(request):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
@@ -284,7 +284,7 @@ def add_products(request):
     return render(request, 'admin/add-product.html', context)
 #########################################################################################Products##############################################################################
 
-
+@login_required
 def products(request):
     products = ProductTable.objects.select_related('category').prefetch_related(
         'variancetable_set__size',
@@ -303,7 +303,7 @@ def products(request):
 
 
 ###############################################################################################################################################################################
-
+@login_required
 def product_detail(request, product_id):
     # Use select_related to fetch related size and color data in a single query
     product = get_object_or_404(ProductTable.objects.select_related('category'), id=product_id)
@@ -321,89 +321,103 @@ def product_detail(request, product_id):
     return render(request,'admin/variance.html',context)
 
 ##############################################################################################################################################################################    
-
+@login_required
 def variance(request):
     return render(request,'admin/variance.html')
 
 ##############################################################################################################################################################################
-
+@login_required
 def edit_product(request):
     return render(request,'admin/edit_product.html')
 
 ##############################################################################################################################################################################
-
-def add_variant(request,product_id):
-    product = get_object_or_404(ProductTable , id=product_id)
-    print(f'product:{product}')
+@login_required
+def add_variant(request, product_id):
+    product = get_object_or_404(ProductTable, id=product_id)
     
     if request.method == 'POST':
-        form = VariantForm(request.POST)
+        form = VariantForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                #checking if hte variant twith same size and color exists
+                # Check for existing variant
                 existing_variant = VarianceTable.objects.filter(
                     product=product,
                     size=form.cleaned_data['size'],
                     color=form.cleaned_data['color']
-                    
                 ).first()
                 
                 if existing_variant:
                     messages.error(request, "A variant with this size and color combination already exists.")
-                    return render(request,'admin/add_variant.html',{'form':form,'product':product})
+                    return render(request, 'admin/add_variant.html', {
+                        'form': form, 
+                        'product': product,
+                        'existing_images': Product_Images_Table.objects.filter(product=product)
+                    })
                 
-                #creating new variant
+                # Create new variant
                 variant = form.save(commit=False)
                 variant.product = product
                 variant.Price = product.sale_Price
-                variant.save()      
+                variant.save()
                 
-                # Handle images
-                files = request.FILES.getlist('images')                  
-                for file in files:
-                    if file.content_type.startswith('image'):
-                        if file.size <= 5 * 1024 * 1024:  # 5MB limit
-                            Product_Images_Table.objects.create(
-                                product=product,
-                                image=file
-                                )
-                        else:
-                            raise ValidationError(f'Image {file.name} exceeds 5MB size limit')
-                    else:
-                        raise ValidationError(f'File {file.name} is not a valid image') 
-                    
+                # Handle images using form's cleaned_data
+                images = form.cleaned_data.get('images', [])
+                if images:
+                    for image in images:
+                        Product_Images_Table.objects.create(
+                            product=product,
+                            image=image
+                        )
                 
-                
-                
-                #updating product quantity
+                # Update product quantity
                 product.product_quantity = (
                     VarianceTable.objects.filter(product=product)
                     .aggregate(total_quantity=Sum('Stock_Quantity'))
                     ['total_quantity'] or 0
-                )  
-                product.save()   
+                )
+                product.save()
                 
-                messages.success(request, "Variant added successfully")
-                # return redirect('products')
-            
+                # Success message
+                success_message = "Variant added successfully"
+                if images:
+                    success_message += f" with {len(images)} image{'s' if len(images) > 1 else ''}"
+                messages.success(request, success_message)
+                
+                return redirect('products')
+                
+            except ValidationError as e:
+                messages.error(request, str(e))
+                return render(request, 'admin/add_variant.html', {
+                    'form': form, 
+                    'product': product,
+                    'existing_images': Product_Images_Table.objects.filter(product=product)
+                })
+                
             except Exception as e:
-                messages.error(request,f"Error saving variant: {str(e)}")
-                return render(request,'admin/add_variant.html', {'form':form,'product':product})
-        
-        
+                messages.error(request, f"Error saving variant: {str(e)}")
+                return render(request, 'admin/add_variant.html', {
+                    'form': form, 
+                    'product': product,
+                    'existing_images': Product_Images_Table.objects.filter(product=product)
+                })
+        else:
+            # Form validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = VariantForm()
     
     context = {
-        'form' : form,
-        'product' : product,
-        'existing_images' : Product_Images_Table.objects.filter(product=product)
+        'form': form,
+        'product': product,
+        'existing_images': Product_Images_Table.objects.filter(product=product)
     }
     
-    return render(request, 'admin/add_variant.html',context)
+    return render(request, 'admin/add_variant.html', context)
 
 ############################################################################################################################################################################### 
-
+@login_required
 def single_product_view(request,variance_id):
     print(variance_id)
     #Getting the variance records
@@ -411,10 +425,12 @@ def single_product_view(request,variance_id):
         'product',
         'size',
         'color'
-    ),id=variance_id)
+    ), id=variance_id)
     print(id)
     
-    product_images = Product_Images_Table.objects.filter(product=variance.product)
+    product_images = Product_Images_Table.objects.filter(
+        product=variance.product,
+    )
     
     context = {
         'variance': variance,
@@ -424,7 +440,7 @@ def single_product_view(request,variance_id):
     return render(request, 'admin/single_product_view.html', context)
 
 ########################################################################################################################################################################################
-
+@login_required
 @never_cache
 def edit_category(request, category_id):
     try:
@@ -528,7 +544,7 @@ def edit_category(request, category_id):
     
     return render(request, 'admin/edit_category.html', context)
 
-
+@login_required
 @never_cache
 def block_category(request, category_id):
     if request.method == 'POST':
@@ -540,7 +556,7 @@ def block_category(request, category_id):
         messages.success(request, 'Category unlisted successfully')
     return redirect('edit_category', category_id=category_id)
 
-
+@login_required
 @never_cache
 def unblock_category(request, category_id):
     if request.method == 'POST':
@@ -553,6 +569,7 @@ def unblock_category(request, category_id):
     return redirect('edit_category', category_id=category_id)
  
 ################################################################################################################################################################################
+@login_required
 def edit_product(request, product_id):
     try:
         product = get_object_or_404(ProductTable, id=product_id, Is_deleted = False)
@@ -562,11 +579,9 @@ def edit_product(request, product_id):
         
         if request.method == 'POST':
             #creating an copy of POST data that for modifying
-            
             post_data = request.POST.copy()
             
             #preserving the orginal category,color,and size values
-            
             if product.category:
                 post_data['category'] = product.category.id
                 
@@ -575,6 +590,9 @@ def edit_product(request, product_id):
                 
             if variance and variance.size:
                 post_data['size'] = variance.size.id
+                
+            if product.product_quantity:
+                post_data['product_quantity'] = product.product_quantity
                 
             form = ProductForm(post_data, request.FILES, instance=product)
             
@@ -613,18 +631,6 @@ def edit_product(request, product_id):
                     required=False,
                     max_value=Decimal(post_data.get('base_price', '0')) - Decimal('0.01')
                 )
-            
-            validator.validate_integer(
-                post_data.get('product_quantity'),
-                'Quantity',
-                min_value=0,
-                max_value=99999
-            )
-            
-            validator.validate_text_field(
-                post_data.get('category'),
-                'Product category'
-            )
             
             #validating the new image
             for image in request.FILES.getlist('product_images'):
@@ -669,7 +675,6 @@ def edit_product(request, product_id):
                     updated_product = form.save()
                     
                     #handiling product images
-                    
                     files = request.FILES.getlist('product_images')
                     
                     images_to_delete = request.POST.getlist('delete_images')
@@ -684,14 +689,13 @@ def edit_product(request, product_id):
                             image=file
                             )
                         
-                    #updating the quantity and price
+                    #updating the price in variance
                     if variance:
-                        variance.Stock_Quantity = form.cleaned_data['product_quantity']
                         variance.Price = form.cleaned_data['base_price']
                         variance.save()
                             
-                        messages.success(request, f'Product "{product_name}" updated successfully')
-                        return redirect('products')  
+                    messages.success(request, f'Product "{product_name}" updated successfully')
+                    return redirect('products')  
                         
                 except Exception as e:
                     messages.error(request, f'Error updating product: {str(e)}')
@@ -705,12 +709,8 @@ def edit_product(request, product_id):
             initial_data = {
                 'name': product.name,
                 'description': product.description,
-                'product_quantity': product.product_quantity,
                 'base_price': product.base_price,
                 'sale_Price': product.sale_Price,
-                'category': product.category.id if product.category else None,
-                'color': variance.color.color if variance and variance.color else '',
-                'size': variance.size.id if variance and variance.size else None,
             }
             form = ProductForm(initial=initial_data, instance=product)
         

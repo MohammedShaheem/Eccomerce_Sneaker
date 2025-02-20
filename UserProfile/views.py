@@ -1100,7 +1100,7 @@ def cancel_order(request, order_id):
             order.cancellation_reason = form.cleaned_data['reason']
             order.save()
             
-            # Handle payment refund logic if needed
+            
             if order.payment_status == 'PAID':
                 order.payment_status = 'REFUNDED'
                 order.refund_amount = order.total_amount
@@ -1120,7 +1120,7 @@ def cancel_order_item(request, order_id, item_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
     
-    # Check if order item can be canceled
+    #checking if order item can be canceled
     if order.order_status in ['DELIVERED', 'CANCELED', 'RETURNED'] or item.is_returned:
         messages.error(request, 'This item cannot be canceled.')
         return redirect('order_detail', order_id=order_id)
@@ -1130,7 +1130,7 @@ def cancel_order_item(request, order_id, item_id):
     else:
         form = CancellationForm(request.POST)
         if form.is_valid():
-            # Mark item as returned (being used for cancellation in this case)
+            
             item.is_returned = True
             item.return_date = datetime.datetime.now()
             item.return_reason = form.cleaned_data['reason']

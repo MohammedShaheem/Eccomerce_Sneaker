@@ -234,17 +234,13 @@ class ProductForm(forms.ModelForm):
 
 
 class MultipleFileInput(forms.ClearableFileInput):
-    def __init__(self, attrs=None):
-        default_attrs = {'multiple': 'multiple'}
-        if attrs:
-            default_attrs.update(attrs)
-        super().__init__(default_attrs)
-        
+    allow_multiple_selected = True
+
 class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("widget", MultipleFileInput())
         super().__init__(*args, **kwargs)
-        
+
     def clean(self, data, initial=None):
         single_file_clean = super().clean
         if isinstance(data, (list, tuple)):
@@ -252,11 +248,18 @@ class MultipleFileField(forms.FileField):
         else:
             result = single_file_clean(data, initial)
         return result
- 
- 
- 
-   
+
+
 class VariantForm(forms.ModelForm):
+    images = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={
+            'class': 'block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white',
+            'accept': 'image/*',
+            'multiple': True  # Explicitly set multiple attribute
+        })
+    )
+    
     size = forms.ModelChoiceField(
         queryset=Size.objects.all(),
         widget=forms.Select(attrs={
@@ -280,10 +283,26 @@ class VariantForm(forms.ModelForm):
         required=True
     )
 
-
     class Meta:
         model = VarianceTable
         fields = ['size', 'color', 'Stock_Quantity']
+
+    def clean_images(self):
+        """
+        Clean and validate the uploaded images
+        """
+        images = self.files.getlist('images')
+        if images:
+            for image in images:
+                # Check file type
+                if not image.content_type.startswith('image/'):
+                    raise forms.ValidationError(f"File {image.name} is not a valid image")
+                
+                # Check file size (5MB limit)
+                if image.size > 5 * 1024 * 1024:
+                    raise forms.ValidationError(f"Image {image.name} exceeds 5MB size limit")
+        
+        return images
 
 
 ################################################################Category Form##################################################################    

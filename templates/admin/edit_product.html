@@ -103,13 +103,6 @@
                             <p class="text-red-500 text-sm mt-1">{{ form.description.errors|join:", " }}</p>
                             {% endif %}
                         </div>
-                        <div>
-                            <label for="stock_quantity" class="block text-sm font-medium text-gray-400 mb-1">Stock Quantity</label>
-                            {{ form.product_quantity }}
-                            {% if form.product_quantity.errors %}
-                            <p class="text-red-500 text-sm mt-1">{{ form.product_quantity.errors|join:", " }}</p>
-                            {% endif %}
-                        </div>
                     </div>
                 </div>
         
@@ -134,46 +127,8 @@
                     </div>
                 </div>
         
-                <!-- Category -->
-                <div class="bg-gray-800 rounded-lg p-6">
-                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Category</h2>
-                    <div class="relative">
-                        <select id="category" name="category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="" disabled {% if not form.category.value %}selected{% endif %}>Select a category</option>
-                            {% for option in form.category.field.queryset %}
-                            <option value="{{ option.id }}" {% if option.id == form.category.value %}selected{% endif %}>
-                                {{ option.category_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        {% if form.category.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.category.errors|join:", " }}</p>
-                        {% endif %}
-                    </div>
-                </div>
         
                 <!-- Variants -->
-                <div class="bg-gray-800 rounded-lg p-6">
-                    <h2 class="text-lg font-semibold mb-4 text-gray-100">Product Variants</h2>
-                    
-                    <!-- Size -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Size</label>
-                        {{ form.size }}
-                        {% if form.size.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.size.errors|join:", " }}</p>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Color -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Color</label>
-                        {{ form.color }}
-                        {% if form.color.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.color.errors|join:", " }}</p>
-                        {% endif %}
-                    </div>
-                </div>
         
                 <!-- Product Images -->
                 <div class="bg-gray-800 rounded-lg p-6">
@@ -211,10 +166,10 @@
                         class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
                         Update Product
                     </button>
-                    <button type="submit" name="action" value="unlist"
+                    {% comment %} <button type="submit" name="action" value="unlist"
                         class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
                         Unlist Product
-                    </button>
+                    </button> {% endcomment %}
                 </div>
             </form>
         </main>
@@ -250,7 +205,6 @@
                     const form = document.querySelector('form');
                     const productNameInput = document.querySelector('input[name="name"]');
                     const descriptionInput = document.querySelector('textarea[name="description"]');
-                    const quantityInput = document.querySelector('input[name="product_quantity"]');
                     const basePriceInput = document.querySelector('input[name="base_price"]');
                     const salePriceInput = document.querySelector('input[name="sale_Price"]');
                     const categorySelect = document.querySelector('select[name="category"]');
@@ -282,15 +236,7 @@
                                 return '';
                             }
                         },
-                        quantity: {
-                            validate: function(value) {
-                                const num = parseInt(value);
-                                if (isNaN(num)) return 'Invalid quantity format';
-                                if (num < 0) return 'Quantity cannot be negative';
-                                if (num > 99999) return 'Quantity cannot exceed 99,999 units';
-                                return '';
-                            }
-                        },
+                        
                         basePrice: {
                             validate: function(value) {
                                 const num = parseFloat(value);
@@ -352,12 +298,7 @@
                         });
                     }
                 
-                    if (quantityInput) {
-                        quantityInput.addEventListener('input', function() {
-                            const error = validationRules.quantity.validate(this.value);
-                            showValidationMessage(this, error);
-                        });
-                    }
+                    
                 
                     if (basePriceInput) {
                         basePriceInput.addEventListener('input', function() {
@@ -397,11 +338,7 @@
                                 hasErrors = hasErrors || descError;
                             }
                             
-                            if (quantityInput) {
-                                const quantityError = validationRules.quantity.validate(quantityInput.value);
-                                showValidationMessage(quantityInput, quantityError);
-                                hasErrors = hasErrors || quantityError;
-                            }
+                           
                             
                             if (basePriceInput) {
                                 const priceError = validationRules.basePrice.validate(basePriceInput.value);
