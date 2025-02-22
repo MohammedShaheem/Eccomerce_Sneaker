@@ -8,26 +8,6 @@ import os
 
 ##################################################################################################################################################################################
 
-class MultipleFileInput(FileInput):
-    def __init__(self, attrs=None):
-        default_attrs = {'multiple':'multiple'}
-        if attrs:
-            default_attrs.update(attrs)
-        super().__init__(default_attrs)
-        
-        
-class MultipleFileField(forms.FileField):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("widget",MultipleFileInput())
-        super().__init__(*args,**kwargs)
-        
-    def clean(self, data, initial=None):
-        single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
-            result = [single_file_clean(d, initial) for d in data]
-        else:
-            result = single_file_clean(data, initial)
-        return result
     
 #############################################################################################################################################################################
 
@@ -59,22 +39,6 @@ class ProductForm(forms.ModelForm):
             'required': 'Product description is required',
             'max_length': 'Description cannot exceed 500 characters'
         }
-    )
-    
-    product_quantity = forms.IntegerField(
-        widget=forms.NumberInput(attrs={
-            'id': 'stock_quantity',
-            'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
-            'placeholder': 'Stock Quantity'
-        }),
-        error_messages={
-            'required': 'Stock quantity is required',
-            'invalid': 'Please enter a valid number',
-            'min_value': 'Quantity must be at least 1',
-            'max_value': 'Quantity cannot exceed 100'
-        },
-        min_value=1,
-        max_value=100
     )
     
     base_price = forms.DecimalField(
@@ -124,52 +88,10 @@ class ProductForm(forms.ModelForm):
             'invalid_choice': 'Invalid category selected'
         }
     )
-    
-    size = forms.ModelChoiceField(
-        queryset=Size.objects.all(),
-        widget=forms.Select(attrs={
-            'id': 'size',
-            'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
-        }),
-        error_messages={
-            'required': 'Please select a size',
-            'invalid_choice': 'Invalid size selected'
-        }
-    )
-    
-    color = forms.CharField(
-        widget=forms.TextInput(attrs={
-            'id': 'color',
-            'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
-            'placeholder': 'Enter Color',
-        }),
-        required=False
-    )
-
     class Meta:
         model = ProductTable
-        fields = ['name', 'description', 'product_quantity', 'base_price', 
-                  'sale_Price', 'category', 'size', 'color']
-
-
-    def clean_product_quantity(self):
-        quantity = self.cleaned_data.get('product_quantity')
-        if quantity is not None:
-            # Convert to string for regex check if needed
-            quantity_str = str(quantity)
-            
-            # Validate quantity
-            if quantity < 0:
-                raise forms.ValidationError("Quantity cannot be negative")
-            if quantity > 100:
-                raise forms.ValidationError("Quantity cannot exceed 100 units")
-            
-            # Optional: If you still want regex validation
-            if not re.match(r'^[0-9]+$', quantity_str):
-                raise forms.ValidationError("Product Quantity can only contain numbers")
-            
-            return quantity
-        return quantity
+        fields = ['name', 'description', 'base_price', 
+                  'sale_Price', 'category']
     
     def clean_base_price(self):
         price = self.cleaned_data.get('base_price')
@@ -227,7 +149,6 @@ class ProductForm(forms.ModelForm):
                 raise forms.ValidationError("Product name can only contain letters, numbers, spaces, hyphens, and underscores")
         
         return name
-                
 
 
 ###############################################################Variant Form###############################################################################################
@@ -236,17 +157,26 @@ class ProductForm(forms.ModelForm):
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 
+    def __init__(self, attrs=None):
+        default_attrs = {'multiple': 'multiple'}
+        if attrs:
+            default_attrs.update(attrs)
+        super().__init__(default_attrs)
+
 class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("widget", MultipleFileInput())
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
-        single_file_clean = super().clean
+        if not data and initial:
+            return initial
         if isinstance(data, (list, tuple)):
-            result = [single_file_clean(d, initial) for d in data]
+            result = [super().clean(d, initial) for d in data]
         else:
-            result = single_file_clean(data, initial)
+            result = super().clean(data, initial)
         return result
 
 
@@ -256,8 +186,9 @@ class VariantForm(forms.ModelForm):
         widget=MultipleFileInput(attrs={
             'class': 'block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white',
             'accept': 'image/*',
-            'multiple': True  # Explicitly set multiple attribute
-        })
+            'multiple': True  
+        }),
+        label = "Variant Images"
     )
     
     size = forms.ModelChoiceField(
@@ -267,42 +198,60 @@ class VariantForm(forms.ModelForm):
             'style': 'background-image: url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23ffffff\' stroke-width=\'2\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19 9l-7 7-7-7\' /%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1rem;',
         })
     )
-
-    color = forms.ModelChoiceField(
-        queryset=Color.objects.all(),
-        widget=forms.Select(attrs={
-            'class': 'w-full bg-gray-100 border border-gray-300 text-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-200 appearance-none',
-        })
+    
+    color = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'id': 'color',
+            'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
+            'placeholder': 'Enter Color',
+        }),
+        required=False
     )
+    
+    
     
     Stock_Quantity = forms.IntegerField(
         widget=forms.NumberInput(attrs={
             'class': 'block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white',
             'min': '0',
         }),
-        required=True
+        required=False,
+        error_messages={
+            'required': 'Stock quantity is required',
+            'invalid': 'Please enter a valid number',
+            'min_value': 'Quantity cannot be negative'
+        },
+        min_value=0
     )
 
     class Meta:
         model = VarianceTable
-        fields = ['size', 'color', 'Stock_Quantity']
+        fields = ['size','Stock_Quantity']
 
     def clean_images(self):
         """
         Clean and validate the uploaded images
         """
-        images = self.files.getlist('images')
-        if images:
+        def clean_images(self):
+            images = self.files.getlist('images') if self.files else []
             for image in images:
-                # Check file type
                 if not image.content_type.startswith('image/'):
                     raise forms.ValidationError(f"File {image.name} is not a valid image")
-                
-                # Check file size (5MB limit)
-                if image.size > 5 * 1024 * 1024:
+                if image.size > 5 * 1024 * 1024:  # 5MB limit
                     raise forms.ValidationError(f"Image {image.name} exceeds 5MB size limit")
+            return images
         
-        return images
+        def clean_Stock_Quantity(self):
+            quantity = self.cleaned_data.get('Stock_Quantity')
+            if quantity is not None and quantity < 0:
+                raise forms.ValidationError("Stock quantity cannot be negative")
+            return quantity
+        
+        def clean(self):
+            cleaned_data = super().clean()
+            if 'color' in cleaned_data:
+                del cleaned_data['color']
+            return cleaned_data
 
 
 ################################################################Category Form##################################################################    
@@ -399,3 +348,4 @@ class CategoryForm(forms.ModelForm):
             
             
         return image
+    

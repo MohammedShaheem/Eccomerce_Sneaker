@@ -24,163 +24,133 @@
         </div>
 
         <!-- Main Content Area -->
+        
         <div class="flex-1 p-8">
             <!-- Header -->
-            <div class="mb-6">
-                <h1 class="text-2xl font-bold">Add Products</h1>
-                <p class="text-sm text-gray-400">Products > Add Products</p>
-            </div>
-
-            <!-- Form Section -->
-            <div>
-                <h2 class="text-lg font-bold mb-4">Add Product</h2>
-                <form id="productForm" class="space-y-6" method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-
-                    {# Global Form Validation Errors #}
-                    {% if form.errors %}
-                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                        <strong class="font-bold">Validation Errors!</strong>
-                        <ul>
-                            {% for field, errors in form.errors.items %}
-                                {% for error in errors %}
-                                    <li>{{ field }}: {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-
-                    {# Django Messages #}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="{% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} px-4 py-2 rounded mb-4">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <!-- General Information -->
-                    <div class="bg-gray-800 rounded-lg p-6">
-                        <h2 class="text-lg font-semibold mb-4">General Information</h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-400 mb-1">Product Name</label>
-                                {{ form.name }}
-                                <p id="nameError" class="text-red-500 text-sm hidden">Product name is required and must be at least 3 characters</p>
-                            </div>
-                            <div>
-                                <label for="description" class="block text-sm font-medium text-gray-400 mb-1">Description</label>
-                                {{ form.description }}
-                                <p id="descriptionError" class="text-red-500 text-sm hidden">Description is required</p>
-                            </div>
-                            <div>
-                                <label for="stock_quantity" class="block text-sm font-medium text-gray-400 mb-1">Stock Quantity</label>
-                                {{ form.product_quantity }}
-                                <p id="quantityError" class="text-red-500 text-sm hidden">Quantity must be between 1 and 1000</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pricing -->
-                    <div class="bg-gray-800 rounded-lg p-6">
-                        <h2 class="text-lg font-semibold mb-4">Pricing</h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="price" class="block text-sm font-medium text-gray-400 mb-1">Price</label>
-                                {{ form.base_price }}
-                                <p id="priceError" class="text-red-500 text-sm hidden">Invalid price. Must be a positive number up to 1,000,000</p>
-                            </div>
-                            <div>
-                                <label for="sale_price" class="block text-sm font-medium text-gray-400 mb-1">Sale Price</label>
-                                {{ form.sale_Price }}
-                                <p id="salePriceError" class="text-red-500 text-sm hidden">Sale price must be less than base price</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Category -->
-                    <div class="bg-gray-800 rounded-lg p-6">
-                        <h2 class="text-lg font-semibold mb-4">Category</h2>
-                        <select id="category" name="category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100">
-                            <option value="" disabled {% if not form.category.value %}selected{% endif %}>Select a category</option>
-                            {% for option in form.category.field.queryset %}
-                                <option value="{{ option.id }}" {% if option.id == form.category.value %}selected{% endif %}>
-                                    {{ option.category_name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <p id="categoryError" class="text-red-500 text-sm hidden">Please select a category</p>
-                    </div>
-
-                    <!-- Size -->
-                    <div class="bg-gray-800 rounded-lg p-6">
-                        <h2 class="text-lg font-semibold mb-4">Size</h2>
-                        {{ form.size }}
-                        <p id="sizeError" class="text-red-500 text-sm hidden">Please select a size</p>
-                    </div>
-
-                    <!-- Color -->
-                    <div class="bg-gray-800 rounded-lg p-6">
-                        <h2 class="text-lg font-semibold mb-4">Color</h2>
-                        {{ form.color }}
-                        <p id="colorError" class="text-red-500 text-sm hidden">Please select a color</p>
-                    </div>
-
-                    <!-- Product Images -->
-                    <div class="bg-gray-800 rounded-lg p-6">
-                        <h2 class="text-lg font-semibold mb-4">Product Images</h2>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-lg">
-                            <div class="space-y-1 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                                </svg>
-                                <div class="flex text-sm text-gray-400">
-                                    <input type="file"
-                                           name="product_images"
-                                           id="product_images"
-                                           multiple
-                                           accept="image/*"
-                                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100">
-                                </div>
-                                <p class="text-xs text-gray-400">PNG, JPG, GIF up to 5MB</p>
-                                <p id="imageError" class="text-red-500 text-sm hidden">Please upload at least one image</p>
-                                <!-- Add preview container -->
-                                <div id="image-preview-container" class="grid grid-cols-3 gap-4 mt-4">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <a href="{% url 'add_products' %}" class="inline-block mt-4">
-                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white">
-                        Add Product
-                    </button>
-                    </a>
-                </form>
-                <a href="{% url 'products' %}" class="inline-block mt-4">
-                    <button class="w-full bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-md text-white">
-                        Back to Products
-                    </button>
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold mb-2">Add Product</h1>
+                    <p class="text-gray-400">Products > Add Product</p>
+                </div>
+                <a href="{% url 'products' %}" 
+                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Back to Products
                 </a>
             </div>
-        </div>
-    </div>
 
-    <script>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-500{% else %}bg-green-500{% endif %} text-white">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Form Section -->
+            <div class="container mx-auto px-4 py-8">
+                <div class="max-w-3xl mx-auto bg-gray-900 rounded-lg shadow-lg p-6">
+                    <h2 class="text-lg font-bold mb-4 text-white">Add New Product</h2>
+
+                    <form method="POST" enctype="multipart/form-data" id="ProductForm" class="space-y-6">
+                        {% csrf_token %}
+
+                        <!-- Name Field -->
+                        <div class="block">
+                            <label class="block text-gray-300 mb-2">Product Name</label>
+                            {{ form.name }}
+                            <p id="nameError" class="text-red-500 text-sm mt-1 hidden"></p>
+                            {% if form.name.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description Field -->
+                        <div class="block">
+                            <label class="block text-gray-300 mb-2">Description</label>
+                            {{ form.description }}
+                            <p id="descriptionError" class="text-red-500 text-sm mt-1 hidden"></p>
+                            {% if form.description.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        {% comment %} <!-- Product Quantity Field -->
+                        <div class="block">
+                            <label class="block text-gray-300 mb-2">Initial Stock Quantity</label>
+                            {{ form.product_quantity }}
+                            <p id="quantityError" class="text-red-500 text-sm mt-1 hidden"></p>
+                            {% if form.product_quantity.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.product_quantity.errors.0 }}</p>
+                            {% endif %}
+                        </div> {% endcomment %}
+
+                        <!-- Color Field -->
+                        <div class="block">
+                            <label class="block text-gray-300 mb-2">Color</label>
+                            <div class="space-y-2">
+                                {% for color in colors %}
+                                    <div class="flex items-center">
+                                        {{ form.color }}
+                                        <span class="ml-2">{{ color.name }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.color.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.color.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Base Price Field -->
+                        <div class="block">
+                            <label class="block text-gray-300 mb-2">Base Price</label>
+                            {{ form.base_price }}
+                            <p id="basePriceError" class="text-red-500 text-sm mt-1 hidden"></p>
+                            {% if form.base_price.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.base_price.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Sale Price Field -->
+                        <div class="block">
+                            <label class="block text-gray-300 mb-2">Sale Price</label>
+                            {{ form.sale_Price }}
+                            <p id="salePriceError" class="text-red-500 text-sm mt-1 hidden"></p>
+                            {% if form.sale_Price.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.sale_Price.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Category Field -->
+                        <div class="block">
+                            <label class="block text-gray-300 mb-2">Category</label>
+                            {{ form.category }}
+                            <p id="categoryError" class="text-red-500 text-sm mt-1 hidden"></p>
+                            {% if form.category.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.category.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-lg text-white font-medium transition-colors duration-200">
+                            Save Product
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('productForm');
-            const nameInput = document.getElementById('name');
-            const descriptionInput = document.getElementById('description');
-            const quantityInput = document.getElementById('stock_quantity');
-            const basePriceInput = document.getElementById('price');
-            const salePriceInput = document.getElementById('sale_price');
-            const categoryInput = document.getElementById('category');
-            const sizeInput = document.getElementById('size');
-            const colorInput = document.getElementById('color');
-            const imageInput = document.getElementById('product_images');
-        
+            const form = document.getElementById('ProductForm');
+            const nameInput = document.getElementById('id_name');
+            const descriptionInput = document.getElementById('id_description');
+            const quantityInput = document.getElementById('id_product_quantity');
+            const basePriceInput = document.getElementById('id_base_price');
+            const salePriceInput = document.getElementById('id_sale_Price');
+            const categoryInput = document.getElementById('id_category');
+
             // Helper function to show error
             function showError(input, errorElementId, message) {
                 const errorElement = document.getElementById(errorElementId);
@@ -190,7 +160,7 @@
                     input.classList.add('border', 'border-red-500');
                 }
             }
-        
+
             // Helper function to clear error
             function clearError(input, errorElementId) {
                 const errorElement = document.getElementById(errorElementId);
@@ -199,67 +169,83 @@
                     input.classList.remove('border', 'border-red-500');
                 }
             }
-        
+
             // Validation functions
             function validateName() {
                 const value = nameInput.value.trim();
-                if (!value || value.length < 3) {
-                    showError(nameInput, 'nameError', 'Product name must be at least 3 characters');
+                if (!value || value.length < 2) {
+                    showError(nameInput, 'nameError', 'Product name must be at least 2 characters');
+                    return false;
+                }
+                if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
+                    showError(nameInput, 'nameError', 'Name can only contain letters, numbers, spaces, hyphens, and underscores');
                     return false;
                 }
                 clearError(nameInput, 'nameError');
                 return true;
             }
-        
+
             function validateDescription() {
                 const value = descriptionInput.value.trim();
                 if (!value) {
                     showError(descriptionInput, 'descriptionError', 'Description is required');
                     return false;
                 }
+                if (value.length > 500) {
+                    showError(descriptionInput, 'descriptionError', 'Description cannot exceed 500 characters');
+                    return false;
+                }
                 clearError(descriptionInput, 'descriptionError');
                 return true;
             }
-        
+
             function validateQuantity() {
                 const value = quantityInput.value.trim();
                 const quantity = parseInt(value);
-                if (!value || isNaN(quantity) || quantity < 0 || quantity > 100) {
-                    showError(quantityInput, 'quantityError', 'Quantity must be between 1 and 100');
+                if (value === '' || isNaN(quantity) || quantity < 0 || quantity > 100) {
+                    showError(quantityInput, 'quantityError', 'Quantity must be between 0 and 100');
                     return false;
                 }
                 clearError(quantityInput, 'quantityError');
                 return true;
             }
-        
+
             function validateBasePrice() {
                 const value = basePriceInput.value.trim();
                 const price = parseFloat(value);
-                if (!value || isNaN(price) || price <= 0 || price > 1000000) {
-                    showError(basePriceInput, 'priceError', 'Invalid price. Must be a positive number up to 1,000,000');
+                if (!value || isNaN(price) || price <= 0 || price > 99999.99) {
+                    showError(basePriceInput, 'basePriceError', 'Base price must be between 0.01 and 99999.99');
                     return false;
                 }
-                clearError(basePriceInput, 'priceError');
+                clearError(basePriceInput, 'basePriceError');
                 return true;
             }
-        
+
             function validateSalePrice() {
+                const value = salePriceInput.value.trim();
+                const salePrice = parseFloat(value);
                 const basePrice = parseFloat(basePriceInput.value);
-                const salePrice = parseFloat(salePriceInput.value);
-        
-                if (salePriceInput.value.trim() === '') {
-                    clearError(salePriceInput, 'salePriceError');
-                    return true;  // Sale price is optional
+
+                if (!value || isNaN(salePrice)) {
+                    showError(salePriceInput, 'salePriceError', 'Sale price must be a valid number');
+                    return false;
                 }
-        
-                if (isNaN(salePrice) || salePrice <= 0 || salePrice >= basePrice || salePrice < (basePrice * 0.1)) {
-                    showError(salePriceInput, 'salePriceError', 'Sale price must be less than base price and at least 10% of base price');
+                if (salePrice <= 0) {
+                    showError(salePriceInput, 'salePriceError', 'Sale price must be greater than 0');
+                    return false;
+                }
+                if (salePrice > basePrice) {
+                    showError(salePriceInput, 'salePriceError', 'Sale price cannot exceed base price');
+                    return false;
+                }
+                if (salePrice < (basePrice * 0.1)) {
+                    showError(salePriceInput, 'salePriceError', 'Sale price must be at least 10% of base price');
                     return false;
                 }
                 clearError(salePriceInput, 'salePriceError');
                 return true;
             }
-        
+
             function validateCategory() {
                 const value = categoryInput.value;
                 if (!value) {
@@ -269,216 +255,42 @@
                 clearError(categoryInput, 'categoryError');
                 return true;
             }
-        
-            function validateSize() {
-                const value = sizeInput.value;
-                if (!value) {
-                    showError(sizeInput, 'sizeError', 'Please select a size');
-                    return false;
-                }
-                clearError(sizeInput, 'sizeError');
-                return true;
-            }
-        
-            function validateColor() {
-                const value = colorInput.value;
-                if (!value) {
-                    showError(colorInput, 'colorError', 'Please select a color');
-                    return false;
-                }
-                clearError(colorInput, 'colorError');
-                return true;
-            }
-            function createImageFromFile(file) {
-                return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        URL.revokeObjectURL(img.src); // Clean up
-                        resolve(img);
-                    };
-                    img.onerror = () => {
-                        URL.revokeObjectURL(img.src); // Clean up
-                        reject(new Error('Failed to load image'));
-                    };
-                    img.src = URL.createObjectURL(file);
-                });
-            }
-        
-            function calculateAspectRatio(srcWidth, srcHeight, maxWidth, maxHeight) {
-                const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-                return {
-                    width: Math.round(srcWidth * ratio),
-                    height: Math.round(srcHeight * ratio)
-                };
-            }
-        
-            async function validateAndResizeImages() {
-                if (!imageInput.files.length) {
-                    showError(imageInput, 'imageError', 'Please upload at least one image');
-                    return false;
-                }
-        
-                const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-                const maxSize = 5 * 1024 * 1024; // 5MB
-                const targetWidth = 800;
-                const targetHeight = 800;
-        
-                try {
-                    const processedFiles = await Promise.all(
-                        Array.from(imageInput.files).map(async file => {
-                            if (!validTypes.includes(file.type)) {
-                                throw new Error(`Invalid file type: ${file.name}. Please use JPG, PNG, or GIF`);
-                            }
-                            if (file.size > maxSize) {
-                                throw new Error(`File too large: ${file.name}. Maximum size is 5MB`);
-                            }
-        
-                            const img = await createImageFromFile(file);
-                            const dimensions = calculateAspectRatio(img.width, img.height, targetWidth, targetHeight);
-        
-                            const canvas = document.createElement('canvas');
-                            canvas.width = dimensions.width;
-                            canvas.height = dimensions.height;
-                            const ctx = canvas.getContext('2d');
-        
-                            // Draw white background
-                            ctx.fillStyle = '#FFFFFF';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-                            // Draw image centered
-                            ctx.drawImage(img, 0, 0, dimensions.width, dimensions.height);
-        
-                            const blob = await new Promise(resolve => 
-                                canvas.toBlob(resolve, file.type, 0.9)
-                            );
-        
-                            return new File([blob], file.name, { type: file.type });
-                        })
-                    );
-        
-                    const dataTransfer = new DataTransfer();
-                    processedFiles.forEach(file => dataTransfer.items.add(file));
-                    imageInput.files = dataTransfer.files;
-                    clearError(imageInput, 'imageError');
-                    return true;
-        
-                } catch (error) {
-                    showError(imageInput, 'imageError', error.message);
-                    return false;
-                }
-            }
-        
-            // Preview images
-            function updateImagePreviews() {
-                const previewContainer = document.getElementById('image-preview-container');
-                previewContainer.innerHTML = '';
-        
-                Array.from(imageInput.files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const preview = document.createElement('div');
-                        preview.className = 'relative inline-block mr-2 mb-2';
-                        preview.innerHTML = `
-                            <img src="${e.target.result}" 
-                                 class="w-32 h-32 object-cover rounded-lg shadow-sm" 
-                                 alt="Product preview">
-                        `;
-                        previewContainer.appendChild(preview);
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-            
-            // Add real-time validation
+
+            // Real-time validation
             nameInput.addEventListener('input', validateName);
             descriptionInput.addEventListener('input', validateDescription);
             quantityInput.addEventListener('input', validateQuantity);
             basePriceInput.addEventListener('input', validateBasePrice);
             salePriceInput.addEventListener('input', validateSalePrice);
             categoryInput.addEventListener('change', validateCategory);
-            sizeInput.addEventListener('change', validateSize);
-            colorInput.addEventListener('change', validateColor);
-            imageInput.addEventListener('change', async () => {
-                await validateAndResizeImages();
-                updateImagePreviews();
-            });
-        
-            // Preview images when selected
-            imageInput.addEventListener('change', function() {
-                const previewContainer = document.getElementById('image-preview-container');
-                previewContainer.innerHTML = '';
-        
-                if (this.files) {
-                    Array.from(this.files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const preview = document.createElement('div');
-                            preview.className = 'relative';
-                            preview.innerHTML = `
-                                <img src="${e.target.result}" class="w-full h-32 object-cover rounded">
-                            `;
-                            previewContainer.appendChild(preview);
-                        }
-                        reader.readAsDataURL(file);
-                    });
-                }
-            });
-            document.getElementById('ProductForm').onsubmit = async function(e) {
-                e.preventDefault();
-                const isValid = await validateAndResizeImages();
-                if (isValid) {
-                    this.submit();
-                }
-            };
-        
-            // Form submission validation
+
             // Form submission handler
-            form.addEventListener('submit', async function(e) {
-            e.preventDefault(); // Prevent default form submission initially
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
 
-            try {
-                    // Run all validations
-                    const validations = await Promise.all([
-                        validateName(),
-                        validateDescription(),
-                        validateQuantity(),
-                        validateBasePrice(),
-                        validateSalePrice(),
-                        validateCategory(),
-                        validateSize(),
-                        validateColor(),
-                        validateAndResizeImages()
-                    ]);
+                const validations = [
+                    validateName(),
+                    validateDescription(),
+                    validateQuantity(),
+                    validateBasePrice(),
+                    validateSalePrice(),
+                    validateCategory()
+                ];
 
-                // Check if all validations passed
                 const isValid = validations.every(result => result === true);
 
                 if (isValid) {
-                        // If all validations pass, submit the form
-                        this.submit();
+                    this.submit();
                 } else {
-                        // Find and scroll to the first error
-                        const firstError = document.querySelector('.text-red-500:not(.hidden)');
-                        if (firstError) {
-                            firstError.scrollIntoView({ 
-                                behavior: 'smooth', 
-                                block: 'center' 
-                            });
-                        }
+                    const firstError = document.querySelector('.text-red-500:not(.hidden)');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                } catch (error) {
-                    console.error('Validation error:', error);
-                    // Handle any unexpected errors during validation
-                const firstError = document.querySelector('.text-red-500:not(.hidden)');
-                if (firstError) {
-                    firstError.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center' 
-                });
-            }
-        }
+                }
+            });
         });
-    });
-    </script>
+        </script>
+
+        
 </body>
 </html>

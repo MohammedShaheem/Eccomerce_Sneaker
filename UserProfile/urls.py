@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path,include
 from . import views
 urlpatterns = [
     path('',views.home_before_login,name='home_before_login'),
@@ -33,4 +33,16 @@ urlpatterns = [
     path('orders/<str:order_id>/', views.order_detail, name='order_detail'),
     path('orders/<str:order_id>/cancel/', views.cancel_order, name='cancel_order'),
     path('orders/<str:order_id>/items/<int:item_id>/cancel/', views.cancel_order_item, name='cancel_order_item'),
+    path('paypal/', include('paypal.standard.ipn.urls')),
+    path('payment-success/', views.payment_success, name='payment_success'),
+    path('payment-cancelled/', views.payment_cancelled, name='payment_cancelled'),
+    path('wishlist/toggle/<int:product_id>/', views.toggle_wishlist, name='toggle_wishlist'),
+    path('wishlist-add-to-cart/', views.add_to_cart_from_wishlist, name='add_to_cart_from_wishlist'),
+    path('wishlist/', views.wishlist_view, name='wishlist_view'),
+    path('wishlist-remove/<int:product_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
+    path('wallet/dashboard/', views.wallet_dashboard, name='wallet_dashboard'),
+    path('wallet/process-payment/', views.process_wallet_payment, name='process_wallet_payment'),
+    path('wallet/process-refund/<int:order_id>/', views.process_refund_to_wallet, name='process_refund_to_wallet'),
+    path('orders-<str:order_id>/return/', views.return_order, name='return_order'),
+    
 ]

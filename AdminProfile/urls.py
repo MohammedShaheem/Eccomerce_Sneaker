@@ -16,6 +16,7 @@ urlpatterns = [
     path('block_user/<int:user_id>/', views.block_user, name='block_user'),
     path('unblock_user/<int:user_id>/', views.unblock_user, name='unblock_user'),
     path('edit_product/', views.edit_product, name='edit_product'),
+    path('products/delete/<int:product_id>/', views.delete_product, name='delete_product'),
     path('products/<int:product_id>/add-variant/', views.add_variant, name='add_variant'),
     path('products/<int:variance_id>/single_product_view/', views.single_product_view, name='single_product_view'),
     path('edit-category/<int:category_id>/', views.edit_category, name='edit_category'),
@@ -23,4 +24,6 @@ urlpatterns = [
     path('unblock_category/<int:category_id>/', views.unblock_category, name='unblock_category'),
     path('products_edit/<int:product_id>/', views.edit_product, name='edit_product'),
     path('admin_orders/', views.admin_orders, name='admin_orders'),
+    path('admin-orders/<str:order_id>/', views.admin_order_detail, name='admin_order_detail'),
+    
 ]

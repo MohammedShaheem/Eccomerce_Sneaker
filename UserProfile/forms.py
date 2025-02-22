@@ -253,3 +253,9 @@ class CancellationForm(forms.Form):
             self.add_error('additional_details', 'Please provide details for "Other reason"')
         
         return cleaned_data
+    
+class ReturnForm(forms.Form):
+    reason = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3}),
+        help_text='Please explain the reason for returning the items.'
+    )

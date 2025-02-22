@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'UserProfile',
     'AdminProfile',
+    'paypal.standard.ipn',
 
 ]
 
@@ -166,12 +167,28 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -222,3 +239,13 @@ AUTHENTICATION_BACKENDS = (
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home_before_login'
+
+#add paypal settings
+#set sandbox to true
+
+
+PAYPAL_RECEIVER_EMAIL = 'mohammedbusiness@gmail.com'#sandbox business account
+PAYPAL_TEST = True
+PAYPAL_CLIENT_ID = 'AXgpBXPi4ZMjXal-46frbxDexfuo8h2wvtHdIm_SgIw1ikOJNBXxoUlkUcTntaJqgVr3sBtX_DO6y_Ib'
+PAYPAL_CLIENT_SECRET = 'EEi0H6feXKNCz681Kkra_5SNr_sLHT68EYIUyhKMFBCwL9re8TdxYADlHjD8p8Pa7L2ZbWzgJ8_mY9W_'
+PAYPAL_MODE = 'sandbox'

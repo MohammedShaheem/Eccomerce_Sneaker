@@ -29,7 +29,7 @@
                     <div class="text-2xl font-bold">Product Details</div>
                 </div>
             </nav>
-
+        
             <div class="bg-gray-800 rounded-lg shadow-md p-6 mt-6">
                 <section class="container mx-auto px-6 py-10">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -38,24 +38,24 @@
                             <div class="flex">
                                 <!-- Thumbnails Column -->
                                 <div class="flex flex-col space-y-4 mr-4">
-                                    {% for image in product_images %}
+                                    {% for image in variance.images.all %}
                                         <img src="{{ image.image.url }}" 
                                              alt="Thumbnail" 
                                              class="w-16 h-16 border rounded-lg cursor-pointer hover:border-white" 
                                              onclick="changeImage('{{ image.image.url }}')">
                                     {% endfor %}
                                 </div>
-
+        
                                 <!-- Main Image -->
                                 <div class="relative flex-1">
                                     <img id="mainImage" 
                                          class="w-full h-[500px] object-cover rounded-lg" 
-                                         src="{{ product_images.first.image.url|default:'#' }}" 
+                                         src="{{ variance.images.first.image.url|default:'#' }}" 
                                          alt="Product Image">
                                 </div>
                             </div>
                         </div>
-
+        
                         <!-- Right Side: Product Details -->
                         <div class="flex flex-col space-y-6">
                             <!-- Product Title -->
@@ -65,53 +65,72 @@
                                     {{ variance.product.category.category_name }}
                                 </h6>
                             </div>
-
+        
                             <!-- Product Details -->
                             <div class="space-y-4">
+                                <!-- Size Selection -->
                                 <div>
                                     <h6 class="text-sm text-gray-500">Size:</h6>
-                                    <p class="text-xl">{{ variance.size.size }}</p>
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        {% for size in available_sizes %}
+                                            <button class="px-4 py-2 rounded-md {% if size == variance.size.size %}bg-gray-600 text-white{% else %}bg-gray-700 text-gray-300{% endif %} hover:bg-gray-600">
+                                                {{ size }}
+                                            </button>
+                                        {% endfor %}
+                                    </div>
                                 </div>
-
+        
+                                <!-- Color Selection -->
                                 <div>
                                     <h6 class="text-sm text-gray-500">Color:</h6>
-                                    <p class="text-xl">{{ variance.Color.color }}</p>
+                                    <div class="flex gap-2 mt-2">
+                                        {% for color in available_colors %}
+                                            <button class="w-8 h-8 rounded-full border-2 {% if color == variance.color.color %}border-white{% else %}border-gray-500{% endif %} hover:border-white"
+                                                    style="background-color: {{ color }}">
+                                            </button>
+                                        {% endfor %}
+                                    </div>
                                 </div>
-
+        
                                 <div>
                                     <h6 class="text-sm text-gray-500">Stock Quantity:</h6>
                                     <p class="text-xl">{{ variance.Stock_Quantity }}</p>
                                 </div>
-
+        
                                 <div>
                                     <h6 class="text-sm text-gray-500">Price:</h6>
                                     <p class="text-2xl font-bold">₹{{ variance.product.sale_Price|floatformat:2 }}</p>
                                 </div>
-
+        
                                 <div>
                                     <h6 class="text-sm text-gray-500">Created At:</h6>
                                     <p class="text-xl">{{ variance.product.created_at }}</p>
                                 </div>
                             </div>
-
-                            <!-- Back Button -->
-                            {% comment %} <div class="pt-6">
-                                <a href="{% url 'product_detail' variance.product.id %}" 
-                                   class="inline-block bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-md">
-                                    Back to Product Details
-                                </a>
-                            </div> {% endcomment %}
+        
+                            <!-- Related Variances -->
+                            <div class="pt-6">
+                                <h6 class="text-sm text-gray-500 mb-3">Other Available Variations:</h6>
+                                <div class="grid grid-cols-2 gap-4">
+                                    {% for rel_var in related_variances %}
+                                        <a href="{% url 'single_product_view' rel_var.id %}" 
+                                           class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                                            <div class="text-sm font-medium">{{ rel_var.color.color }} - {{ rel_var.size.size }}</div>
+                                            <div class="text-sm text-gray-400">Stock: {{ rel_var.Stock_Quantity }}</div>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
             </div>
         </div>
-    </div>
-
-    <script>
-        function changeImage(imageSrc) {
-            document.getElementById('mainImage').src = imageSrc;
-        }
-    </script>
+        
+        <script>
+            function changeImage(imageSrc) {
+                document.getElementById('mainImage').src = imageSrc;
+            }
+        </script>
 </body>
 </html>

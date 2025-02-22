@@ -166,10 +166,13 @@
                         class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
                         Update Product
                     </button>
-                    {% comment %} <button type="submit" name="action" value="unlist"
-                        class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
-                        Unlist Product
-                    </button> {% endcomment %}
+                    <form method="POST" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" name="delete_product" 
+                                class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+                            Delete Product
+                        </button>
+                    </form>
                 </div>
             </form>
         </main>

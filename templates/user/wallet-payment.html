@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-white">
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <div class="max-w-2xl mx-auto py-8 px-4">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-6">Complete Your Payment</h1>
+        
+        <!-- Order Summary -->
+        <div class="wallet-payment-section mb-6">
+            <div class="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                    <h3 class="text-lg font-semibold">Wallet Balance</h3>
+                    <p class="text-gray-600">${{ request.user.wallet.balance }}</p>
+                </div>
+                
+                {% if request.user.wallet.has_sufficient_balance:order.total %}
+                <button id="useWalletBtn" 
+                        class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                        data-amount="{{ order.total }}"
+                        data-order-id="{{ order.id }}">
+                    Pay with Wallet
+                </button>
+                {% else %}
+                <span class="text-red-500">Insufficient balance</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+        
+
+    <!-- Footer -->
+    <footer class="bg-black text-white mt-16">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-4 gap-8">
+                <!-- Subscribe -->
+                <div>
+                    <h3 class="font-medium mb-4">Subscribe</h3>
+                    <p class="text-sm mb-4">Get 10% off your first order</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Enter your email" class="bg-transparent border px-4 py-2 flex-grow">
+                        <button class="bg-white text-black px-4">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h3 class="font-medium mb-4">Support</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>111 Bijay sarani, Dhaka,</p>
+                        <p>DH 1515, Bangladesh.</p>
+                        <p>exclusive@gmail.com</p>
+                        <p>+88015-88888-9999</p>
+                    </div>
+                </div>
+
+                <!-- Account -->
+                <div>
+                    <h3 class="font-medium mb-4">Account</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>My Account</p>
+                        <p>Login / Register</p>
+                        <p>Cart</p>
+                        <p>Wishlist</p>
+                        <p>Shop</p>
+                    </div>
+                </div>
+
+                <!-- Quick Link -->
+                <div>
+                    <h3 class="font-medium mb-4">Quick Link</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>Privacy Policy</p>
+                        <p>Terms Of Use</p>
+                        <p>FAQ</p>
+                        <p>Contact</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download App Section -->
+            <div class="mt-12">
+                <h3 class="font-medium mb-4">Download App</h3>
+                <div class="flex items-center space-x-4">
+                    <img src="/api/placeholder/120/40" alt="QR Code" class="w-24 h-24">
+                    <div class="space-y-2">
+                        <img src="/api/placeholder/120/40" alt="Google Play" class="h-10">
+                        <img src="/api/placeholder/120/40" alt="App Store" class="h-10">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Icons -->
+            <div class="flex space-x-4 mt-8">
+                <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </div>
+    </footer>
+    <script>
+        document.getElementById('useWalletBtn')?.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const button = e.target;
+            const amount = button.dataset.amount;
+            const orderId = button.dataset.orderId;
+        
+            try {
+                const response = await fetch('/wallet/process-payment/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `amount=${amount}&order_id=${orderId}`
+                });
+        
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Handle successful payment
+                    window.location.href = '/order/confirmation/' + orderId;
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Error processing payment');
+            }
+        });
+        
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        </script>
+    
+</body>
+</html>

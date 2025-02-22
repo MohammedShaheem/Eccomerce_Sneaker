@@ -1,9 +1,9 @@
 from django.shortcuts import render,HttpResponse,redirect,get_object_or_404
 from django.contrib import messages  # for setting passages if user logedin
-from UserProfile.forms import UserRegForm,AddressForm,CancellationForm
+from UserProfile.forms import UserRegForm,AddressForm,CancellationForm,ReturnForm
 from UserProfile.models import UserTable,Address
 from django.contrib.auth.hashers import make_password,check_password #make password for encrypting and check password for decrypting
-from AdminProfile.models import ProductTable,Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem,Order,OrderItem
+from AdminProfile.models import ProductTable,Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem,Order,OrderItem,Wishilist,Wallet,WalletTransaction,ReturnedItem
 from .utils import generate_otp, verify_otp
 from django.core.mail import send_mail
 from django.conf import settings
@@ -25,6 +25,12 @@ import uuid
 import re
 from django.contrib.auth import update_session_auth_hash
 import datetime
+from django.urls import reverse
+from django.conf import settings
+from paypal.standard.forms import PayPalPaymentsForm
+from django.views.decorators.csrf import csrf_exempt
+from decimal import Decimal
+
 
 
 # Create your views here.
@@ -346,10 +352,17 @@ def logout(request):
 def MenPage(request):
     products = ProductTable.objects.prefetch_related(
         'category',
-        'images',
-        'variancetable_set__size',
-        'variancetable_set__color'
-    )
+        'variances__images',
+        'variances__size',
+        'variances__color'
+    ).filter(Is_deleted=False)  
+    
+    # Get user's wishlist items
+    user_wishlist_items = []
+    if request.user.is_authenticated:
+        user_wishlist_items = Wishilist.objects.filter(
+            user=request.user
+        ).values_list('product_id', flat=True)
     
     # Get the sort parameter from the request
     sort_option = request.GET.get('sort', 'default')
@@ -366,21 +379,19 @@ def MenPage(request):
     elif sort_option == 'name_desc':
         products = products.order_by('-name')
     
-    
     # Get cart count
     cart_count = 0
     if request.user.is_authenticated:
-        # If you have a Cart model with user relation, use this approach
         cart_count = CartItem.objects.filter(cart__user=request.user).count()
     else:
-        # For session-based cart
         cart = request.session.get('cart', {})
         cart_count = sum(item.get('quantity', 0) for item in cart.values())
     
     return render(request, 'user/menPage.html', {
         'products': products,
         'current_sort': sort_option,
-        'cart_count': cart_count
+        'cart_count': cart_count,
+        'user_wishlist_items': user_wishlist_items
     })
 ######################################################################################################################################################################################
 
@@ -391,7 +402,9 @@ def single_product_page(request, product_id):
     variants = VarianceTable.objects.filter(
         product=product
     ).select_related(
-        'size' # fetching size
+        'size',
+    ).prefetch_related(
+        'images'
     ).order_by(
         'size__size' # order by size value
     )
@@ -408,14 +421,14 @@ def single_product_page(request, product_id):
                 'id': variant.id,
                 'size': variant.size.size,
                 'stock': variant.Stock_Quantity,
-                'is_available': variant.Stock_Quantity > 0
+                'is_available': variant.Stock_Quantity > 0,
+                'images': [image.image.url for image in variant.images.all()]
             }
             for variant in variants
         ]
     }
     
     return render(request, 'user/SPPage.html', context)
-    
 ################################################################################################################################################################################
 
 def home_before_login(request):
@@ -428,75 +441,80 @@ def home_before_login(request):
 ################################################################################################################################################################################
 @require_POST
 @login_required
-
 def add_to_cart(request):
-    print("hello")
     try:
         data = json.loads(request.body)
         variant_id = data.get('variant_id')
-        quantity = int(data.get('quantity',1))
-        print(f"data:{data}")
+        quantity = int(data.get('quantity', 1))
         
-        #validate inputs
+        # Validate inputs
         if not variant_id or quantity < 1:
             return JsonResponse({
-                'success':False,
-                'message':'Invalid input data'
+                'success': False,
+                'message': 'Invalid input data'
             })
             
-            # get variant
+        # Get variant
         try:
-            variant = VarianceTable.objects.get(id=variant_id)
+            variant = VarianceTable.objects.select_related('product').get(id=variant_id)
+            product_price = variant.product.sale_Price  # Get the price from product
         except VarianceTable.DoesNotExist:
             return JsonResponse({
-                'success':False,
-                'message':'Product variant not found'
+                'success': False,
+                'message': 'Product variant not found'
             })
             
-        # check stock
+        # Check stock
         if variant.Stock_Quantity < quantity:
             return JsonResponse({
-                'success':False,
-                'message':f'Only {variant.Stock_Quantity} items available'
+                'success': False,
+                'message': f'Only {variant.Stock_Quantity} items available'
             })
             
-        # get or create cart
-        cart , _ = Cart.objects.get_or_create(user=request.user)
+        # Get or create cart
+        cart, _ = Cart.objects.get_or_create(user=request.user)
         
-        # get or create cart item
-        cart_item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            product_variant=variant,
-            defaults={'quantity':0}
-        )
+        try:
+            # Get or create cart item
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                product_variant=variant,
+                defaults={
+                    'quantity': quantity,
+                    'item_price': product_price,  # Use product's sale price
+                    'total_price': product_price * quantity  # Calculate initial total price
+                }
+            )
             
-        # update quantity
-        new_quantity = cart_item.quantity + quantity
-        if new_quantity > variant.Stock_Quantity:
+            if not created:
+                # Update quantity if item already exists
+                new_quantity = cart_item.quantity + quantity
+                if new_quantity > variant.Stock_Quantity:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Cannot add {quantity} more items. Stock limit reached.'
+                    })
+                cart_item.quantity = new_quantity
+                cart_item.save()  # This will trigger the save method which updates total_price
+            
+            cart.update_total()
+            
+            # Return success response with updated cart info
+            return JsonResponse({
+                'success': True,
+                'message': 'Product added to cart successfully',
+                'cart_count': cart.total_items,
+                'cart_total': float(cart.grand_total)
+            })
+            
+        except ValidationError as e:
             return JsonResponse({
                 'success': False,
-                'message': f'Cannot add {quantity} more items. Stock limit reached.'
+                'message': str(e)
             })
-        cart_item.quantity = new_quantity
-        cart_item.save()
-        cart.update_total()
             
-            
-        #return success response with updated cart info
-        return JsonResponse({
-                'success':False,
-                'message':'Product added to cart sucessfully',
-                'cart_count':cart.total_items,
-                'cart_total':float(cart.grand_total)
-            })
-        
-        
-    except (ValueError, ValidationError) as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        })
     except Exception as e:
+        print(f"Error in add_to_cart: {str(e)}")  # For debugging
         return JsonResponse({
             'success': False,
             'message': 'An error occurred while adding to cart'
@@ -517,13 +535,14 @@ def cart(request):
         'product_variant__product',
         'product_variant__size',
         'product_variant__color'
+        
     ).prefetch_related(
-        'product_variant__product__images'
+        'product_variant__images'
     ).all()
     
     print("Cart Items:", cart_items.count())
     
-    subtotal = cart.grand_total
+    subtotal = Decimal(cart.grand_total)
     tax_rate = Decimal(0.10)
     tax_amount = subtotal * tax_rate
     total = subtotal + tax_amount
@@ -616,7 +635,9 @@ def remove_from_cart(request, item_id):
             
         })
 ################################################################################################################################################################################        
+import logging
 
+logger = logging.getLogger(__name__)
 @login_required
 def clear_cart(request):
     if request.method == 'POST':
@@ -669,30 +690,30 @@ def add_address(request):
 #####################################################################################################################################################################################################
 @login_required
 def checkout(request):
-    #getting the user's cart
+    # Existing code remains the same until context
     try:
         cart = Cart.objects.get(user=request.user)
-        #getting cart items associated with that cart
         cart_items = CartItem.objects.filter(cart=cart)
     except Cart.DoesNotExist:
         cart_items = []
         cart = None
 
-    # Get user's addresses
     user_addresses = Address.objects.filter(user=request.user)
     
-    # Calculate totals
     cart_total = 0
     if cart_items:
         cart_total = cart_items.aggregate(
             total=Sum('total_price')
         )['total'] or 0
     
-    delivery_charge = 40  
-    coupon_discount = 100
-    # request.session.get('coupon_discount', 0)
+    delivery_charge = 0  
+    coupon_discount = 0
     
     total_amount = cart_total + delivery_charge - coupon_discount
+    
+    
+    wallet = request.user.wallet
+    has_sufficient_balance = wallet.has_sufficient_balance(total_amount)
     
     context = {
         'user_addresses': user_addresses,
@@ -701,175 +722,274 @@ def checkout(request):
         'delivery_charge': delivery_charge,
         'coupon_discount': coupon_discount,
         'total_amount': total_amount,
-        'address_form': AddressForm()
+        'address_form': AddressForm(),
+        'wallet_balance':wallet.balance,
+        'has_sufficient_balance': has_sufficient_balance
     }
     
     return render(request, 'user/checkout.html', context)
-##############################################################################################################################################################################################################################
 
 @login_required
 def create_order(request):
     if request.method == 'POST':
         try:
-            print("Debug: POST data:", request.POST)
-            print(f"Debug: User ID: {request.user.id}")
-            print(f"Debug: Username: {request.user.username}")
-            
-            # Check if user has an active cart
-            cart_exists = Cart.objects.filter(user=request.user, is_active=True).exists()
-            print(f"Debug: Active cart exists: {cart_exists}")
-            
-            # with transaction.atomic():
-            print("Debug: Starting order creation")
-                
-                #getting the cart
-            try:
-                    
-                    cart = Cart.objects.select_related('user').prefetch_related(
-                        'items', # Prefetch all related CartItem objects 
-                        'items__product_variant' # prefetch the product variants for those CartItems
-                    ).get(
-                        user=request.user,
-                        is_active=True
-                        )
-                    
-                    print(f"Debug: Cart ID: {cart.id}")
-                    print(f"Debug: Cart items count: {cart.items.count()}")
-                    
-            except Cart.DoesNotExist:
-                    print("Debug: No active cart found")
-                    messages.error(request, "No active cart found")
-                    return redirect('cart')
-            except Exception as e:
-                    print(f"Debug: Error fetching cart: {str(e)}")
-                    raise
-                
-                #getting address 
+            # Validate cart
+            cart = Cart.objects.select_related('user').prefetch_related(
+                'items',
+                'items__product_variant',
+                'items__product_variant__product'
+            ).get(user=request.user, is_active=True)
+
+
+            # Validate address
             address_id = request.POST.get('address')
-            print(f"Debug: Address ID received: {address_id}")
             if not address_id:
-                    messages.error(request, "Please select a delivery address")
+                messages.error(request, "Please select a delivery address")
+                return redirect('checkout')
+            address = Address.objects.get(id=address_id, user=request.user)
+
+
+            # Validate payment method
+            payment_method = request.POST.get('payment_method')
+            if payment_method not in ['COD', 'WALLET', 'UPI']:
+                messages.error(request, "Invalid payment method")
+                return redirect('checkout')
+
+
+            # Calculate total
+            total_amount = Decimal('0')
+            for item in cart.items.all():
+                if item.product_variant.Stock_Quantity < item.quantity:
+                    raise ValueError(f"Sorry, {item.product_variant} is out of stock")
+                total_amount += item.product_variant.product.sale_Price * item.quantity
+
+
+            if total_amount <= 0:
+                messages.error(request, "Invalid order amount")
+                return redirect('checkout')
+
+            # Generate order ID
+            order_id = f"ORD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+            
+            if payment_method == 'WALLET':
+                #check wallet balance
+                wallet = request.user.wallet
+                if not wallet.has_sufficient_balance(total_amount):
+                    messages.error(request, "Insufficient wallet balance")
                     return redirect('checkout')
                 
-            address = Address.objects.get(id=address_id, user=request.user)
-            print(address)
-                
-            #getting payment method
-            payment_method = request.POST.get('payment_method')
-            print(f"Debug: Payment method received: {payment_method}")
-            if payment_method not in ['COD','CARD','UPI']:
-                messages.error(request,"Invalid payment method")
-                return redirect('checkout')
-                
-                
-                #calculating total amount
-            total_amount = sum(
-                item.quantity * item.product_variant.Price 
-                for item in cart.items.all()
-                )
-            print(f"Debug:total={total_amount}")
-                
-            #generate unique order ID
-            order_id = f"ORD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-            print(f"Debug:orderid={order_id}")
-                
-                #creating order
-            order = Order.objects.create(
-                    order_id = order_id,
-                    user = request.user,
-                    shipping_address=address,
-                    payment_method = payment_method,
-                    total_amount = total_amount,
-                    order_status = 'PENDING',
-                    payment_status = 'PENDING' if payment_method == 'COD' else 'PAID'
-                )
-            print(f"Debug:order={order.user}{order.shipping_address}")
-                
-                
-            #creating order items
-            order_items = []
-            print("Debug: Starting order items creation...")
-               
-                
-            print(f"Debug: Number of cart items: {cart.items.count()}")
-            cart_items = list(cart.items.all())
-            print(f"Debug: Cart items list: {cart_items}")
-                
-            for cart_item in cart_items:
-                    try:
-                        print(f"Debug: Cart Item: {cart_item}")
-                        print(f"Debug: Variant: {cart_item.product_variant}")
-                    
+                try:
+                    with transaction.atomic():
+                        #processing wallet payment
+                        wallet.debit(total_amount,f"Payment for order #{order_id}")
                         
-                        print(f"Debug: Has product reference: {hasattr(cart_item.product_variant, 'product')}")
+                        #creating the order with paid status
+                        order = create_order_instance(
+                            order_id=order_id,
+                            user=request.user,
+                            address=address,
+                            payment_method=payment_method,
+                            total_amount=total_amount,
+                            cart=cart,
+                            payment_status='PAID'
+                        )
                     
-                    
-                        product_name = getattr(cart_item.product_variant.product, 'name', 'Unknown') if hasattr(cart_item.product_variant, 'product') else 'No Product Reference'
-                        print(f"Debug: Product name: {product_name}")
-                    
+                    messages.success(request, f"Order placed successfully! Order ID: {order_id}")
+                    return redirect('order_confirmation', order_id=order_id)
+                
+                except Exception as e:
+                    # If anything fails, transaction will be rolled back
+                    messages.error(request, f"Error processing wallet payment: {str(e)}")
+                    return redirect('checkout')
+            
+            elif payment_method == 'UPI':
+                # Store necessary data in session instead of creating order
+                request.session['pending_order'] = {
+                    'address_id': address_id,
+                    'total_amount': str(total_amount),  # Convert Decimal to string for session
+                    'cart_items': [
+                        {
+                            'variant_id': item.product_variant.id,
+                            'quantity': item.quantity,
+                            'price': str(item.product_variant.product.sale_Price)
+                        } for item in cart.items.all()
+                    ]
+                }
 
-                    # Check stock
-                        if cart_item.product_variant.Stock_Quantity < cart_item.quantity:
-                            raise ValueError(f"Sorry, {cart_item.product_variant} is out of stock")
-                        
-                        # Decrease the stock quantity
-                        cart_item.product_variant.Stock_Quantity -= cart_item.quantity
-                        cart_item.product_variant.save()  # Save the updated quantity
-                        print(f"Debug: Decreased stock for {product_name}. New quantity: {cart_item.product_variant.Stock_Quantity}")
-        
-                    
-                    
-                        try:
-                            
-                            # Create order item
-                            order_item = OrderItem(
-                                order=order,
-                                variant=cart_item.product_variant,
-                                quantity=cart_item.quantity,
-                                price_per_item=cart_item.product_variant.Price,
-                                total_amount=cart_item.quantity * cart_item.product_variant.Price
-                            )
-                            order_items.append(order_item)
-                            
-                            print(f"Debug: Successfully created order item for variant: {cart_item.product_variant}")
-                        except Exception as item_error:
-                            print(f"Debug: Error creating order item: {str(item_error)}")
-                        
-                    except Exception as e:
-                        print(f"Error processing cart item: {e}")
-    
-            #bulk creating the items
-            print(f"Debug: About to create {len(order_items)} order items")
-            OrderItem.objects.bulk_create(order_items)
-            print("Debug: Finished creating order items")
-                
-            #clearing cart
-            for cart_item in cart_items:
-                cart_item.delete()
-            print("Debug: Purchased items deleted from cart")   
+                # Create PayPal payment
+                paypal_dict = {
+                    'business': settings.PAYPAL_RECEIVER_EMAIL,
+                    'amount': str(f"{total_amount:.2f}"),
+                    'item_name': f'Order for {request.user.username}',
+                    'invoice': f"TEMP-{uuid.uuid4().hex[:6].upper()}",
+                    'currency_code': 'USD',
+                    'notify_url': request.build_absolute_uri(reverse('paypal-ipn')),
+                    'return_url': request.build_absolute_uri(reverse('payment_success')),
+                    'cancel_return': request.build_absolute_uri(reverse('payment_cancelled')),
+                }
+                print(f"paypal_dict:{paypal_dict}")
+                logger.info(f"PayPal payment initiated with: {paypal_dict}")
+
+                form = PayPalPaymentsForm(initial=paypal_dict)
+                return render(request, 'user/process_payment.html', {
+                    'form': form,
+                    'total_amount': total_amount
+                })
             
-            
-                
-                
-            messages.success(request, f"Order placed successfully orderid: {order_id}")
-            return redirect('order_confirmation', order_id=order_id)
-                
-            
-                              
-        except Address.DoesNotExist:
-            messages.error(request, "Invalid delivery address")
-            return redirect('checkout')
-            
-        except ValueError as e:
-            messages.error(request, str(e))
-            return redirect('checkout')
-            
+            else:  #handle COD 
+                # Create order
+                order = Order.objects.create(
+                    order_id=order_id,
+                    user=request.user,
+                    shipping_address=address,
+                    payment_method=payment_method,
+                    total_amount=total_amount,
+                    order_status='PENDING',
+                    payment_status='PENDING' if payment_method == 'COD' else 'PAID'
+                )
+
+
+                messages.success(request, f"Order placed successfully! Order ID: {order_id}")
+                return redirect('order_confirmation', order_id=order_id)
+
         except Exception as e:
-            messages.error(request, "Something went wrong. Please try again.")
+            messages.error(request, str(e))
             return redirect('checkout')
 
     return redirect('checkout')
-##################################################################################################################################################################################
+
+def create_order_instance(order_id, user, address, payment_method, total_amount, cart, payment_status):
+    """helper function to create order and order items"""
+    with transaction.atomic():
+        # Create order
+        order = Order.objects.create(
+            order_id=order_id,
+            user=user,
+            shipping_address=address,
+            payment_method=payment_method,
+            total_amount=total_amount,
+            order_status='PENDING',
+            payment_status=payment_status
+        )
+
+        # Create order items and update stock
+        order_items = []
+        for cart_item in cart.items.all():
+            cart_item.product_variant.Stock_Quantity -= cart_item.quantity
+            cart_item.product_variant.save()
+            
+            product = cart_item.product_variant.product
+            product.product_quantity = product.variances.aggregate(
+                total=Sum('Stock_Quantity')
+            )['total'] or 0
+            product.save()
+            
+            order_items.append(OrderItem(
+                order=order,
+                variant=cart_item.product_variant,
+                quantity=cart_item.quantity,
+                price_per_item=cart_item.product_variant.product.sale_Price,
+                total_amount=cart_item.quantity * cart_item.product_variant.product.sale_Price
+            ))
+        
+        OrderItem.objects.bulk_create(order_items)
+        cart.items.all().delete()
+        
+        return order
+
+@csrf_exempt
+def payment_success(request):
+    pending_order = request.session.get('pending_order')
+    if not pending_order:
+        messages.error(request, "No pending order found")
+        return redirect('home')
+
+    try:
+        # Get address
+        address = Address.objects.get(
+            id=pending_order['address_id'],
+            user=request.user
+        )
+
+        # Create order
+        order_id = f"ORD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+        order = Order.objects.create(
+            order_id=order_id,
+            user=request.user,
+            shipping_address=address,
+            payment_method='UPI',
+            total_amount=Decimal(pending_order['total_amount']),
+            order_status='PENDING',
+            payment_status='PAID'
+        )
+
+        # Create order items
+        order_items = []
+        for item in pending_order['cart_items']:
+            variant = VarianceTable.objects.get(id=item['variant_id'])
+            quantity = item['quantity']
+            
+            if variant.Stock_Quantity < quantity:
+                order.delete()
+                raise ValueError(f"Sorry, {variant} is out of stock")
+                
+            variant.Stock_Quantity -= quantity
+            variant.save()
+            
+            order_items.append(OrderItem(
+                order=order,
+                variant=variant,
+                quantity=quantity,
+                price_per_item=Decimal(item['price']),
+                total_amount=Decimal(item['price']) * quantity
+            ))
+        
+        OrderItem.objects.bulk_create(order_items)
+        
+        # Clear cart
+        cart = Cart.objects.get(user=request.user)
+        cart.items.all().delete()
+        
+        # Clear session
+        del request.session['pending_order']
+        
+        messages.success(request, "Payment completed successfully!")
+        return redirect('order_confirmation', order_id=order_id)
+        
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect('checkout')
+
+@csrf_exempt
+def payment_cancelled(request):
+    if 'pending_order' in request.session:
+        del request.session['pending_order']
+    messages.warning(request, "Payment was cancelled")
+    return redirect('checkout')
+
+
+
+
+#configuring Instant Payment Notification IPN
+from paypal.standard.ipn.signals import valid_ipn_received
+from django.dispatch import receiver
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+@receiver(valid_ipn_received)
+def payment_notification(sender, **kwargs):
+    ipn_obj = sender
+    logger.info(f"PayPal IPN received: {ipn_obj.payment_status}")
+    if ipn_obj.payment_status == 'Completed':
+        try:
+            order = Order.objects.get(order_id=ipn_obj.invoice)
+            order.payment_status = 'PAID'
+            order.save()
+            logger.info(f"Order {ipn_obj.invoice} payment updated to PAID")
+        except Order.DoesNotExist:
+            logger.warning(f"No order found for invoice {ipn_obj.invoice}")
 
 @login_required
 def order_confirmation(request, order_id):
@@ -889,8 +1009,7 @@ def order_confirmation(request, order_id):
     except Order.DoesNotExist:
         messages.error(request, "Order not found")
         return redirect('home')
-##########################################################################################################################################################################################
-
+##############################################################################################################################################################################################
 @login_required
 def user_profile(request):
     return render(request,'user/user_profile.html',{'user':request.user})
@@ -1095,20 +1214,34 @@ def cancel_order(request, order_id):
     else:
         form = CancellationForm(request.POST)
         if form.is_valid():
-            order.order_status = 'CANCELED'
-            order.canceled_date = datetime.datetime.now()
-            order.cancellation_reason = form.cleaned_data['reason']
-            order.save()
-            
-            
-            if order.payment_status == 'PAID':
-                order.payment_status = 'REFUNDED'
-                order.refund_amount = order.total_amount
-                order.refund_date = datetime.datetime.now()
-                order.save()
-            
-            messages.success(request, 'Your order has been canceled successfully.')
-            return redirect('order_list')
+            try:
+                with transaction.atomic():
+                    order.order_status = 'CANCELED'
+                    order.canceled_date = datetime.datetime.now()
+                    order.cancellation_reason = form.cleaned_data['reason']
+                    
+                    #handleing refund based on payment method
+                    if order.payment_status == 'PAID':
+                        order.payment_status = 'REFUNDED'
+                        order.refund_amount = order.total_amount
+                        order.refund_date = datetime.datetime.now()
+                        
+                        #if payment was made via UPI refund to wallet
+                        if order.payment_method == 'UPI':
+                            request.user.wallet.credit(
+                                amount=order.total_amount,
+                                description=f"Refund for canceled order #{order.order_id}"
+                            )
+                            messages.success(request, f'₹{order.total_amount} has been credited to your wallet')
+                    
+                    order.save()
+                    messages.success(request, 'Your order has been canceled successfully.')
+                    
+                return redirect('order_list')
+                
+            except Exception as e:
+                messages.error(request, f'Error processing cancellation: {str(e)}')
+                return redirect('order_detail', order_id=order_id)
     
     return render(request, 'user/cancel_order.html', {
         'order': order,
@@ -1120,7 +1253,6 @@ def cancel_order_item(request, order_id, item_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
     
-    #checking if order item can be canceled
     if order.order_status in ['DELIVERED', 'CANCELED', 'RETURNED'] or item.is_returned:
         messages.error(request, 'This item cannot be canceled.')
         return redirect('order_detail', order_id=order_id)
@@ -1130,36 +1262,301 @@ def cancel_order_item(request, order_id, item_id):
     else:
         form = CancellationForm(request.POST)
         if form.is_valid():
-            
-            item.is_returned = True
-            item.return_date = datetime.datetime.now()
-            item.return_reason = form.cleaned_data['reason']
-            item.save()
-            
-            # Recalculate order total
-            remaining_items = order.items.filter(is_returned=False)
-            if remaining_items.count() == 0:
-                # Cancel entire order if no items left
-                order.order_status = 'CANCELED'
-                order.canceled_date = datetime.datetime.now()
-                order.cancellation_reason = "All items canceled"
-            else:
-                # Update order total
-                new_total = sum(item.total_amount for item in remaining_items)
-                order.total_amount = new_total
-            
-            # Handle refund for the specific item
-            if order.payment_status == 'PAID':
-                order.refund_amount = (order.refund_amount or 0) + item.total_amount
-                order.refund_date = datetime.datetime.now()
-            
-            order.save()
-            
-            messages.success(request, 'The item has been canceled successfully.')
-            return redirect('order_detail', order_id=order_id)
+            try:
+                with transaction.atomic():
+                    item.is_returned = True
+                    item.return_date = datetime.datetime.now()
+                    item.return_reason = form.cleaned_data['reason']
+                    item.save()
+                    
+                    #recalculateing order total
+                    remaining_items = order.items.filter(is_returned=False)
+                    if remaining_items.count() == 0:
+                        order.order_status = 'CANCELED'
+                        order.canceled_date = datetime.datetime.now()
+                        order.cancellation_reason = "All items canceled"
+                    else:
+                        new_total = sum(item.total_amount for item in remaining_items)
+                        order.total_amount = new_total
+                    
+                    #handleing refund for the specific item
+                    if order.payment_status == 'PAID':
+                        refund_amount = item.total_amount
+                        order.refund_amount = (order.refund_amount or 0) + refund_amount
+                        order.refund_date = datetime.datetime.now()
+                        
+                        #if payment was made via UPI refund to wallet
+                        if order.payment_method == 'UPI':
+                            request.user.wallet.credit(
+                                amount=refund_amount,
+                                description=f"Refund for canceled item from order #{order.order_id}"
+                            )
+                            messages.success(request, f'₹{refund_amount} has been credited to your wallet')
+                    
+                    order.save()
+                    messages.success(request, 'The item has been canceled successfully.')
+                    
+                return redirect('order_detail', order_id=order_id)
+                
+            except Exception as e:
+                messages.error(request, f'Error processing cancellation: {str(e)}')
+                return redirect('order_detail', order_id=order_id)
     
     return render(request, 'user/cancel_order_item.html', {
         'order': order,
         'item': item,
         'form': form
     })
+######################################################################################################################################################################################################
+
+@login_required
+@require_POST
+def toggle_wishlist(request, product_id):
+    try:
+        product = get_object_or_404(ProductTable, id=product_id)
+        wishlist_item = Wishilist.objects.filter(
+            user=request.user,
+            product=product
+        ).first()
+        
+        if wishlist_item:
+            # If item exists, remove it
+            wishlist_item.delete()
+            return JsonResponse({'status': 'removed'})
+        else:
+            # If item doesn't exist, add it
+            Wishilist.objects.create(user=request.user, product=product)
+            return JsonResponse({'status': 'added'})
+            
+    except Exception as e:
+        print(f"Error in toggle_wishlist: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)
+
+
+@login_required
+@login_required
+def wishlist_view(request):
+    # Get wishlist items with all related data in a single query
+    wishlist_items = Wishilist.objects.filter(user=request.user)\
+        .select_related('product')\
+        .prefetch_related(
+            'product__variances',           # Use the correct related_name
+            'product__variances__images'    # Chain to fetch images
+        )
+    
+    # For each wishlist item get all the available variants
+    for item in wishlist_items:
+        item.available_variants = VarianceTable.objects.filter(
+            product=item.product,
+            Stock_Quantity__gt=0
+        ).select_related('size', 'color')
+    
+    context = {
+        'wishlist_items': wishlist_items
+    }
+    
+    return render(request, 'user/wishlist.html', context)
+    
+@login_required
+@require_POST
+def add_to_cart_from_wishlist(request):
+    try:
+        product_id = request.POST.get('product_id')
+        variant_id = request.POST.get('variant_id')
+        remove_from_wishlist = request.POST.get('remove_from_wishlist') == 'true'
+        
+        if not variant_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Please select a variant'
+            }, status=400)
+            
+        variant = get_object_or_404(VarianceTable, id=variant_id)
+        
+        #get or create user's cart
+        cart, _ = Cart.objects.get_or_create(user=request.user, is_active=True)
+        
+        # adding the item to cart using the model's method
+        cart.add_item(variant)
+        
+        if remove_from_wishlist:
+            Wishilist.objects.filter(
+                user=request.user,
+                product_id=product_id
+            ).delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Item added to cart successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)
+
+@login_required
+@require_POST
+def remove_from_wishlist(request, product_id):
+    try:
+        wishlist_item = Wishilist.objects.get(user=request.user, product_id=product_id)
+        wishlist_item.delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Item removed from wishlist'
+        })
+    except Wishilist.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Item not found in wishlist'
+        }, status=404)
+###############################################################################################################################################################################################################        
+        
+@login_required
+def wallet_dashboard(request):
+    wallet = request.user.wallet
+    transactions = wallet.transactions.all()[:10]  # Get last 10 transactions
+    
+    context = {
+        'wallet': wallet,
+        'transactions': transactions,
+    }
+    return render(request, 'user/wallet_dashboard.html', context)
+
+@login_required
+@require_POST
+def process_wallet_payment(request):
+    try:
+        amount = Decimal(request.POST.get('amount', 0))
+        order_id = request.POST.get('order_id')
+        
+        wallet = request.user.wallet
+        
+        if not wallet.has_sufficient_balance(amount):
+            return JsonResponse({
+                'success': False,
+                'message': 'Insufficient wallet balance'
+            })
+        
+        # Process the payment
+        wallet.debit(amount, f"Payment for order #{order_id}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Payment processed successfully',
+            'new_balance': str(wallet.balance)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+@login_required
+def process_refund_to_wallet(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id, user=request.user)
+        refund_amount = order.total_amount
+        
+        # Credit the refund amount to wallet
+        request.user.wallet.credit(
+            refund_amount,
+            f"Refund for order #{order_id}"
+        )
+        
+        # Update order status
+        order.status = 'refunded'
+        order.save()
+        
+        messages.success(request, f'Refund of {refund_amount} has been credited to your wallet')
+        return redirect('wallet_dashboard')
+    except Exception as e:
+        messages.error(request, f'Error processing refund: {str(e)}')
+        return redirect('order_detail', order_id=order_id)
+    
+
+@login_required
+def return_order(request, order_id):
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
+    
+    #checking if the order can be returned only delivered oreders
+    if order.order_status != 'DELIVERED':
+        messages.error(request, 'Only delivered orders can be returned')
+        return redirect ('order_detail', order_id=order_id)
+    
+    
+    #check if return period has expired 
+    # return_window = timezone.now() - timezone.timedelta(days=7)
+    # if order.delivered_date and order.delivered_date < return_window:
+    #     messages.error(request, 'Return period has expired')
+    #     return redirect('order_details', order_id=order_id)
+    
+    if request.method == 'GET':
+        form = ReturnForm()
+        return render(request, 'user/return_order.html',{
+            'order':order,
+            'form':form
+        })
+        
+    form = ReturnForm(request.POST)
+    if form.is_valid():
+        try:
+            with transaction.atomic():
+                #creating return entries for selected items
+                selected_items = request.POST.getlist('return_items')
+                if not selected_items:
+                    messages.error(request, 'Please select at least one item to return')
+                    return redirect('return_order',order_id=order_id)
+                
+                total_refund = 0
+                for item_id in selected_items:
+                    item = get_object_or_404(OrderItem, id=item_id, order=order)
+                    
+                    #checking if the item is already returned
+                    if hasattr(item, 'returneditem'):
+                        continue
+                    
+                    #creating return record
+                    ReturnedItem.objects.create(
+                        order_item = item,
+                        return_reason=form.cleaned_data['reason']
+                    )
+                    
+                    total_refund += item.total_amount
+                
+                #updating order status if all items are returned
+                all_items_returned = all(
+                    hasattr(item, 'returneditem') 
+                    for item in order.items.all()
+                )
+                if all_items_returned:
+                    order.order_status = 'RETURNED'
+                    
+                #processing refund to wallet
+                if total_refund > 0:
+                    request.user.wallet.credit(
+                        amount=total_refund,
+                        description=f"Refund for returned items from order #{order.order_id}"
+                    )
+                    messages.success(
+                        request, 
+                        f'₹{total_refund} has been credited to your wallet'
+                    )
+                
+                order.save()
+                messages.success(request, 'Return request submitted successfully.')
+                return redirect('order_detail', order_id=order_id)
+                
+        except Exception as e:
+            messages.error(request, f'Error processing return: {str(e)}')
+            return redirect('order_detail', order_id=order_id)
+    
+    return render(request, 'user/return_order.html', {
+        'order': order,
+        'form': form
+    })
+                    

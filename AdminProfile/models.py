@@ -3,6 +3,9 @@ from UserProfile.models import UserTable
 from decimal import Decimal
 from django.core.validators import MinValueValidator
 from UserProfile.models import UserTable,Address
+from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Product(models.Model):
     name = models.CharField(max_length=150, null=False, blank=False)
@@ -48,13 +51,12 @@ class Category(models.Model):
 class ProductTable(models.Model):
     name = models.CharField(max_length=50)
     base_price = models.DecimalField(max_digits=7, decimal_places=2)
-    product_quantity = models.IntegerField()
+    product_quantity = models.IntegerField(default=0)
     category = models.ForeignKey(Category, related_name="products", on_delete=models.CASCADE,null=True,blank=True)
     sale_Price = models.DecimalField(max_digits=7, decimal_places=2)
     description = models.TextField()
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
-    Is_active = models.BooleanField(default=True)
     Is_deleted = models.BooleanField(default = False)
     
     def __str__(self):
@@ -63,7 +65,7 @@ class ProductTable(models.Model):
     class Meta:
         db_table = 'ProductTable'
 
-
+######################################################################################################################################################################################
 class Size(models.Model):
     size = models.CharField(max_length=50)
     
@@ -74,7 +76,7 @@ class Size(models.Model):
     class Meta:
         db_table = 'size'
 
-
+############################################################################################################################################################################
 class Color(models.Model):
     color = models.CharField(max_length=50)
     
@@ -84,32 +86,32 @@ class Color(models.Model):
     class Meta:
         db_table = 'color'
         
-        
+###########################################################################################################################################################################        
 class VarianceTable(models.Model):
-    product = models.ForeignKey("ProductTable", verbose_name="variances", on_delete=models.CASCADE,null=True,blank=True)
+    product = models.ForeignKey("ProductTable", related_name="variances", on_delete=models.CASCADE,null=True,blank=True)
     size = models.ForeignKey("Size",on_delete=models.CASCADE,null=True,blank=True)
     color = models.ForeignKey("Color",on_delete=models.CASCADE,null=True,blank=True)
     Stock_Quantity = models.PositiveIntegerField()
-    Price = models.DecimalField(max_digits=10, decimal_places=2)
+    
     
     def __str__(self):
-        return f"{self.product.name}{self.color.color} - {self.size.size}"
+        return f"{self.product.name} - {self.color.color} - {self.size.size}"
     
     class Meta:
         db_table = 'variance_table'
     
-    
+###################################################################################################################################################################   
 class Product_Images_Table(models.Model):
-    product = models.ForeignKey(ProductTable,related_name="images", on_delete=models.CASCADE)
+    variant = models.ForeignKey(VarianceTable, related_name="images", on_delete=models.CASCADE,null=True,blank=True)
     image = models.ImageField(upload_to="products/")
     
     def __str__(self):
-        return f"Image for {self.product.name}"
+        return f"Image for {self.variant.product.name}"
     
     class Meta:
         db_table = 'Product_Images_Table'
         
-
+############################################################################################################################################################################
 class Cart(models.Model):
     user = models.OneToOneField(UserTable,
                                 on_delete=models.CASCADE,
@@ -221,7 +223,7 @@ class CartItem(models.Model):
     def save(self,*args,**kwargs):
         "save with validation and price calculation"
         self.clean()
-        self.item_price = self.product_variant.Price
+        self.item_price = self.product_variant.product.sale_Price
         self.total_price = round(self.quantity * self.item_price, 2)
         super().save(*args,**kwargs)
         self.cart.update_total()
@@ -232,7 +234,7 @@ class CartItem(models.Model):
         #for preventing duplications
         unique_together = ['cart','product_variant']
         ordering = ['-added_at']
-        
+#####################################################################################################################################################################################        
 class Order(models.Model):
     STATUS_CHOICES = (
         ('PENDING', 'Pending'),
@@ -304,8 +306,8 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order,related_name='items', on_delete=models.CASCADE,blank=True,null=True)
-    product = models.ForeignKey(Product,on_delete=models.PROTECT,blank=True,null=True)
-    variant = models.ForeignKey(VarianceTable,on_delete=models.PROTECT,blank=True,null=True)
+    product = models.ForeignKey(Product,on_delete=models.CASCADE,blank=True,null=True)
+    variant = models.ForeignKey(VarianceTable,on_delete=models.CASCADE,blank=True,null=True)
     quantity = models.PositiveIntegerField()
     price_per_item = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -332,3 +334,96 @@ class OrderItem(models.Model):
         #calculatting total amount
         self.total_amount = Decimal(self.quantity) * self.price_per_item - self.discount_amount
         super().save(*args, **kwargs)
+        
+        
+class Wishilist(models.Model):
+    user = models.ForeignKey(UserTable, related_name='wishilist', on_delete=models.CASCADE,null=True,blank=True)
+    product = models.ForeignKey(ProductTable, related_name="Wishilisted_by", on_delete=models.CASCADE,null=True,blank=True)
+    added_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'Wishilist'
+        #ensuring a user can't add the same product multiple times
+        unique_together = ['user','product']
+        ordering = ['-added_at']
+        
+        
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}"
+    
+#############################################################################################################################################################################################
+class Wallet(models.Model):
+    wallet_id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(UserTable, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Wallet of {self.user.username}"
+
+    def has_sufficient_balance(self, amount):
+        return self.balance >= Decimal(str(amount))
+
+    def debit(self, amount, description=""):
+        if not self.has_sufficient_balance(amount):
+            raise ValidationError("Insufficient balance in wallet")
+        
+        self.balance -= Decimal(str(amount))
+        self.save()
+        
+        WalletTransaction.objects.create(
+            wallet=self,
+            transaction_type='debit',
+            transaction_amount=amount,
+            description=description
+        )
+
+    def credit(self, amount, description=""):
+        self.balance += Decimal(str(amount))
+        self.save()
+        
+        WalletTransaction.objects.create(
+            wallet=self,
+            transaction_type='credit',
+            transaction_amount=amount,
+            description=description
+        )
+
+class WalletTransaction(models.Model):
+    TRANSACTION_TYPES = (
+        ('credit', 'Credit'),
+        ('debit', 'Debit'),
+    )
+    
+    transaction_id = models.AutoField(primary_key=True)
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    transaction_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.transaction_type.title()} of {self.transaction_amount} on {self.created_at.strftime('%Y-%m-%d')}"
+
+# Signal to create wallet when user is created
+@receiver(post_save, sender=UserTable)
+def create_user_wallet(sender, instance, created, **kwargs):
+    if created:
+        Wallet.objects.create(user=instance)
+        
+####################################################################################################################################################################################
+class ReturnedItem(models.Model):
+    order_item = models.OneToOneField(OrderItem,on_delete=models.CASCADE)
+    return_date = models.DateTimeField(auto_now_add=True)
+    return_reason = models.TextField()
+    status = models.CharField(max_length=20, choices=[
+        ('PENDING','Pending'),
+        ('APPROVED','Approved'),
+        ('REJECTED','Rejected')
+    ], default='PENDING')
+    
+    
+        

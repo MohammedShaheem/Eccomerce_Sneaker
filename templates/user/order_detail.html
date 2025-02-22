@@ -267,6 +267,18 @@
             </div>
         </div>
         {% endif %}
+        {% if order.order_status == 'DELIVERED' %}
+            {% with has_returnable_items=order.items.exists %}
+                {% if has_returnable_items %}
+                    <div class="mt-4">
+                        <a href="{% url 'return_order' order_id=order.order_id %}" 
+                        class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md inline-block">
+                            Return Items
+                        </a>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% endif %}
     </div>
     <!-- Footer -->
     <footer class="bg-black text-white py-6">

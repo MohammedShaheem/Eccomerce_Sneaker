@@ -199,8 +199,7 @@ def add_products(request):
         form = ProductForm(request.POST, request.FILES)
         
         if form.is_valid():
-            try:
-                with transaction.atomic():
+                try:
                     # Check if product already exists
                     product_name = form.cleaned_data.get('name')
                     if ProductTable.objects.filter(name__iexact=product_name).exists():
@@ -213,38 +212,6 @@ def add_products(request):
                     # Save the product
                     product = form.save()
                     
-                    # Handle product images
-                    files = request.FILES.getlist('product_images')
-                    if not files:
-                        messages.warning(request, 'No product images were uploaded')
-                    
-                    for file in files:
-                        if file.content_type.startswith('image'):
-                            if file.size <= 5 * 1024 * 1024:  # 5MB limit
-                                Product_Images_Table.objects.create(
-                                    product=product,
-                                    image=file
-                                )
-                            else:
-                                raise ValidationError(f'Image {file.name} exceeds 5MB size limit')
-                        else:
-                            raise ValidationError(f'File {file.name} is not a valid image')
-                    
-                    # Handle color
-                    color_name = form.cleaned_data.get('color')
-                    color_obj = None
-                    if color_name:
-                        color_obj, _ = Color.objects.get_or_create(color=color_name.strip())
-                    
-                    # Create variance entry
-                    VarianceTable.objects.create(
-                        product=product,
-                        size=form.cleaned_data['size'],
-                        color=color_obj,
-                        Stock_Quantity=form.cleaned_data['product_quantity'],
-                        Price=form.cleaned_data['base_price']
-                    )
-                    
                     # Update category total products
                     category = product.category
                     if category:
@@ -254,12 +221,12 @@ def add_products(request):
                     messages.success(request, f'Product "{product_name}" added successfully')
                     return redirect('products')  # Make sure this URL name exists
                     
-            except ValidationError as e:
-                messages.error(request, str(e))
-                transaction.set_rollback(True)
-            except Exception as e:
-                messages.error(request, f'Error saving product: {str(e)}')
-                transaction.set_rollback(True)
+                except ValidationError as e:
+                    messages.error(request, str(e))
+                
+                except Exception as e:
+                    messages.error(request, f'Error saving product: {str(e)}')
+                
         else:
             # Form validation errors
             for field, errors in form.errors.items():
@@ -278,7 +245,7 @@ def add_products(request):
     context = {
         'form': form,
         'existing_products': json.dumps(existing_products),
-        'title': 'Add Product'  # For template title
+        'title': 'Add Product' 
     }
     
     return render(request, 'admin/add-product.html', context)
@@ -287,19 +254,25 @@ def add_products(request):
 @login_required
 def products(request):
     products = ProductTable.objects.select_related('category').prefetch_related(
-        'variancetable_set__size',
-        'variancetable_set__color'
-    )
+        'variances__size',  
+        'variances__color'
+    ).filter(Is_deleted=False)  
     
-    search_query = request.GET.get('q','')
+    search_query = request.GET.get('q', '')
     
     if search_query:
-        products = ProductTable.objects.filter(name__icontains=search_query)
+        products = ProductTable.objects.filter(
+            name__icontains=search_query,
+            Is_deleted=False  
+        )
         
     else:
-        products = ProductTable.objects.all() 
+        products = ProductTable.objects.filter(Is_deleted=False)  
     
-    return render(request,'admin/products.html',{'products':products, 'search_query':search_query})
+    return render(request, 'admin/products.html', {
+        'products': products, 
+        'search_query': search_query
+    })
 
 
 ###############################################################################################################################################################################
@@ -337,35 +310,56 @@ def add_variant(request, product_id):
     
     if request.method == 'POST':
         form = VariantForm(request.POST, request.FILES)
+        
+        # Handle color
+        color_name = request.POST.get('color', '').strip()
+        color_obj = None
+        
+        if color_name:
+            try:    
+                # First try to get existing color
+                color_obj = Color.objects.filter(color=color_name).first()
+                if not color_obj:
+                    # If color doesn't exist, create and save it
+                    color_obj = Color.objects.create(color=color_name)
+            except Exception as e:
+                messages.error(request, f"Error processing color: {str(e)}")
+                return render(request, 'admin/add_variant.html', {
+                    'form': form,
+                    'product': product,
+                    'existing_images': Product_Images_Table.objects.filter(product=product)
+                })
+        
         if form.is_valid():
             try:
-                # Check for existing variant
-                existing_variant = VarianceTable.objects.filter(
-                    product=product,
-                    size=form.cleaned_data['size'],
-                    color=form.cleaned_data['color']
-                ).first()
-                
-                if existing_variant:
-                    messages.error(request, "A variant with this size and color combination already exists.")
-                    return render(request, 'admin/add_variant.html', {
-                        'form': form, 
-                        'product': product,
-                        'existing_images': Product_Images_Table.objects.filter(product=product)
-                    })
+                # Only check for existing variant if we have both color and size
+                if color_obj and form.cleaned_data['size']:
+                    existing_variant = VarianceTable.objects.filter(
+                        product=product,
+                        size=form.cleaned_data['size'],
+                        color=color_obj
+                    ).first()
+                    
+                    if existing_variant:
+                        messages.error(request, "A variant with this size and color combination already exists.")
+                        return render(request, 'admin/add_variant.html', {
+                            'form': form, 
+                            'product': product,
+                            'existing_images': Product_Images_Table.objects.filter(product=product)
+                        })
                 
                 # Create new variant
                 variant = form.save(commit=False)
                 variant.product = product
-                variant.Price = product.sale_Price
+                variant.color = color_obj
                 variant.save()
                 
-                # Handle images using form's cleaned_data
-                images = form.cleaned_data.get('images', [])
+                # Handle variant-specific images
+                images = request.FILES.getlist('images')
                 if images:
                     for image in images:
                         Product_Images_Table.objects.create(
-                            product=product,
+                            variant=variant,
                             image=image
                         )
                 
@@ -376,6 +370,16 @@ def add_variant(request, product_id):
                     ['total_quantity'] or 0
                 )
                 product.save()
+                
+                # Update category total products
+                category = product.category
+                if category:
+                    category.total_products = (
+                        ProductTable.objects.filter(category=category)
+                        .aggregate(total_quantity=Sum('product_quantity'))
+                        ['total_quantity'] or 0
+                    )
+                    category.save()
                 
                 # Success message
                 success_message = "Variant added successfully"
@@ -390,15 +394,15 @@ def add_variant(request, product_id):
                 return render(request, 'admin/add_variant.html', {
                     'form': form, 
                     'product': product,
-                    'existing_images': Product_Images_Table.objects.filter(product=product)
+                   'existing_images': Product_Images_Table.objects.filter(variant__product=product)  # Using double underscore to follow the relationship
                 })
-                
+            
             except Exception as e:
                 messages.error(request, f"Error saving variant: {str(e)}")
                 return render(request, 'admin/add_variant.html', {
                     'form': form, 
                     'product': product,
-                    'existing_images': Product_Images_Table.objects.filter(product=product)
+                    'existing_images': Product_Images_Table.objects.filter(variant__product=product)  # Using double underscore to follow the relationship
                 })
         else:
             # Form validation errors
@@ -411,32 +415,41 @@ def add_variant(request, product_id):
     context = {
         'form': form,
         'product': product,
-        'existing_images': Product_Images_Table.objects.filter(product=product)
+        'existing_images': Product_Images_Table.objects.filter(variant__product=product)  # Using double underscore to follow the relationship
+        
     }
     
     return render(request, 'admin/add_variant.html', context)
-
 ############################################################################################################################################################################### 
 @login_required
-def single_product_view(request,variance_id):
-    print(variance_id)
-    #Getting the variance records
+def single_product_view(request, variance_id):
+    # Get the current variance with related fields
     variance = get_object_or_404(VarianceTable.objects.select_related(
-        'product',
         'size',
         'color'
-    ), id=variance_id)
-    print(id)
+    ).prefetch_related('images'), id=variance_id)
     
-    product_images = Product_Images_Table.objects.filter(
-        product=variance.product,
-    )
+    # Get all variances for the same product to show options
+    related_variances = VarianceTable.objects.filter(
+        product=variance.product
+    ).select_related('size', 'color').exclude(id=variance_id)
+    
+    # Get all unique colors and sizes for this product's variances
+    available_colors = VarianceTable.objects.filter(
+        product=variance.product
+    ).values_list('color__color', flat=True).distinct()
+    
+    available_sizes = VarianceTable.objects.filter(
+        product=variance.product
+    ).values_list('size__size', flat=True).distinct()
     
     context = {
         'variance': variance,
-        'product_images': product_images,
-        
+        'related_variances': related_variances,
+        'available_colors': available_colors,
+        'available_sizes': available_sizes,
     }
+    
     return render(request, 'admin/single_product_view.html', context)
 
 ########################################################################################################################################################################################
@@ -573,8 +586,14 @@ def unblock_category(request, category_id):
 def edit_product(request, product_id):
     try:
         product = get_object_or_404(ProductTable, id=product_id, Is_deleted = False)
-        product_images = product.images.all()
         variance = VarianceTable.objects.filter(product=product).first()
+        product_images = variance.images.all()
+        
+        
+        
+        if request.method == 'POST':
+            if 'delete_product' in request.POST:
+                return redirect('delete_product', product_id=product_id)
         
         
         if request.method == 'POST':
@@ -729,6 +748,36 @@ def edit_product(request, product_id):
         return redirect('products')
     
 ############################################################################################################################################
+@login_required
+def delete_product(request, product_id):
+    try:
+        product = get_object_or_404(ProductTable, id=product_id, Is_deleted=False)
+        
+        if request.method == 'POST':
+            #soft delete the product
+            product.Is_deleted = True
+            product.save()
+            
+            #updating category total product count 
+            if product.category:
+                category = product.category
+                category.total_products = category.products.filter(Is_deleted=False).count()
+                category.save()
+                
+            messages.success(request, f"Product {product.name} hasbeen deleted successfully")
+            return redirect ('products')
+        
+        return render(request, 'admin/delete_product_confirm.html',{
+            'product':product,
+            'title':'Delete Product'
+        })
+    
+    except ProductTable.DoesNotExist:
+        messages.error(request, 'Product not found')
+        return redirect('products')
+    
+
+
 
 @login_required
 def admin_orders(request):
@@ -739,7 +788,7 @@ def admin_orders(request):
     search_query = request.GET.get('search','')
     
     
-    orders = Order.objects.all().select_related('user','shipping_address').prefetch_related('items','items__variant','items__product')
+    orders = Order.objects.all().select_related('user','shipping_address').prefetch_related('items','items__variant','items__product').order_by('-ordered_date')
     
     
     
@@ -786,3 +835,29 @@ def admin_orders(request):
     }
     
     return render(request, 'admin/admin_orders.html', context)
+
+
+@login_required
+def admin_order_detail(request, order_id):
+    order = get_object_or_404(Order.objects.select_related(
+        'user', 
+        'shipping_address'
+    ).prefetch_related(
+        'items',
+        'items__variant',
+        'items__product'
+    ), order_id=order_id)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('order_status')
+        if new_status and new_status in dict(Order.STATUS_CHOICES):
+            order.order_status = new_status
+            order.save()
+            messages.success(request, 'Order status updated successfully')
+            return redirect('admin_order_detail', order_id=order_id)
+            
+    context = {
+        'order': order,
+        'Order': Order,  # For accessing STATUS_CHOICES in template
+    }
+    return render(request, 'admin/order_detail.html', context)

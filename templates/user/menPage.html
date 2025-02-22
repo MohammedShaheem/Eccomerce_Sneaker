@@ -12,6 +12,8 @@
     <!-- Splide slider CSS and JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+    <!-- Add this somewhere in your base template -->
+    
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
 
@@ -51,10 +53,12 @@
                     </button>
 
                     <!-- Wishlist icon -->
+                    <a href="{% url 'wishlist_view' %}" class="text-gray-600 hover:text-black transition-colors">
                     <button class="p-2 relative">
                         <i class="fas fa-heart"></i>
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
                     </button>
+                    </a>
 
                     <!-- Cart icon -->
                     <a href="{% url 'cart' %}" class="p-2 relative">
@@ -120,149 +124,158 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container mx-auto py-6 px-4 lg:px-6 flex-grow">
-        <div class="flex flex-wrap lg:flex-nowrap gap-6">
-            <!-- Sidebar -->
-            <aside class="w-full lg:w-1/5">
-                <div class="bg-white shadow-md rounded-md p-5 h-fit sticky top-24">
-                    <h2 class="text-lg font-semibold mb-4 border-b pb-2">Categories</h2>
-                    
-                    <div class="mb-6">
-                        <h3 class="text-md font-medium mb-3">Ladies</h3>
-                        <ul class="space-y-2 pl-2">
-                            <li><a href="#" class="block text-gray-700 hover:text-black">Sneakers</a></li>
-                            <li><a href="#" class="block text-gray-700 hover:text-black">Heels</a></li>
-                            <li><a href="#" class="block text-gray-700 hover:text-black">Flats</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-md font-medium mb-3">Men's</h3>
-                        <ul class="space-y-2 pl-2">
-                            <li><a href="#" class="block text-gray-700 hover:text-black">Sneakers</a></li>
-                            <li><a href="#" class="block text-gray-700 hover:text-black">Boots</a></li>
-                            <li><a href="#" class="block text-gray-700 hover:text-black">Loafers</a></li>
-                        </ul>
-                    </div>
-                    
-                    <!-- Filter section -->
-                    {% comment %} <div class="mt-8">
-                        <h2 class="text-lg font-semibold mb-4 border-b pb-2">Filter</h2>
-                        
-                        <div class="mb-4">
-                            <h3 class="text-md font-medium mb-2">Price Range</h3>
-                            <div class="flex items-center">
-                                <input type="range" min="0" max="10000" value="5000" class="w-full">
-                            </div>
-                            <div class="flex justify-between text-sm mt-1">
-                                <span>₹0</span>
-                                <span>₹10,000</span>
-                            </div>
-                        </div>
-                    </div> {% endcomment %}
-                </div>
-            </aside>
-
-            <!-- Product Grid Section -->
-            <div class="w-full lg:w-4/5">
-                <!-- Sort options -->
-                <div class="bg-white shadow-md rounded-md p-4 mb-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <h2 class="text-lg font-medium">Products</h2>
-                        <div class="relative w-full sm:w-60">
-                            <select id="sort-select" onchange="applySorting()" 
-                                    class="appearance-none block w-full px-4 py-2 pr-8 bg-white border border-gray-300 rounded-md 
-                                          leading-tight focus:outline-none focus:ring-black focus:border-black text-sm">
-                                <option value="default" {% if current_sort == 'default' %}selected{% endif %}>Sort by</option>
-                                <option value="price_low_high" {% if current_sort == 'price_low_high' %}selected{% endif %}>Price: Low to High</option>
-                                <option value="price_high_low" {% if current_sort == 'price_high_low' %}selected{% endif %}>Price: High to Low</option>
-                                <option value="new_arrival" {% if current_sort == 'new_arrival' %}selected{% endif %}>New Arrivals</option>
-                                <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name: A to Z</option>
-                                <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name: Z to A</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Product Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {% for product in products %}
-                    <div class="group bg-white shadow-md rounded-lg overflow-hidden transform transition duration-200 hover:shadow-lg hover:-translate-y-1">
-                        <!-- Product Image with Wishlist Icon -->
-                        <div class="relative">
-                            <a href="{% url 'single_product_page' product.id %}" class="block">
-                                <div class="aspect-w-1 aspect-h-1 overflow-hidden">
-                                    {% with product.images.first as first_image %}
-                                        {% if first_image %}
-                                            <img src="{{ first_image.image.url }}"
-                                                alt="{{ product.name }}"
-                                                class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300">
-                                        {% else %}
-                                            <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
-                                                <span class="text-gray-400">No image</span>
-                                            </div>
-                                        {% endif %}
-                                    {% endwith %}
-                                </div>
-                            </a>
-                            
-                            <!-- Wishlist Icon -->
-                            <button class="absolute top-3 right-3 p-1.5 bg-white rounded-full shadow-md text-gray-500 hover:text-red-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <!-- Product Details -->
-                        <div class="p-4">
-                            <h3 class="text-lg font-medium truncate mb-1">{{ product.name }}</h3>
-                            <p class="text-red-600 font-bold">Rs. {{ product.sale_Price }}</p>
-                            
-                            <!-- Quick actions buttons -->
-                            <div class="flex space-x-2 mt-4">
-                                {% comment %} <button class="flex-grow py-2 bg-black text-white hover:bg-gray-800 rounded-md transition-colors text-sm font-medium">
-                                    Add to Cart
-                                </button> {% endcomment %}
-                                {% comment %} <button class="py-2 px-3 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-md transition-colors">
-                                    <i class="fas fa-eye"></i>
-                                </button> {% endcomment %}
-                            </div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="col-span-full py-16 px-4 flex flex-col items-center justify-center bg-white rounded-lg shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <p class="text-gray-500 text-lg mb-2">No products found</p>
-                        <p class="text-gray-400 text-sm mb-6 text-center max-w-md">Try adjusting your search or filter criteria, or browse our categories to find what you're looking for.</p>
-                        <a href="#" class="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors">
-                            Continue Shopping
-                        </a>
-                    </div>
-                    {% endfor %}
-                </div>
-                
-                <!-- Pagination -->
-                <div class="flex justify-center mt-8">
-                    <nav class="flex items-center space-x-1">
-                        <a href="#" class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Previous</a>
-                        <a href="#" class="px-3 py-2 rounded-md bg-black text-white">1</a>
-                        <a href="#" class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">2</a>
-                        <a href="#" class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">3</a>
-                        <span class="px-3 py-2">...</span>
-                        <a href="#" class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">10</a>
-                        <a href="#" class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Next</a>
-                    </nav>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Page Header and Sorting -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold mb-4 sm:mb-0">Men's Collection</h1>
+            
+            <!-- Sorting Dropdown -->
+            <div class="relative">
+                <select id="sort-select" onchange="applySorting()" class="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-4 pr-10 leading-tight focus:outline-none focus:border-black">
+                    <option value="default" {% if current_sort == 'default' %}selected{% endif %}>Default Sorting</option>
+                    <option value="price_low_high" {% if current_sort == 'price_low_high' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_high_low" {% if current_sort == 'price_high_low' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="new_arrival" {% if current_sort == 'new_arrival' %}selected{% endif %}>New Arrivals</option>
+                    <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name: A to Z</option>
+                    <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name: Z to A</option>
+                </select>
+                <div class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </div>
             </div>
         </div>
+    
+        <!-- Product Grid -->
+        <div data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" hidden></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for product in products %}
+            <div class="group bg-white shadow-md rounded-lg overflow-hidden transform transition duration-200 hover:shadow-xl hover:-translate-y-1 relative">
+                <!-- Out of Stock Overlay -->
+                {% if product.product_quantity == 0 %}
+                <div class="absolute inset-0 bg-black bg-opacity-50 z-10 flex items-center justify-center">
+                    <span class="bg-red-500 text-white px-4 py-2 rounded-md font-medium">Out of Stock</span>
+                </div>
+                {% endif %}
+            
+                <!-- Product Image with Wishlist -->
+                <div class="relative">
+                    <a href="{% url 'single_product_page' product.id %}" class="block">
+                        <div class="aspect-w-1 aspect-h-1 overflow-hidden">
+                            {% with first_variant=product.variances.first %}
+                                {% if first_variant and first_variant.images.first %}
+                                    <img src="{{ first_variant.images.first.image.url }}"
+                                         alt="{{ product.name }}"
+                                         class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300 {% if product.product_quantity == 0 %}opacity-50{% endif %}">
+                                {% else %}
+                                    <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                                        <span class="text-gray-400">No image</span>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </a>
+                    
+                    <!-- Wishlist Button - Disabled if out of stock -->
+                    {% if product.product_quantity > 0 %}
+                        <button onclick="toggleWishlist({{ product.id }})"
+                            class="wishlist-btn absolute top-3 right-3 p-2 bg-white rounded-full shadow-md"
+                            data-product-id="{{ product.id }}">
+                            <svg class="w-5 h-5 {% if product.id in user_wishlist_items %}text-red-500 fill-current{% else %}text-gray-500{% endif %}"
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" 
+                                    stroke-linejoin="round" 
+                                    stroke-width="2" 
+                                    d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+                            </svg>
+                        </button>
+                    {% endif %}
+                </div>
+            
+                <!-- Product Details -->
+                <div class="p-4">
+                    <h3 class="text-lg font-medium truncate mb-1">{{ product.name }}</h3>
+                    <p class="text-red-600 font-bold">Rs. {{ product.sale_Price }}</p>
+                    
+                    <!-- Stock Status -->
+                    {% if product.product_quantity > 0 %}
+                        <p class="text-green-600 text-sm mt-1">In Stock</p>
+                    {% else %}
+                        <p class="text-red-600 text-sm mt-1">Out of Stock</p>
+                    {% endif %}
+                    
+                    <!-- Product Variants -->
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        {% with product.variancetable_set.all|slice:":3" as variants %}
+                            {% for variant in variants %}
+                                <span class="inline-block px-2 py-1 text-xs bg-gray-100 rounded-md">
+                                    {{ variant.size.name }} / {{ variant.color.name }}
+                                </span>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+            
+                    <!-- Quick Action Buttons -->
+                    <div class="flex space-x-2 mt-4">
+                        <a href="{% url 'single_product_page' product.id %}" 
+                           class="flex-grow py-2 {% if product.product_quantity == 0 %}bg-gray-400 cursor-not-allowed{% else %}bg-black hover:bg-gray-800{% endif %} text-white text-center rounded-md transition-colors text-sm font-medium">
+                            {% if product.product_quantity == 0 %}
+                                Out of Stock
+                            {% else %}
+                                View Details
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full py-16 px-4 flex flex-col items-center justify-center bg-white rounded-lg shadow-md">
+                <svg class="h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p class="text-gray-500 text-lg mb-2">No products found</p>
+                <p class="text-gray-400 text-sm mb-6 text-center max-w-md">Try adjusting your search or filter criteria, or browse our categories to find what you're looking for.</p>
+                <a href="{% url 'home' %}" class="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors">
+                    Continue Shopping
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    
+        <!-- Pagination -->
+        {% if products.has_other_pages %}
+        <div class="flex justify-center mt-8">
+            <nav class="flex items-center space-x-1">
+                {% if products.has_previous %}
+                    <a href="?page={{ products.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                       class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
+                        Previous
+                    </a>
+                {% endif %}
+    
+                {% for num in products.paginator.page_range %}
+                    {% if num == products.number %}
+                        <a href="#" class="px-3 py-2 rounded-md bg-black text-white">{{ num }}</a>
+                    {% else %}
+                        <a href="?page={{ num }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                           class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
+                            {{ num }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+    
+                {% if products.has_next %}
+                    <a href="?page={{ products.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                       class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
+                        Next
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Footer -->
@@ -336,39 +349,126 @@
     </footer>
 
     <script>
-        // User dropdown functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const dropdownButton = document.getElementById('userDropdownButton');
-            const dropdownMenu = document.getElementById('userDropdownMenu');
-            
-            // Toggle dropdown on button click
-            dropdownButton.addEventListener('click', function() {
-                dropdownMenu.classList.toggle('hidden');
-            });
-            
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
-                    dropdownMenu.classList.add('hidden');
-                }
-            });
-        });
 
-        // Sorting functionality
+       function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+        async function toggleWishlist(productId) {
+            // Get the product quantity from the DOM
+            const productCard = document.querySelector(`.wishlist-btn[data-product-id="${productId}"]`).closest('.group');
+            const isOutOfStock = productCard.querySelector('.text-red-600.text-sm')?.textContent === 'Out of Stock';
+            
+            if (isOutOfStock) {
+                showNotification('Cannot add out of stock items to wishlist', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/wishlist/toggle/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                
+                // Update the wishlist button appearance
+                const wishlistBtn = document.querySelector(`.wishlist-btn[data-product-id="${productId}"]`);
+                if (wishlistBtn) {
+                    const icon = wishlistBtn.querySelector('svg');
+                    if (data.status === 'added') {
+                        icon.classList.add('text-red-500', 'fill-current');
+                        icon.classList.remove('text-gray-500');
+                        showNotification('Added to wishlist', 'success');
+                    } else {
+                        icon.classList.remove('text-red-500', 'fill-current');
+                        icon.classList.add('text-gray-500');
+                        showNotification('Removed from wishlist', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error updating wishlist', 'error');
+            }
+        }
+
+        
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white z-50`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
         function applySorting() {
             const sortValue = document.getElementById('sort-select').value;
             const currentUrl = new URL(window.location.href);
             
-            // Set the new sort parameter
             if (sortValue === 'default') {
                 currentUrl.searchParams.delete('sort');
             } else {
                 currentUrl.searchParams.set('sort', sortValue);
             }
             
-            // Navigate to the new URL
+            
+            const page = currentUrl.searchParams.get('page');
+            if (page) {
+                currentUrl.searchParams.set('page', '1'); // Reset to first page when sorting
+            }
+            
             window.location.href = currentUrl.toString();
         }
+        async function removeFromWishlist(productId) {
+            try {
+                const response = await fetch(`/shop/wishlist/toggle/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'removed') {
+                    // Remove the item from the UI
+                    const wishlistItem = document.getElementById(`wishlist-item-${productId}`);
+                    wishlistItem.remove();
+                    
+                    // If no items left, show empty message
+                    const wishlistContainer = document.querySelector('.grid');
+                    if (!wishlistContainer.children.length) {
+                        const emptyMessage = document.createElement('p');
+                        emptyMessage.className = 'col-span-full text-center text-gray-500';
+                        emptyMessage.textContent = 'Your wishlist is empty.';
+                        wishlistContainer.appendChild(emptyMessage);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error removing from wishlist:', error);
+                showNotification('Error removing item from wishlist', 'error');
+            }
+        }
+
     </script>
 </body>
 </html>
