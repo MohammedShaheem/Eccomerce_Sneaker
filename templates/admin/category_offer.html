@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Category</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+            <h2 class="text-lg font-bold mb-4">Pages</h2>
+            <nav>
+              <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+              <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md bg-gray-700">Categories</a>
+              <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+              <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+              <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
+            </nav>
+        </div>
+
+    <!-- Main Content Area -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Category Offers</h2>
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valid Period</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for offer in category_offers %}
+                    <tr>
+                        <td class="px-6 py-4">{{ offer.offer_title }}</td>
+                        <td class="px-6 py-4">{{ offer.product.name }}</td>
+                        <td class="px-6 py-4">
+                            {% if offer.discount_type == 'percentage' %}
+                                {{ offer.discount_value }}%
+                            {% else %}
+                                ${{ offer.discount_value }}
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {{ offer.valid_from|date:"M d, Y" }} - {{ offer.valid_till|date:"M d, Y" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if offer.is_valid %}
+                                <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Active</span>
+                            {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <a href="{% url 'edit_offer' offer.id %}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                            <form action="{% url 'delete_offer' offer.id %}" method="POST" class="inline ml-3">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-600 hover:text-red-900" 
+                                        onclick="return confirm('Are you sure you want to delete this offer?')">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No product offers found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

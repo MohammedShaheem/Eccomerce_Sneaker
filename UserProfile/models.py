@@ -159,6 +159,3 @@ def set_new_default_address(sender, instance, **kwargs):
             new_default.is_default = True
             new_default.save()
         
-
-    
-    

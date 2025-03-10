@@ -1,0 +1,285 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Shop Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <nav class="border-b relative">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Sneakers</div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-600">Home</a>
+                    <!-- Shop Dropdown -->
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
+                            <span>Shop</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                            <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                            <a href="{% url "Boots" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100"></a>
+                        </div>
+                    </div>
+                    <a href="#" class="text-gray-600">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
+                    <button class="p-2"><i class="fas fa-search"></i></button>
+                    <button class="p-2"><i class="fas fa-heart"></i></button>
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
+                    </a>
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if messages %}
+        <div class="fixed top-4 right-4 z-50">
+        {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                       px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+        {% endfor %}
+        </div>
+        {% endif %}
+    </nav>
+
+    <!-- Breadcrumb -->
+    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+        <a href="#" class="hover:underline">Home</a> /
+        <a href="#" class="hover:underline">Shop</a> /
+        <span class="text-gray-800">Nike Dunk Low Retro SE</span>
+    </nav>
+        <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+</head>
+
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-6">Your Orders</h1>
+        
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div class="p-3 mb-3 {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% endif %} rounded">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="container mx-auto px-4 py-8 max-w-3xl">
+            <div class="flex items-center mb-6">
+                <a href="{% url 'order_detail' order_id=order.order_id %}" class="text-indigo-600 hover:text-indigo-900 mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to order
+                </a>
+                <h1 class="text-2xl font-bold">Cancel Item from Order #{{ order.order_id }}</h1>
+            </div>
+            
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Item Details</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Please review the item before cancellation.</p>
+                </div>
+                
+                <div class="p-4 flex items-start">
+                    <div class="flex-shrink-0 w-24 h-24 bg-gray-200 rounded-md overflow-hidden">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="ml-4 flex-1">
+                        <h3 class="text-lg font-medium text-gray-900">{{ item.product.name }}</h3>
+                        {% if item.variant %}
+                        <p class="mt-1 text-sm text-gray-500">{{ item.variant.attribute_values }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Quantity: {{ item.quantity }}</p>
+                        <div class="mt-2 flex justify-between">
+                            <p class="text-sm font-medium text-gray-700">Price per item: ₹{{ item.price_per_item }}</p>
+                            <p class="text-sm font-semibold text-gray-900">Total: ₹{{ item.total_amount }}</p>
+                        </div>
+                        {% if item.discount_applied %}
+                        <p class="mt-1 text-xs text-green-600">Discount: -₹{{ item.discount_amount }} ({{ item.discount_prcentage }}% off)</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Cancellation Warning</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <p>This action cannot be undone. Once canceled, you'll need to place a new order for this item.</p>
+                            {% if order.payment_status == 'PAID' %}
+                            <p class="mt-1">Your payment for this item (₹{{ item.total_amount }}) will be refunded according to our refund policy.</p>
+                            {% endif %}
+                            {% if order.items.count == 1 %}
+                            <p class="mt-1 font-semibold">This is the only item in your order. Canceling it will cancel the entire order.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Cancellation Reason</h3>
+                    <div class="mt-5">
+                        <form method="post" action="{% url 'cancel_order_item' order_id=order.order_id item_id=item.id %}">
+                            {% csrf_token %}
+                            
+                            {% if form.non_field_errors %}
+                            <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+                                {{ form.non_field_errors }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="space-y-4">
+                                <span class="block text-sm font-medium text-gray-700 mb-2">Please select a reason:</span>
+                                {% for radio in form.reason %}
+                                <div class="flex items-start">
+                                    <div class="flex items-center h-5">
+                                        {{ radio.tag }}
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="{{ radio.id_for_label }}" class="font-medium text-gray-700">{{ radio.choice_label }}</label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% if form.reason.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.reason.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label for="{{ form.additional_details.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                    Additional Details
+                                </label>
+                                {{ form.additional_details }}
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Please provide any specific details that will help us improve our products and services.
+                                </p>
+                                {% if form.additional_details.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.additional_details.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mt-6 flex justify-end">
+                                <a href="{% url 'order_detail' order_id=order.order_id %}" 
+                                   class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">
+                                    Go Back
+                                </a>
+                                <button type="submit" 
+                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    Confirm Item Cancellation
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>If you have any questions about cancellations or refunds, please contact our customer support.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-6">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 px-4 lg:px-6">
+            <!-- Subscribe -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Subscribe</h3>
+                <input type="email" placeholder="Your Email" class="w-full py-2 px-4 mb-4 rounded-md text-gray-800">
+                <button class="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-md">Subscribe</button>
+            </div>
+            <!-- Support -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Support</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">Shipping Policy</a></li>
+                    <li><a href="#" class="hover:underline">Refund Policy</a></li>
+                    <li><a href="#" class="hover:underline">Contact Us</a></li>
+                </ul>
+            </div>
+            <!-- Quick Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline">About Us</a></li>
+                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <!-- App Download -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Download App</h3>
+                <img src="https://via.placeholder.com/100" alt="QR Code" class="mb-4">
+                <div class="flex space-x-2">
+                    <a href="#" class="hover:underline">Facebook</a>
+                    <a href="#" class="hover:underline">Twitter</a>
+                    <a href="#" class="hover:underline">LinkedIn</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+</body>
+
+</html>

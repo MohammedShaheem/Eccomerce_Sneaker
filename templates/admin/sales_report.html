@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Category</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+            <h2 class="text-lg font-bold mb-4">Pages</h2>
+            <nav>
+              <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+              <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md bg-gray-700">Categories</a>
+              <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+              <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+              <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
+            </nav>
+    </div>
+
+        <div class="container mx-auto px-4 py-8 bg-gray-900 text-gray-200 min-h-screen">
+            <h1 class="text-2xl font-bold mb-6 text-white">Sales Report</h1>
+            
+            <!-- Date Range Filter Form -->
+            <div class="bg-gray-800 shadow-md rounded-lg p-6 mb-6 border border-gray-700">
+                <h2 class="text-xl font-semibold mb-4 text-gray-200">Filter Report</h2>
+                <form method="get" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div class="mt-4 mb-6">
+                            <a href="{{ request.get_full_path }}&download_pdf=1" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Download PDF Report
+                            </a>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300">Report Type</label>
+                            <select name="report_type" id="report_type" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="daily" {% if report_type == 'daily' %}selected{% endif %}>Daily</option>
+                                <option value="weekly" {% if report_type == 'weekly' %}selected{% endif %}>Weekly</option>
+                                <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Monthly</option>
+                                <option value="yearly" {% if report_type == 'yearly' %}selected{% endif %}>Yearly</option>
+                                <option value="custom" {% if report_type == 'custom' %}selected{% endif %}>Custom</option>
+                            </select>
+                        </div>
+                        <div class="custom-date-range {% if report_type != 'custom' %}hidden{% endif %}">
+                            <label class="block text-sm font-medium text-gray-300">Start Date</label>
+                            <input type="date" name="start_date" value="{{ start_date }}" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        <div class="custom-date-range {% if report_type != 'custom' %}hidden{% endif %}">
+                            <label class="block text-sm font-medium text-gray-300">End Date</label>
+                            <input type="date" name="end_date" value="{{ end_date }}" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300">Order Status</label>
+                            <select name="order_status" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="DELIVERED" {% if order_status == 'DELIVERED' %}selected{% endif %}>Delivered</option>
+                                <option value="SHIPPED" {% if order_status == 'SHIPPED' %}selected{% endif %}>Shipped</option>
+                                <option value="PENDING" {% if order_status == 'PENDING' %}selected{% endif %}>Pending</option>
+                                <option value="RETURNED" {% if order_status == 'RETURNED' %}selected{% endif %}>Returned</option>
+                                <option value="ALL" {% if order_status == 'ALL' %}selected{% endif %}>All Orders</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                                Apply Filter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="bg-gray-800 shadow-md rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-gray-400 text-sm font-medium mb-1">Total Orders</h3>
+                    <p class="text-3xl font-bold text-white">{{ total_sales_count }}</p>
+                    <p class="text-sm text-gray-400 mt-2">{{ start_date }} to {{ end_date }}</p>
+                </div>
+                <div class="bg-gray-800 shadow-md rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-gray-400 text-sm font-medium mb-1">Total Revenue</h3>
+                    <p class="text-3xl font-bold text-white">${{ total_revenue|floatformat:2 }}</p>
+                    <p class="text-sm text-gray-400 mt-2">After discounts</p>
+                </div>
+                <div class="bg-gray-800 shadow-md rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-gray-400 text-sm font-medium mb-1">Total Discounts</h3>
+                    <p class="text-3xl font-bold text-white">${{ total_discount|floatformat:2 }}</p>
+                    <p class="text-sm text-gray-400 mt-2">Coupons & promotions</p>
+                </div>
+                <div class="bg-gray-800 shadow-md rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-gray-400 text-sm font-medium mb-1">Canceled/Refunded</h3>
+                    <p class="text-3xl font-bold text-white">{{ total_canceled_count }}</p>
+                    <p class="text-sm text-gray-400 mt-2">${{ total_refund_amount|floatformat:2 }} refunded</p>
+                </div>
+            </div>
+            
+            <!-- Top Products -->
+            <div class="bg-gray-800 shadow-md rounded-lg p-6 mb-6 border border-gray-700">
+                <h2 class="text-xl font-semibold mb-4 text-gray-200">Top Selling Products</h2>
+                {% if top_products %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-gray-800">
+                        <thead>
+                            <tr>
+                                <th class="py-2 px-4 border-b border-gray-700 text-left text-gray-300">Product</th>
+                                <th class="py-2 px-4 border-b border-gray-700 text-right text-gray-300">Quantity Sold</th>
+                                <th class="py-2 px-4 border-b border-gray-700 text-right text-gray-300">Total Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in top_products %}
+                            <tr>
+                                <td class="py-2 px-4 border-b border-gray-700 text-gray-200">{{ product.variant__product__name|default:"N/A" }}</td>
+                                <td class="py-2 px-4 border-b border-gray-700 text-right text-gray-200">{{ product.quantity_sold }}</td>
+                                <td class="py-2 px-4 border-b border-gray-700 text-right text-gray-200">${{ product.total_sales|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-gray-400">No product sales data available for this period.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Payment Methods -->
+            <div class="bg-gray-800 shadow-md rounded-lg p-6 border border-gray-700">
+                <h2 class="text-xl font-semibold mb-4 text-gray-200">Payment Methods</h2>
+                {% if payment_methods %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-gray-800">
+                        <thead>
+                            <tr>
+                                <th class="py-2 px-4 border-b border-gray-700 text-left text-gray-300">Payment Method</th>
+                                <th class="py-2 px-4 border-b border-gray-700 text-right text-gray-300">Orders</th>
+                                <th class="py-2 px-4 border-b border-gray-700 text-right text-gray-300">Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for method in payment_methods %}
+                            <tr>
+                                <td class="py-2 px-4 border-b border-gray-700 text-gray-200">{{ method.payment_method }}</td>
+                                <td class="py-2 px-4 border-b border-gray-700 text-right text-gray-200">{{ method.count }}</td>
+                                <td class="py-2 px-4 border-b border-gray-700 text-right text-gray-200">${{ method.total|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-gray-400">No payment method data available for this period.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const reportTypeSelect = document.getElementById('report_type');
+                const customDateFields = document.querySelectorAll('.custom-date-range');
+                
+                reportTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        customDateFields.forEach(field => field.classList.remove('hidden'));
+                    } else {
+                        customDateFields.forEach(field => field.classList.add('hidden'));
+                    }
+                });
+            });
+        </script>
+</body>
+</html>

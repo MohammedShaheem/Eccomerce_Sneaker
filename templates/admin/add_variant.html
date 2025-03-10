@@ -16,19 +16,29 @@
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
         <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
         <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md bg-gray-700">Products</a>
-        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+        <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
       </nav>
     </div>
 
     <!-- Main Content Area -->
     <div class="flex-1 p-8">
       <!-- Header -->
-      <div class="mb-6">
-        <h1 class="text-2xl font-bold">Add Products</h1>
-        <p class="text-sm text-gray-400">Products > Add Products</p>
-      </div>
+      <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl font-bold mb-2">Add Variants</h1>
+            <p class="text-gray-400">Products > Add Variants</p>
+        </div>
+        <a href="{% url 'products' %}" 
+        class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back to Products
+        </a>
+    </div>
       {% if messages %}
         {% for message in messages %}
           <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-500{% else %}bg-green-500{% endif %}">
@@ -38,302 +48,203 @@
     {% endif %}
 
       <!-- Form Section -->
-      <div>
-        <h2 class="text-lg font-bold mb-4">Add Variant for {{ product.name }}</h2>
-        {% if existing_images %}
-        <div class="mb-6">
-        <h3 class="text-md font-semibold mb-2">Existing Product Images</h3>
-        <div class="grid grid-cols-4 gap-4">
-        {% for img in existing_images %}
-            <div class="relative">
-            <img src="{{ img.image.url }}" alt="Product image" class="w-full h-32 object-cover rounded-lg">
-        </div>
-        {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-
-
-      <form method="POST" class="space-y-4" enctype="multipart/form-data">
-        {% csrf_token %}
-        
-        {% comment %} {% for field in form %}
-          <div class="mb-4">
-            <label class="block text-gray-300 mb-2">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}
-              <p class="text-sm text-gray-400 mt-1">{{ field.help_text }}</p>
+      <div class="container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto bg-gray-900 rounded-lg shadow-lg p-6">
+            <h2 class="text-lg font-bold mb-4 text-white">Add Variant for {{ product.name }}</h2>
+            
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-500{% else %}bg-green-500{% endif %} text-white">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
             {% endif %}
-            {% if field.errors %}
-              {% for error in field.errors %}
-                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
-              {% endfor %}
-            {% endif %}
-          </div>
-        {% endfor %} {% endcomment %}
-
-
-        {% comment %} <div class="mt-4">
-          <p class="text-sm text-gray-400 mb-2">New images preview:</p>
-          <div id="imagePreview" class="grid grid-cols-4 gap-4"></div>
-        </div> {% endcomment %}
-
-         <!-- Product Images -->
-         <div class="bg-gray-800 rounded-lg p-6">
-          <h2 class="text-lg font-semibold mb-4">Product Images</h2>
-          <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-lg">
-              <div class="space-y-1 text-center">
-                  <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                  </svg>
-                  <div class="flex text-sm text-gray-400">
-                      <input type="file"
-                             name="variant_images"
-                             id="variant_images"
-                             multiple
-                             accept="image/*"
-                             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100">
-                  </div>
-                  <p class="text-xs text-gray-400">PNG, JPG, GIF up to 5MB</p>
-                  <p id="imageError" class="text-red-500 text-sm hidden">Please upload at least one image</p>
-                  <!-- Add preview container -->
-                  <div id="image-preview-container" class="grid grid-cols-3 gap-4 mt-4">
-                  </div>
-              </div>
-          </div>
-      </div>
-
-          <label class="block">
-            <span class="text-gray-300">Size</span>
-            <select name="size" class="block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white">
-              <option value="">Select Size</option>
-              {% for size in form.fields.size.queryset %}
-                <option value="{{ size.id }}">{{ size.size }}</option>
-              {% endfor %}
-            </select>
-          </label>
-
-          <label class="block">
-            <span class="text-gray-300">Color</span>
-            <select name="color" class="block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white">
-              <option value="">Select Color</option>
-              {% for color in form.fields.color.queryset %}
-                <option value="{{ color.id }}">{{ color.color }}</option>
-              {% endfor %}
-            </select>
-          </label>
-
-          <label class="block">
-            <span class="text-gray-300">Stock Quantity</span>
-            <input type="number" name="Stock_Quantity" class="block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring focus:ring-blue-300 text-white">
-          </label>
-
-
-          <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white">
-            Save Variant
-          </button>
-        </form>
-      </div>
+    
+            {% comment %} {% if existing_images %}
+            <div class="mb-6">
+                <h3 class="text-md font-semibold mb-2 text-white">Existing Product Images</h3>
+                <div class="grid grid-cols-4 gap-4">
+                    {% for img in existing_images %}
+                    <div class="relative">
+                        <img src="{{ img.image.url }}" alt="Product image" class="w-full h-32 object-cover rounded-lg">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %} {% endcomment %}
+    
+            <form method="POST" enctype="multipart/form-data" id="VariantForm" class="space-y-6">
+                {% csrf_token %}
+    
+                <!-- Product Images -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 text-white">Product Images</h2>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-lg">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                            <div class="flex text-sm text-gray-400">
+                                <input type="file"
+                                       name="images"
+                                       id="variant_images"
+                                       multiple
+                                       accept="image/*"
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100">
+                            </div>
+                            <p class="text-xs text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                            <p id="imageError" class="text-red-500 text-sm hidden">Please upload at least one image</p>
+                            <div id="image-preview-container" class="grid grid-cols-3 gap-4 mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Size Field -->
+                <div class="block">
+                    <label class="block text-gray-300 mb-2">Size</label>
+                    {{ form.size }}
+                    {% if form.size.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.size.errors.0 }}</p>
+                    {% endif %}
+                </div>
+    
+               <!-- Color Field -->
+               <div class="block">
+                    <label class="block text-gray-300 mb-2">Color</label>
+                    {{ form.color }}
+                    {% if form.color.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.color.errors.0 }}</p>
+                    {% endif %}
+                </div>
+    
+                <!-- Stock Quantity Field -->
+                <div class="block">
+                    <label class="block text-gray-300 mb-2">Stock Quantity</label>
+                    {{ form.Stock_Quantity }}
+                    {% if form.Stock_Quantity.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.Stock_Quantity.errors.0 }}</p>
+                    {% endif %}
+                </div>
+    
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-lg text-white font-medium transition-colors duration-200">
+                    Save Variant
+                </button>
+            </form>
+        </div>
     </div>
-  </div>
+    
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const imageInput = document.getElementById('variant_images');
-
-
+      const form = document.getElementById('VariantForm');
+  
       // Helper function to show error
       function showError(input, errorElementId, message) {
-        const errorElement = document.getElementById(errorElementId);
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.classList.remove('hidden');
-            input.classList.add('border', 'border-red-500');
-        }
-    }
-
-    // Helper function to clear error
-    function clearError(input, errorElementId) {
-        const errorElement = document.getElementById(errorElementId);
-        if (errorElement) {
-            errorElement.classList.add('hidden');
-            input.classList.remove('border', 'border-red-500');
-        }
-    }
-
-    // validation function
-    function createImageFromFile(file) {
-      return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => {
-              URL.revokeObjectURL(img.src); // Clean up
-              resolve(img);
-          };
-          img.onerror = () => {
-              URL.revokeObjectURL(img.src); // Clean up
-              reject(new Error('Failed to load image'));
-          };
-          img.src = URL.createObjectURL(file);
-      });
-  }
-
-  function calculateAspectRatio(srcWidth, srcHeight, maxWidth, maxHeight) {
-      const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-      return {
-          width: Math.round(srcWidth * ratio),
-          height: Math.round(srcHeight * ratio)
-      };
-  }
-
-  async function validateAndResizeImages() {
-      if (!imageInput.files.length) {
-          showError(imageInput, 'imageError', 'Please upload at least one image');
-          return false;
-      }
-
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      const targetWidth = 800;
-      const targetHeight = 800;
-
-      try {
-          const processedFiles = await Promise.all(
-              Array.from(imageInput.files).map(async file => {
-                  if (!validTypes.includes(file.type)) {
-                      throw new Error(`Invalid file type: ${file.name}. Please use JPG, PNG, or GIF`);
-                  }
-                  if (file.size > maxSize) {
-                      throw new Error(`File too large: ${file.name}. Maximum size is 5MB`);
-                  }
-
-                  const img = await createImageFromFile(file);
-                  const dimensions = calculateAspectRatio(img.width, img.height, targetWidth, targetHeight);
-
-                  const canvas = document.createElement('canvas');
-                  canvas.width = dimensions.width;
-                  canvas.height = dimensions.height;
-                  const ctx = canvas.getContext('2d');
-
-                  // Draw white background
-                  ctx.fillStyle = '#FFFFFF';
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                  // Draw image centered
-                  ctx.drawImage(img, 0, 0, dimensions.width, dimensions.height);
-
-                  const blob = await new Promise(resolve => 
-                      canvas.toBlob(resolve, file.type, 0.9)
-                  );
-
-                  return new File([blob], file.name, { type: file.type });
-              })
-          );
-
-          const dataTransfer = new DataTransfer();
-          processedFiles.forEach(file => dataTransfer.items.add(file));
-          imageInput.files = dataTransfer.files;
-          clearError(imageInput, 'imageError');
-          return true;
-
-      } catch (error) {
-          showError(imageInput, 'imageError', error.message);
-          return false;
-      }
-  }
-
-  // Preview images
-  function updateImagePreviews() {
-      const previewContainer = document.getElementById('image-preview-container');
-      previewContainer.innerHTML = '';
-
-      Array.from(imageInput.files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-              const preview = document.createElement('div');
-              preview.className = 'relative inline-block mr-2 mb-2';
-              preview.innerHTML = `
-                  <img src="${e.target.result}" 
-                       class="w-32 h-32 object-cover rounded-lg shadow-sm" 
-                       alt="Product preview">
-              `;
-              previewContainer.appendChild(preview);
-          };
-          reader.readAsDataURL(file);
-      });
-  }
-
-  // Add real-time validation
-  imageInput.addEventListener('change', async () => {
-    await validateAndResizeImages();
-    updateImagePreviews();
-});
-// Preview images when selected
-imageInput.addEventListener('change', function() {
-  const previewContainer = document.getElementById('image-preview-container');
-  previewContainer.innerHTML = '';
-
-  if (this.files) {
-      Array.from(this.files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-              const preview = document.createElement('div');
-              preview.className = 'relative';
-              preview.innerHTML = `
-                  <img src="${e.target.result}" class="w-full h-32 object-cover rounded">
-              `;
-              previewContainer.appendChild(preview);
+          const errorElement = document.getElementById(errorElementId);
+          if (errorElement) {
+              errorElement.textContent = message;
+              errorElement.classList.remove('hidden');
+              input.classList.add('border-red-500');
           }
-          reader.readAsDataURL(file);
-      });
-  }
-});
-document.getElementById('VariantForm').onsubmit = async function(e) {
-  e.preventDefault();
-  const isValid = await validateAndResizeImages();
-  if (isValid) {
-      this.submit();
-  }
-};
-
-// Form submission validation
-            // Form submission handler
-            form.addEventListener('submit', async function(e) {
-              e.preventDefault(); // Prevent default form submission initially
+      }
   
-              try {
-                      // Run all validations
-                      const validations = await Promise.all([
-                      validateAndResizeImages()
-                    ]);
-               // Check if all validations passed
-               const isValid = validations.every(result => result === true);
-
-               if (isValid) {
-                       // If all validations pass, submit the form
-                       this.submit();
-               } else {
-                       // Find and scroll to the first error
-                       const firstError = document.querySelector('.text-red-500:not(.hidden)');
-                       if (firstError) {
-                           firstError.scrollIntoView({ 
-                               behavior: 'smooth', 
-                               block: 'center' 
-                           });
-                       }
-                   }
-               } catch (error) {
-                   console.error('Validation error:', error);
-                   // Handle any unexpected errors during validation
-               const firstError = document.querySelector('.text-red-500:not(.hidden)');
-               if (firstError) {
-                   firstError.scrollIntoView({ 
-                       behavior: 'smooth', 
-                       block: 'center' 
-               });
-           }
-       }
-       });
-    });
+      // Helper function to clear error
+      function clearError(input, errorElementId) {
+          const errorElement = document.getElementById(errorElementId);
+          if (errorElement) {
+              errorElement.classList.add('hidden');
+              input.classList.remove('border-red-500');
+          }
+      }
+  
+      // Image validation and processing
+      async function validateAndResizeImages() {
+          if (!imageInput.files.length) {
+              showError(imageInput, 'imageError', 'Please upload at least one image');
+              return false;
+          }
+  
+          const validTypes = ['image/jpeg', 'image/png', 'image/gif','image/avif'];
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          const targetWidth = 800;
+          const targetHeight = 800;
+  
+          try {
+              const processedFiles = await Promise.all(
+                  Array.from(imageInput.files).map(async file => {
+                      if (!validTypes.includes(file.type)) {
+                          throw new Error(`Invalid file type: ${file.name}. Please use JPG, PNG, or GIF`);
+                      }
+                      if (file.size > maxSize) {
+                          throw new Error(`File too large: ${file.name}. Maximum size is 5MB`);
+                      }
+  
+                      return file; // Return original file if validation passes
+                  })
+              );
+  
+              clearError(imageInput, 'imageError');
+              return true;
+  
+          } catch (error) {
+              showError(imageInput, 'imageError', error.message);
+              return false;
+          }
+      }
+  
+      // Preview images
+      function updateImagePreviews() {
+          const previewContainer = document.getElementById('image-preview-container');
+          previewContainer.innerHTML = '';
+  
+          Array.from(imageInput.files).forEach(file => {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                  const preview = document.createElement('div');
+                  preview.className = 'relative';
+                  preview.innerHTML = `
+                      <img src="${e.target.result}" 
+                           class="w-full h-32 object-cover rounded-lg shadow-sm" 
+                           alt="Product preview">
+                  `;
+                  previewContainer.appendChild(preview);
+              };
+              reader.readAsDataURL(file);
+          });
+      }
+  
+      // Add event listeners
+      imageInput.addEventListener('change', async () => {
+          await validateAndResizeImages();
+          updateImagePreviews();
+      });
+  
+      // Form submission handler
+      form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          try {
+              const isValid = await validateAndResizeImages();
+              
+              if (isValid) {
+                  this.submit();
+              } else {
+                  const firstError = document.querySelector('.text-red-500:not(.hidden)');
+                  if (firstError) {
+                      firstError.scrollIntoView({ 
+                          behavior: 'smooth', 
+                          block: 'center' 
+                      });
+                  }
+              }
+          } catch (error) {
+              console.error('Validation error:', error);
+              showError(imageInput, 'imageError', 'An unexpected error occurred. Please try again.');
+          }
+      });
+  });
     </script>
  
     

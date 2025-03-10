@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Shop Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <nav class="border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Sneakers</div>
+                <div class="flex space-x-6">
+                    <a href="{% url 'home' %}" class="text-gray-600">Home</a>
+                    <a href="#" class="text-gray-600">Latest</a>
+                    <a href="#" class="text-gray-600">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
+                    <button class="p-2"><i class="fas fa-search"></i></button>
+                    <button class="p-2"><i class="fas fa-heart"></i></button>
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
+                    </a>
+                    {% if messages %}
+                    <div class="fixed top-4 right-4 z-50">
+                        {% for msg in messages %}
+                            <div id="message-{{ forloop.counter }}" 
+                                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                                       px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                                {{ msg }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- User dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+        <a href="#" class="hover:underline">Home</a> /
+        <a href="#" class="hover:underline">Shop</a> /
+        <span class="text-gray-800">Nike Dunk Low Retro SE</span>
+    </nav>
+        <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+</head>
+
+    </header>
+
+    <div class="container mx-auto px-4 py-8 min-h-screen bg-white">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center text-sm text-gray-500 mb-6">
+            <a href="{% url 'order_list' %}" class="hover:text-gray-700">Orders</a>
+            <span class="mx-2">/</span>
+            <a href="{% url 'order_detail' order_id=order.order_id %}" class="hover:text-gray-700">Order #{{ order.order_id }}</a>
+            <span class="mx-2">/</span>
+            <span class="text-gray-900">Return Items</span>
+        </nav>
+    
+        <!-- Main Content -->
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Return Items from Order #{{ order.order_id }}</h1>
+    
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Items Selection -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Select Items to Return</h2>
+                
+                <div class="space-y-4">
+                    {% for item in returnable_items %}
+                        <div class="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" 
+                                   name="return_items" 
+                                   value="{{ item.id }}" 
+                                   id="item_{{ item.id }}"
+                                   class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <label for="item_{{ item.id }}" class="ml-4 flex-1 flex items-center justify-between cursor-pointer">
+                                <div>
+                                    <h3 class="font-medium text-gray-900">{{ item.product.name }}</h3>
+                                    {% if item.variant %}
+                                        <p class="text-sm text-gray-500">{{ item.variant.name }}</p>
+                                    {% endif %}
+                                </div>
+                                <span class="text-lg font-semibold text-gray-900">
+                                    ₹{{ item.total_amount }}
+                                </span>
+                            </label>
+                        </div>
+                    {% empty %}
+                        <p class="text-gray-500">No items available for return.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Return Reason -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Return Reason</h2>
+                {% if form.reason.errors %}
+                    <div class="text-red-500 text-sm mb-2">
+                        {{ form.reason.errors }}
+                    </div>
+                {% endif %}
+                <textarea name="reason" 
+                          rows="3" 
+                          class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Please explain why you want to return these items..."
+                          required>{{ form.reason.value|default:'' }}</textarea>
+                <p class="text-sm text-gray-500 mt-2">{{ form.reason.help_text }}</p>
+            </div>
+        </div>
+        
+        <!-- Return Policy -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 class="font-medium text-blue-800 mb-2">Return Policy</h3>
+            <ul class="text-sm text-blue-700 space-y-1">
+                <li>• Items must be returned within 7 days of delivery</li>
+                <li>• Items should be unused and in original packaging</li>
+                <li>• Refund will be processed to your wallet once return is approved</li>
+            </ul>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'order_detail' order_id=order.order_id %}" 
+               class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Submit Return Request
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Return Request Submitted</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">Your return request has been submitted successfully. You'll receive a confirmation email shortly.</p>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="closeModal" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const checkboxes = form.querySelectorAll('input[name="return_items"]:checked');
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one item to return');
+        }
+    });
+    
+    // Show success modal on successful submission
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                document.getElementById('successModal').classList.remove('hidden');
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
+    // Close modal
+    document.getElementById('closeModal')?.addEventListener('click', function() {
+        document.getElementById('successModal').classList.add('hidden');
+        window.location.href = "{% url 'order_detail' order_id=order.order_id %}";
+    });
+});
+</script>
+
+</body>
+
+</html>

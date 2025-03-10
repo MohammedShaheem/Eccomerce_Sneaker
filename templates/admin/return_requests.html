@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Category</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 w-64 h-screen fixed">
+            <h2 class="text-lg font-bold mb-4">Pages</h2>
+            <nav>
+              <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+              <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md bg-gray-700">Categories</a>
+              <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+              <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+              <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
+            </nav>
+    </div>
+
+    <!-- Main Content Area - Now centered with left margin for sidebar -->
+    <div class="min-h-screen bg-black text-white p-6 ml-64 w-full">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl font-bold mb-6">Return Requests</h1>
+            
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gray-800 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold">{{ pending_count }}</h2>
+                        <p class="text-gray-400 text-sm">Pending</p>
+                    </div>
+                    <div class="bg-gray-700 p-2 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold">{{ approved_count }}</h2>
+                        <p class="text-gray-400 text-sm">Approved</p>
+                    </div>
+                    <div class="bg-gray-700 p-2 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold">{{ rejected_count }}</h2>
+                        <p class="text-gray-400 text-sm">Rejected</p>
+                    </div>
+                    <div class="bg-gray-700 p-2 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="mb-6">
+                <form method="GET" action="{% url 'admin_return_requests' %}" class="flex gap-4">
+                    <div>
+                        <select name="status" class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white">
+                            <option value="">All Statuses</option>
+                            <option value="REQUESTED" {% if status_filter == 'REQUESTED' %}selected{% endif %}>Pending</option>
+                            <option value="APPROVED" {% if status_filter == 'APPROVED' %}selected{% endif %}>Approved</option>
+                            <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                            Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Return Requests Table -->
+            <div class="overflow-x-auto bg-gray-900 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Request ID
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Order ID
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Customer
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Request Date
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        {% for request in page_obj %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                                #{{ request.id }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {{ request.order.order_id }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {{ request.user.username }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if request.status == 'APPROVED' %}
+                                    bg-green-700 text-green-100
+                                {% elif request.status == 'REQUESTED' %}
+                                    bg-yellow-700 text-yellow-100
+                                {% elif request.status == 'REJECTED' %}
+                                    bg-red-700 text-red-100
+                                {% endif %}">
+                                {{ request.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {{ request.created_at|date:"d-m-Y H:i" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{% url 'admin_return_request_detail' request_id=request.id %}" class="text-indigo-400 hover:text-indigo-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                No return requests found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="mt-4 flex justify-center">
+                <nav class="inline-flex rounded-md shadow">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-3 py-2 rounded-l-md border border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700">
+                        Previous
+                    </a>
+                    {% else %}
+                    <span class="px-3 py-2 rounded-l-md border border-gray-700 bg-gray-900 text-gray-500 cursor-not-allowed">
+                        Previous
+                    </span>
+                    {% endif %}
+                    
+                    {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                    <span class="px-3 py-2 border border-gray-700 bg-indigo-600 text-white">
+                        {{ i }}
+                    </span>
+                    {% else %}
+                    <a href="?page={{ i }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-3 py-2 border border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700">
+                        {{ i }}
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-3 py-2 rounded-r-md border border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700">
+                        Next
+                    </a>
+                    {% else %}
+                    <span class="px-3 py-2 rounded-r-md border border-gray-700 bg-gray-900 text-gray-500 cursor-not-allowed">
+                        Next
+                    </span>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+  </div>
+</body>
+</html>

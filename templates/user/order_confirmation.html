@@ -17,6 +17,7 @@
     </div>
 
     <!-- Navigation -->
+     
     <div class="min-h-screen bg-gray-100 py-8">
         <div class="container mx-auto px-4">
             <div class="max-w-2xl mx-auto">
@@ -41,8 +42,17 @@
                         {% for item in items %}
                         <div class="flex items-center justify-between py-4 border-b">
                             <div class="flex items-center space-x-4">
-                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover rounded">
-                                <div>
+                                {% with variant_image=item.variant.images.first %}
+                                {% if variant_image and variant_image.image %}
+                                <img src="{{ variant_image.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover rounded">
+                                {% else %}
+                                <div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
                                     <h3 class="font-medium">{{ item.product.name }}</h3>
                                     <p class="text-gray-600">Quantity: {{ item.quantity }}</p>
                                 </div>
@@ -56,7 +66,7 @@
                             <div class="p-4 bg-gray-50 rounded">
                                 <p class="font-medium">{{ address.full_name }}</p>
                                 <p class="text-gray-600">
-                                    {{ address.street_address }},<br>
+                                    {{ order.order_address.house_name }},<br>
                                     {{ address.city }},<br>
                                     {{ address.state }} - {{ address.pincode }}
                                 </p>
@@ -82,11 +92,22 @@
                                     <span>₹{{ order.total_amount }}</span>
                                 </div>
                             </div>
+                            {% if order.payment_status == 'PAID' %}
+                                <div class="mt-6 flex justify-center">
+                                    <a href="{% url 'generate_invoice' order_id=order.order_id %}" 
+                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Download Invoice
+                                    </a>
+                                </div>
+                                {% endif %}
                         </div>
                     </div>
     
                     <div class="mt-8 text-center">
-                        <a href="{% url 'MenPage' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md font-medium hover:bg-blue-700">
+                        <a href="{% url 'Sneakers' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md font-medium hover:bg-blue-700">
                             Continue Shopping
                         </a>
                     </div>

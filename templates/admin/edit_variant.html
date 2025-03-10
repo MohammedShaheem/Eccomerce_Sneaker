@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Variant</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen w-64 flex-shrink-0">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+        <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
+        <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md bg-gray-700">Products</a>
+        <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+      </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 p-6 min-h-screen">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-2xl font-bold mb-2">Edit Variant - {{ product.name }}</h1>
+          <p class="text-gray-400">Products > Edit Variant</p>
+        </div>
+        <a href="{% url 'product-detail' product.id %}" 
+           class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+          </svg>
+          Back to Product_detail
+        </a>
+      </div>
+
+      {% if messages %}
+      <div class="fixed top-4 right-4 z-50">
+        {% for msg in messages %}
+          <div id="message-{{ forloop.counter }}" 
+              class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                     px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+            {{ msg }}
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Form Section -->
+      <div class="flex justify-center items-center">
+        <div class="max-w-3xl w-full bg-gray-800 rounded-lg shadow-md p-6">
+          <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Size Selection -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-300">Size</label>
+              {{ form.size }}
+            </div>
+            
+            <!-- Color Input -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-300">Color</label>
+              <input type="text" name="color" value="{{ variant.color.color }}" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+            
+            <!-- Stock Quantity -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-300">Stock Quantity</label>
+              {{ form.Stock_Quantity }}
+            </div>
+            
+            <!-- Existing Images -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-medium text-gray-300">Current Images</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {% for image in existing_images %}
+                <div class="relative">
+                  <img src="{{ image.image.url }}" alt="Product variant image" class="w-full h-48 object-cover rounded-lg">
+                  {% if existing_images.count > 1 %}
+                  <div class="absolute top-2 right-2">
+                    <input type="checkbox" name="delete_images" value="{{ image.id }}" class="form-checkbox h-5 w-5 text-red-600">
+                  </div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            
+            <!-- New Images Upload -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-300">Add New Images</label>
+              <input type="file" name="images" multiple accept="image/*" class="mt-1 block w-full text-gray-300">
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="flex justify-end space-x-4">
+              <a href="{% url 'products' %}" class="px-4 py-2 border border-gray-600 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700">
+                Cancel
+              </a>
+              <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                Update Variant
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    
+  </script> 
+</body>
+</html>

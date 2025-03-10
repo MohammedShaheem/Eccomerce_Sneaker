@@ -12,11 +12,12 @@
     <div class="bg-gray-800 p-6 h-screen">
       <h2 class="text-lg font-bold mb-4">Pages</h2>
       <nav>
-        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
-        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
-        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+        <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md bg-gray-700 transition-colors">Users</a>
+        <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
+        <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
         <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
-        <a href="#" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Reports</a>
+        <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Reports</a>
       </nav>
     </div>
 
@@ -34,52 +35,69 @@
       </nav>
 
       <div class="bg-gray-800 rounded-lg shadow-md p-6 mt-6">
-        {% comment %} {% for row in user%} {% endcomment %}
         <div class="grid grid-cols-2 gap-6">
           <div>
-            <p class="font-medium">id</p>
+            <p class="font-medium">ID</p>
             <p><strong>ID:</strong> {{ user.id }}</p>
           </div>
           <div>
-            <p class="font-medium">name</p>
-            <p><strong>Name:</strong> {{ user.name }}</p>
+            <p class="font-medium">Name</p>
+            <p><strong>Name:</strong> {{ user.username }}</p> <!-- Changed from user.name to user.username -->
           </div>
           <div>
-            <p class="font-medium">Email address</p>
+            <p class="font-medium">Email Address</p>
             <p><strong>Email:</strong> {{ user.email }}</p>
           </div>
           <div>
-            <p class="font-medium">Address</p>
-            <p>4140 Parker road,allentown</p>
+            <p class="font-medium">Phone Number</p>
+            <p><strong>Phone:</strong> {{ user.Phone_number }}</p>
           </div>
+          {% if default_address %}
+            <div>
+              <p class="font-medium">Address</p>
+              <p><strong>House:</strong> {{ default_address.house_name }}, {{ default_address.street }}</p>
+            </div>
+            <div>
+              <p class="font-medium">City</p>
+              <p><strong>City:</strong> {{ default_address.city }}</p>
+            </div>
+            <div>
+              <p class="font-medium">State</p>
+              <p><strong>State:</strong> {{ default_address.state }}</p>
+            </div>
+            <div>
+              <p class="font-medium">Country</p>
+              <p><strong>Country:</strong> {{ default_address.country|default:"Not specified" }}</p> <!-- Assuming country might be added -->
+            </div>
+            <div>
+              <p class="font-medium">Pincode</p>
+              <p><strong>Pincode:</strong> {{ default_address.pincode }}</p>
+            </div>
+          {% else %}
+            <div class="col-span-2">
+              <p class="font-medium">Address</p>
+              <p><strong>No address available</strong></p>
+            </div>
+          {% endif %}
           <div>
-            <p class="font-medium">City</p>
-            <p>California</p>
-          </div>
-          <div>
-            <p class="font-medium">Country</p>
-            <p>United States</p>
-          </div>
-          <div>
-            <p class="font-medium">Uploaded photo</p>
+            <p class="font-medium">Uploaded Photo</p>
             <img src="https://via.placeholder.com/150" alt="User photo" class="rounded-full w-24 h-24">
           </div>
         </div>
-        
+
         <div class="flex justify-end mt-6 space-x-2">
-            {% if user.is_active %}
-                <a href="{% url 'block_user' user.id %}" class="inline-block">
-                    <button class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md">Block</button>
-                </a>
-            {% else %}
-                <a href="{% url 'unblock_user' user.id %}" class="inline-block">
-                    <button class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md">Un block</button>
-                </a>
-            {% endif %}
-            <a href="{% url "admin_users" %}" class="inline-block">
-                <button class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md">Back</button>
+          {% if user.is_active %}
+            <a href="{% url 'block_user' user.id %}" class="inline-block">
+              <button class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md">Block</button>
             </a>
-          
+          {% else %}
+            <a href="{% url 'unblock_user' user.id %}" class="inline-block">
+              <button class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md">Unblock</button>
+            </a>
+          {% endif %}
+          <a href="{% url 'admin_users' %}" class="inline-block">
+            <button class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md">Back</button>
+          </a>
         </div>
       </div>
     </div>

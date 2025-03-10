@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-white">
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1 text-center">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <nav class="border-b relative">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Sneakers</div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-600">Home</a>
+                    <!-- Shop Dropdown -->
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
+                            <span>Shop</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                            <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                            <a href="{% url "Boots" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100"></a>
+                        </div>
+                    </div>
+                    <a href="#" class="text-gray-600">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
+                    <button class="p-2"><i class="fas fa-search"></i></button>
+                    <button class="p-2"><i class="fas fa-heart"></i></button>
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
+                    </a>
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if messages %}
+        <div class="fixed top-4 right-4 z-50">
+        {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                       px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+        {% endfor %}
+        </div>
+        {% endif %}
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">My Wishlist</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for item in wishlist_items %}
+            <div class="bg-white rounded-lg shadow-md p-4" id="wishlist-item-{{ item.product.id }}">
+                <!-- Image Section -->
+                {% with variants=item.product.variances.all %}
+                    {% if variants %}
+                        {% with first_variant=variants|first %}
+                            {% with first_image=first_variant.images.first %}
+                                {% if first_image %}
+                                    <img src="{{ first_image.image.url }}" 
+                                         alt="{{ item.product.name }}"
+                                         class="w-full h-48 object-cover rounded-t-lg">
+                                {% else %}
+                                    <!-- Fallback image if no product image is available -->
+                                    <div class="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
+                                        <span class="text-gray-500">No image available</span>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        <!-- Fallback if no variants exist -->
+                        <div class="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
+                            <span class="text-gray-500">No variants available</span>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="mt-4">
+                    <h2 class="text-xl font-semibold">{{ item.product.name }}</h2>
+                    <!-- Display discounted price if available, otherwise fall back to sale_Price -->
+                    {% if item.discount_data.offer %}
+                    <div class="text-lg font-bold mt-2">
+                        <span class="text-red-600">₹{{ item.discount_data.final_price|floatformat:2 }}</span>
+                        <span class="text-sm line-through text-gray-500 ml-2">₹{{ item.discount_data.original_price|floatformat:2 }}</span>
+                        <span class="text-green-600 text-sm ml-2">Save ₹{{ item.discount_data.saved_amount|floatformat:2 }}</span>
+                    </div>
+                    {% else %}
+                    <p class="text-lg font-bold mt-2">₹{{ item.product.sale_Price|floatformat:2 }}</p>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <select class="variant-select w-full p-2 border rounded mb-4" 
+                                data-product-id="{{ item.product.id }}">
+                            <option value="">Select Size & Color</option>
+                            {% for variant in item.available_variants %}
+                                <option value="{{ variant.id }}">
+                                    {{ variant.size.size }} - {{ variant.color.color }}
+                                    {% if variant.Stock_Quantity == 0 %}(Out of Stock){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <div class="flex space-x-2">
+                            <button onclick="addToCartFromWishlist({{ item.product.id }})"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Add to Cart
+                            </button>
+                            <button onclick="removeFromWishlist({{ item.product.id }})"
+                                    class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="col-span-full text-center text-gray-500">Your wishlist is empty.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white mt-16">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-4 gap-8">
+                <!-- Subscribe -->
+                <div>
+                    <h3 class="font-medium mb-4">Subscribe</h3>
+                    <p class="text-sm mb-4">Get 10% off your first order</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Enter your email" class="bg-transparent border px-4 py-2 flex-grow">
+                        <button class="bg-white text-black px-4">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h3 class="font-medium mb-4">Support</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>111 Bijay sarani, Dhaka,</p>
+                        <p>DH 1515, Bangladesh.</p>
+                        <p>exclusive@gmail.com</p>
+                        <p>+88015-88888-9999</p>
+                    </div>
+                </div>
+
+                <!-- Account -->
+                <div>
+                    <h3 class="font-medium mb-4">Account</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>My Account</p>
+                        <p>Login / Register</p>
+                        <p>Cart</p>
+                        <p>Wishlist</p>
+                        <p>Shop</p>
+                    </div>
+                </div>
+
+                <!-- Quick Link -->
+                <div>
+                    <h3 class="font-medium mb-4">Quick Link</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>Privacy Policy</p>
+                        <p>Terms Of Use</p>
+                        <p>FAQ</p>
+                        <p>Contact</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download App Section -->
+            <div class="mt-12">
+                <h3 class="font-medium mb-4">Download App</h3>
+                <div class="flex items-center space-x-4">
+                    <img src="/api/placeholder/120/40" alt="QR Code" class="w-24 h-24">
+                    <div class="space-y-2">
+                        <img src="/api/placeholder/120/40" alt="Google Play" class="h-10">
+                        <img src="/api/placeholder/120/40" alt="App Store" class="h-10">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Icons -->
+            <div class="flex space-x-4 mt-8">
+                <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    async function toggleWishlist(productId) {
+        try {
+            const response = await fetch(`/wishlist/toggle/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            
+            // Update the wishlist button appearance
+            const wishlistBtn = document.querySelector(`.wishlist-btn[data-product-id="${productId}"]`);
+            if (wishlistBtn) {
+                const icon = wishlistBtn.querySelector('svg');
+                if (data.status === 'added') {
+                    icon.classList.add('text-red-500', 'fill-current');
+                    icon.classList.remove('text-gray-500');
+                    showNotification('Added to wishlist', 'success');
+                } else {
+                    icon.classList.remove('text-red-500', 'fill-current');
+                    icon.classList.add('text-gray-500');
+                    showNotification('Removed from wishlist', 'success');
+                    
+                    // If on wishlist page, remove the item
+                    const wishlistItem = document.getElementById(`wishlist-item-${productId}`);
+                    if (wishlistItem) {
+                        wishlistItem.remove();
+                        checkEmptyWishlist();
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error updating wishlist', 'error');
+        }
+    }
+    
+    async function addToCartFromWishlist(productId) {
+        const variantSelect = document.querySelector(`select[data-product-id="${productId}"]`);
+        if (!variantSelect || !variantSelect.value) {
+            showNotification('Please select a size and color', 'error');
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('variant_id', variantSelect.value);
+        formData.append('remove_from_wishlist', 'true');
+    
+        try {
+            const response = await fetch('/wishlist-add-to-cart/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: formData
+            });
+    
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Remove from wishlist UI
+                const wishlistItem = document.getElementById(`wishlist-item-${productId}`);
+                if (wishlistItem) {
+                    wishlistItem.remove();
+                    checkEmptyWishlist();
+                }
+                
+                // Update cart count
+                
+                showNotification('Added to cart successfully', 'success');
+            } else {
+                throw new Error(data.message || 'Failed to add to cart');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification(error.message || 'Error adding to cart', 'error');
+        }
+    }
+    async function removeFromWishlist(productId) {
+        try {
+            const response = await fetch(`/wishlist-remove/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            });
+    
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Remove the item from the UI
+                const wishlistItem = document.getElementById(`wishlist-item-${productId}`);
+                if (wishlistItem) {
+                    wishlistItem.remove();
+                    checkEmptyWishlist();
+                    
+                    // Show success notification
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Item removed from wishlist',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            } else {
+                throw new Error(data.message || 'Failed to remove from wishlist');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: error.message || 'Error removing from wishlist'
+            });
+        }
+    }
+    
+    // Function to check if wishlist is empty and show appropriate message
+        function checkEmptyWishlist() {
+            const wishlistContainer = document.querySelector('.grid');
+            const wishlistItems = wishlistContainer.querySelectorAll('[id^="wishlist-item-"]');
+            
+            if (wishlistItems.length === 0) {
+                const emptyMessage = `
+                    <div class="col-span-full text-center py-8">
+                        <p class="text-gray-500 text-lg mb-4">Your wishlist is empty</p>
+                        <a href="/" class="inline-block px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition duration-200">
+                            Continue Shopping
+                        </a>
+                    </div>
+                `;
+                wishlistContainer.innerHTML = emptyMessage;
+            }
+        }
+    
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+</body>
+</html>

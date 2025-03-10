@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Products</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 p-6 h-screen">
+      <h2 class="text-lg font-bold mb-4">Pages</h2>
+      <nav>
+        <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+        <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
+        <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md bg-gray-700">Products</a>
+        <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+        <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+        <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
+      </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    
+    <div class="flex-1 p-8">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl font-bold mb-2">Add offer</h1>
+            <p class="text-gray-400"> > Add offer</p>
+        </div>
+        <a href="{% url 'products' %}" 
+        class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back to Products
+        </a>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-500{% else %}bg-green-500{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+      
+
+      <!-- Form Section -->
+<div class="min-h-screen p-6 bg-gray-900">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-2xl font-bold text-white mb-6">
+            {% if is_edit %}Edit{% else %}Add New{% endif %} {{ source_type|title }} Offer
+        </h1>
+
+        <form method="POST" class="space-y-6" data-lowest-price="{% if source_type == 'category' and lowest_price %}{{ lowest_price }}{% else %}null{% endif %}">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="mb-4">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-2">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <div class="text-red-500 text-sm mt-1">
+                    {{ field.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-end gap-4">
+                <a href="{% url 'offer_list' %}" 
+                   class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    {% if is_edit %}Update{% else %}Create{% endif %} Offer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get form elements
+    const form = document.querySelector('form');
+    const discountValue = form.querySelector('input[name="discount_value"]');
+    const discountType = form.querySelector('select[name="discount_type"]');
+    const offerTitle = form.querySelector('input[name="offer_title"]');
+    const validFrom = form.querySelector('input[name="valid_from"]');
+    const validTill = form.querySelector('input[name="valid_till"]');
+    const lowestPrice = parseFloat(form.dataset.lowestPrice) || null;  // Get lowest price from data attribute
+
+    // Helper function to show error
+    function showError(element, message) {
+        let errorDiv = element.parentElement.querySelector('.text-red-500');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'text-red-500 text-sm mt-1';
+            element.parentElement.appendChild(errorDiv);
+        }
+        errorDiv.textContent = message;
+        element.classList.add('border-red-500');
+    }
+
+    // Helper function to hide error
+    function hideError(element) {
+        const errorDiv = element.parentElement.querySelector('.text-red-500');
+        if (errorDiv) {
+            errorDiv.textContent = '';
+        }
+        element.classList.remove('border-red-500');
+    }
+
+    // Validate dates
+    function validateDates() {
+        const fromDate = new Date(validFrom.value);
+        const tillDate = new Date(validTill.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (!validFrom.value) {
+            showError(validFrom, 'Start date is required');
+        } else if (fromDate < today) {
+            showError(validFrom, 'Start date cannot be in the past');
+        } else {
+            hideError(validFrom);
+        }
+
+        if (!validTill.value) {
+            showError(validTill, 'End date is required');
+        } else if (tillDate <= fromDate) {
+            showError(validTill, 'End date must be after start date');
+        } else {
+            hideError(validTill);
+        }
+    }
+
+    // Set minimum dates
+    function setMinDates() {
+        const today = new Date().toISOString().split('T')[0];
+        validFrom.min = today;
+        if (validFrom.value) {
+            validTill.min = validFrom.value;
+        } else {
+            validTill.min = today;
+        }
+    }
+
+    // Event listeners for dates
+    validFrom.addEventListener('input', function() {
+        validateDates();
+        setMinDates();
+    });
+    validTill.addEventListener('input', validateDates);
+    
+    // Initial setup
+    setMinDates();
+
+    // Validate offer title
+    offerTitle.addEventListener('input', function() {
+        const value = this.value.trim();
+        const titleRegex = /^[a-zA-Z][a-zA-Z0-9\s]*$/;
+
+        if (value.length === 0) {
+            showError(this, 'Offer title is required');
+        } else if (!titleRegex.test(value)) {
+            showError(this, 'Title must start with a letter and contain only letters, numbers, and spaces');
+        } else if (value.length > 255) {
+            showError(this, 'Title cannot exceed 255 characters');
+        } else {
+            hideError(this);
+        }
+    });
+
+    // Validate discount value based on type
+    function validateDiscountValue() {
+        const value = parseFloat(discountValue.value);
+        const isCategoryOffer = lowestPrice !== null;  // Check if it's a category offer
+
+        if (!discountValue.value) {
+            showError(discountValue, 'Discount value is required');
+            return;
+        } else if (isNaN(value) || value < 0) {
+            showError(discountValue, 'Please enter a valid positive number');
+            return;
+        }
+
+        if (discountType.value === 'percentage') {
+            if (value > 95) {
+                showError(discountValue, 'Percentage discount cannot exceed 95%');
+            } else {
+                hideError(discountValue);
+            }
+        } else if (discountType.value === 'fixed') {
+            if (value <= 0) {
+                showError(discountValue, 'Fixed discount must be greater than 0');
+            } else if (isCategoryOffer && lowestPrice !== null) {
+                const maxAllowedDiscount = lowestPrice - 500;
+                if (value >= maxAllowedDiscount) {
+                    showError(discountValue, 
+                        `Fixed discount (${value}₹) must be at least 500₹ less than the lowest priced product (${lowestPrice}₹). Max allowed: ${maxAllowedDiscount}₹`
+                    );
+                } else {
+                    hideError(discountValue);
+                }
+            } else {
+                hideError(discountValue);
+            }
+        }
+    }
+
+    discountValue.addEventListener('input', validateDiscountValue);
+    discountType.addEventListener('change', validateDiscountValue);
+
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        let hasErrors = false;
+
+        // Validate all fields
+        if (!offerTitle.value.trim()) {
+            showError(offerTitle, 'Offer title is required');
+            hasErrors = true;
+        }
+
+        if (!discountValue.value) {
+            showError(discountValue, 'Discount value is required');
+            hasErrors = true;
+        }
+
+        if (!validFrom.value) {
+            showError(validFrom, 'Start date is required');
+            hasErrors = true;
+        }
+
+        if (!validTill.value) {
+            showError(validTill, 'End date is required');
+            hasErrors = true;
+        }
+
+        // Run all validations
+        validateDiscountValue();
+        validateDates();
+
+        // Check for any remaining errors
+        const errorMessages = form.querySelectorAll('.text-red-500');
+        for (const error of errorMessages) {
+            if (error.textContent) {
+                hasErrors = true;
+                break;
+            }
+        }
+
+        if (hasErrors) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+ 
+    
+</body>
+</html>
