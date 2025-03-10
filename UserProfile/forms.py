@@ -3,6 +3,7 @@ from UserProfile.models import UserTable,Address
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 import re
+from AdminProfile.models import Order
 
 class UserRegForm(forms.ModelForm):
     username = forms.CharField(
@@ -256,6 +257,7 @@ class CancellationForm(forms.Form):
     
 class ReturnForm(forms.Form):
     reason = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 3}),
-        help_text='Please explain the reason for returning the items.'
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md'}),
+        label="Return Reason",
+        help_text="Please provide a detailed reason for returning these items."
     )

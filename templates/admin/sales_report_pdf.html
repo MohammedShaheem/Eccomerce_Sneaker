@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            font-size: 12px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header-info {
+            margin-bottom: 20px;
+        }
+        .summary-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .summary-item {
+            margin-bottom: 10px;
+        }
+        .label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .section-title {
+            font-size: 16px;
+            color: #2c3e50;
+            margin: 15px 0 10px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #777;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sales Report</h1>
+    
+    <div class="header-info">
+        <p><span class="label">Report Type:</span> {{ report_type|title }}</p>
+        <p><span class="label">Period:</span> {{ start_date }} to {{ end_date }}</p>
+        <p><span class="label">Order Status:</span> {{ order_status }}</p>
+    </div>
+
+    <div class="section-title">Sales Summary</div>
+    <div class="summary-box">
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="label">Total Orders:</span> {{ total_sales_count }}
+            </div>
+            <div class="summary-item">
+                <span class="label">Total Order Amount:</span> ${{ total_order_amount|floatformat:2 }}
+            </div>
+            <div class="summary-item">
+                <span class="label">Total Discounts:</span> ${{ total_discount|floatformat:2 }}
+            </div>
+            <div class="summary-item">
+                <span class="label">Total Revenue:</span> ${{ total_revenue|floatformat:2 }}
+            </div>
+            <div class="summary-item">
+                <span class="label">Total Refund Amount:</span> ${{ total_refund_amount|floatformat:2 }}
+            </div>
+            <div class="summary-item">
+                <span class="label">Total Canceled Orders:</span> ${{ total_canceled_count }}
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">Payment Methods</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Payment Method</th>
+                <th>Orders</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for method in payment_methods %}
+            <tr>
+                <td>{{ method.payment_method }}</td>
+                <td>{{ method.count }}</td>
+                <td>${{ method.total|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Top Selling Products</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity Sold</th>
+                <th>Total Sales</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in top_products %}
+            <tr>
+                <td>{{ product.variant__product__name }}</td>
+                <td>{{ product.quantity_sold }}</td>
+                <td>${{ product.total_sales|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Report generated on {{ request.build_absolute_uri }}</p>
+        <p>Generated on {% now "F j, Y H:i" %}</p>
+    </div>
+</body>
+</html>

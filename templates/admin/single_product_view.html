@@ -19,14 +19,29 @@
                 <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
                 <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
                 <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+                <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
             </nav>
         </div>
 
         <!-- Main Content Area -->
         <div class="flex-1 p-8">
+
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold mb-2">Single Product Detail</h1>
+                    <p class="text-gray-400">Products > Product Detail > Single Product Detail</p>
+                </div>
+                <a href="{% url 'products' %}" 
+                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Back to Products
+                </a>
+            </div>
             <nav class="bg-gray-800 py-4">
                 <div class="container mx-auto flex justify-between items-center">
-                    <div class="text-2xl font-bold">Product Details</div>
+                    <div class="text-2xl font-bold"></div>
                 </div>
             </nav>
         
@@ -73,7 +88,7 @@
                                     <h6 class="text-sm text-gray-500">Size:</h6>
                                     <div class="flex flex-wrap gap-2 mt-2">
                                         {% for size in available_sizes %}
-                                            <button class="px-4 py-2 rounded-md {% if size == variance.size.size %}bg-gray-600 text-white{% else %}bg-gray-700 text-gray-300{% endif %} hover:bg-gray-600">
+                                            <button class="px-4 py-2 rounded-md {% if size == variance.size.size %}bg-gray-600 text-white{% else %}bg-gray-800 text-gray-300{% endif %} hover:bg-gray-600">
                                                 {{ size }}
                                             </button>
                                         {% endfor %}
@@ -87,7 +102,9 @@
                                         {% for color in available_colors %}
                                             <button class="w-8 h-8 rounded-full border-2 {% if color == variance.color.color %}border-white{% else %}border-gray-500{% endif %} hover:border-white"
                                                     style="background-color: {{ color }}">
+                                                    
                                             </button>
+                                            <p>{{ color }}</p>
                                         {% endfor %}
                                     </div>
                                 </div>

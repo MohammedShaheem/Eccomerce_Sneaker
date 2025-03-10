@@ -3,8 +3,8 @@ from django.contrib import messages  # for setting passages if user logedin
 from UserProfile.forms import UserRegForm,AddressForm,CancellationForm,ReturnForm
 from UserProfile.models import UserTable,Address
 from django.contrib.auth.hashers import make_password,check_password #make password for encrypting and check password for decrypting
-from AdminProfile.models import ProductTable,Product,Category,ProductTable,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem,Order,OrderItem,Wishilist,Wallet,WalletTransaction,ReturnedItem
-from .utils import generate_otp, verify_otp
+from AdminProfile.models import ProductTable,Product,Category,VarianceTable,Color,Size,Product_Images_Table,Cart,CartItem,Order,OrderItem,Wishilist,Wallet,WalletTransaction,Offer,Coupon,CouponUsage,ReturnRequest,ReturnRequestItem,OrderAddress
+from .utils import generate_otp, verify_otp,get_discounted_price
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import authenticate, login as auth_login
@@ -30,6 +30,13 @@ from django.conf import settings
 from paypal.standard.forms import PayPalPaymentsForm
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
+from django.db.models import F, Q
+import logging
+from django.utils.timezone import now
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from io import BytesIO
+from decimal import Decimal
 
 
 
@@ -38,39 +45,36 @@ from decimal import Decimal
 
 def login(request):
     if request.user.is_authenticated:
-        return redirect('home')
+        if not request.user.is_staff and request.session.get('user_role') == 'user':
+            return redirect('home')
+        elif request.user.is_staff:
+            messages.error(request, "Please log out from admin side first.")
+            return redirect('admin_logout')  # Force logout from admin side
 
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
         
         try:
-            # Find the user by email
             user = UserTable.objects.get(email=email)
             
-            # Detailed debugging
-            print(f"User found: {user}")
-            print(f"User is active: {user.is_active}")
-            print(f"User password is valid: {user.has_usable_password()}")
+            if user.is_staff:  # Block staff from user login
+                messages.error(request, "Staff members must use the admin login.")
+                return render(request, 'user/login.html')
 
-            # Check if user is active
             if not user.is_active:
                 messages.error(request, "Your account is not active. Please verify your email.")
                 return render(request, 'user/login.html')
 
-            # Authenticate using the user's credentials
             auth_user = authenticate(username=email, password=password)
-            print(f"auth_user: {auth_user}")
             
-            print(f"Authentication result: {auth_user}")
-
             if auth_user is not None:
                 auth_login(request, auth_user)
+                request.session['user_role'] = 'user'  # Set role as user
                 request.session['userMail'] = email
                 messages.success(request, "Login successful!")
                 return redirect('home')
             else:
-                # If authentication fails, check password
                 if not user.check_password(password):
                     messages.error(request, "Incorrect password")
                 else:
@@ -349,13 +353,14 @@ def logout(request):
 
 
 #############################################################################################################################################################################
-def MenPage(request):
+def Sneakers(request):
     products = ProductTable.objects.prefetch_related(
         'category',
         'variances__images',
         'variances__size',
         'variances__color'
-    ).filter(Is_deleted=False)  
+    ).filter(category__category_name='sneakers',
+        Is_deleted=False,Is_active=True)  
     
     # Get user's wishlist items
     user_wishlist_items = []
@@ -379,6 +384,21 @@ def MenPage(request):
     elif sort_option == 'name_desc':
         products = products.order_by('-name')
     
+    #calculate discounted proces for each product
+    products_with_offers = []
+    for product in products:
+        discount_info = get_discounted_price(product)
+        print(f"discount_info:{discount_info}")
+        products_with_offers.append({
+            'product':product,
+            'discounted_info':discount_info
+        })    
+        print(f"products_with_offers:{products_with_offers}")
+        
+        
+        
+        
+    
     # Get cart count
     cart_count = 0
     if request.user.is_authenticated:
@@ -387,18 +407,140 @@ def MenPage(request):
         cart = request.session.get('cart', {})
         cart_count = sum(item.get('quantity', 0) for item in cart.values())
     
-    return render(request, 'user/menPage.html', {
-        'products': products,
+    return render(request, 'user/Sneakers.html', {
+        'products': products_with_offers,
         'current_sort': sort_option,
         'cart_count': cart_count,
         'user_wishlist_items': user_wishlist_items
     })
 ######################################################################################################################################################################################
 
+def Boots(request):
+    products = ProductTable.objects.prefetch_related(
+        'category',
+        'variances__images',
+        'variances__size',
+        'variances__color'
+    ).filter(category__category_name='boots',
+        Is_deleted=False,Is_active=True)  
+    
+    # Get user's wishlist items
+    user_wishlist_items = []
+    if request.user.is_authenticated:
+        user_wishlist_items = Wishilist.objects.filter(
+            user=request.user
+        ).values_list('product_id', flat=True)
+    
+    # Get the sort parameter from the request
+    sort_option = request.GET.get('sort', 'default')
+    
+    # Apply sorting based on user selection
+    if sort_option == 'price_low_high':
+        products = products.order_by('sale_Price')
+    elif sort_option == 'price_high_low':
+        products = products.order_by('-sale_Price')
+    elif sort_option == 'new_arrival':
+        products = products.order_by('-created_at')
+    elif sort_option == 'name_asc':
+        products = products.order_by('name')
+    elif sort_option == 'name_desc':
+        products = products.order_by('-name')
+    
+    #calculate discounted proces for each product
+    products_with_offers = []
+    for product in products:
+        discount_info = get_discounted_price(product)
+        print(f"discount_info:{discount_info}")
+        products_with_offers.append({
+            'product':product,
+            'discounted_info':discount_info
+        })    
+        print(f"products_with_offers:{products_with_offers}")
+        
+        
+        
+        
+    
+    # Get cart count
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart_count = CartItem.objects.filter(cart__user=request.user).count()
+    else:
+        cart = request.session.get('cart', {})
+        cart_count = sum(item.get('quantity', 0) for item in cart.values())
+    
+    return render(request, 'user/Boots.html', {
+        'products': products_with_offers,
+        'current_sort': sort_option,
+        'cart_count': cart_count,
+        'user_wishlist_items': user_wishlist_items
+    })
+#################################################################################################################################################################################
+def Runners(request):
+    products = ProductTable.objects.prefetch_related(
+        'category',
+        'variances__images',
+        'variances__size',
+        'variances__color'
+    ).filter(category__category_name='Running',
+        Is_deleted=False,Is_active=True)  
+    
+    # Get user's wishlist items
+    user_wishlist_items = []
+    if request.user.is_authenticated:
+        user_wishlist_items = Wishilist.objects.filter(
+            user=request.user
+        ).values_list('product_id', flat=True)
+    
+    # Get the sort parameter from the request
+    sort_option = request.GET.get('sort', 'default')
+    
+    # Apply sorting based on user selection
+    if sort_option == 'price_low_high':
+        products = products.order_by('sale_Price')
+    elif sort_option == 'price_high_low':
+        products = products.order_by('-sale_Price')
+    elif sort_option == 'new_arrival':
+        products = products.order_by('-created_at')
+    elif sort_option == 'name_asc':
+        products = products.order_by('name')
+    elif sort_option == 'name_desc':
+        products = products.order_by('-name')
+    
+    #calculate discounted proces for each product
+    products_with_offers = []
+    for product in products:
+        discount_info = get_discounted_price(product)
+        print(f"discount_info:{discount_info}")
+        products_with_offers.append({
+            'product':product,
+            'discounted_info':discount_info
+        })    
+        print(f"products_with_offers:{products_with_offers}")
+        
+        
+        
+        
+    
+    # Get cart count
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart_count = CartItem.objects.filter(cart__user=request.user).count()
+    else:
+        cart = request.session.get('cart', {})
+        cart_count = sum(item.get('quantity', 0) for item in cart.values())
+    
+    return render(request, 'user/Boots.html', {
+        'products': products_with_offers,
+        'current_sort': sort_option,
+        'cart_count': cart_count,
+        'user_wishlist_items': user_wishlist_items
+    })
+############################################################################################################################################################################################3
 def single_product_page(request, product_id):
     product = get_object_or_404(ProductTable, id=product_id)#model name and the the id of the product to display whic comes from the url pattern.
     
-    # get all variants for this product with thier stock informations
+    #getting all variants for this product with thier stock informations
     variants = VarianceTable.objects.filter(
         product=product
     ).select_related(
@@ -409,13 +551,51 @@ def single_product_page(request, product_id):
         'size__size' # order by size value
     )
     
-    # check if product is completely out of stock
+    #getting the related product of the same category,excluding he same product
+    related_products = ProductTable.objects.filter(
+        category = product.category,
+        Is_deleted=False
+    ).exclude(
+        id=product.id
+    ).prefetch_related(
+        'variances',
+        'variances__images'
+    )[:4]#limiting 4 related products
+    
+    #checking if product is completely out of stock
     is_out_of_stock = not variants.filter(Stock_Quantity__gt=0).exists()
     
+    #calculatting the discounted proce for the product
+    discount_info = get_discounted_price(product)
+    
+    #adding discounted price info to related products as well
+    related_products_with_offers = [
+        {
+            'product': related_product,
+            'discounted_info': get_discounted_price(related_product)
+        }
+        for related_product in related_products
+    ]
+    user_wishlist_items = []
+    if request.user.is_authenticated:
+        user_wishlist_items = Wishilist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        
+    wishlist_count = Wishilist.objects.filter(user=request.user).count()
+    
+    
+     # Get cart count
+    cart = Cart.objects.get(user=request.user, is_active=True)
+    cart_count = cart.total_items
+        
+        
     context = {
         'product': product,
         'variants': variants,
+        'cart_count': cart_count,
+        'wishlist_count': wishlist_count,
+        'user_wishlist_items': user_wishlist_items,
         'is_out_of_stock': is_out_of_stock,
+        'related_products': related_products_with_offers,  
         'available_sizes': [
             {
                 'id': variant.id,
@@ -425,7 +605,8 @@ def single_product_page(request, product_id):
                 'images': [image.image.url for image in variant.images.all()]
             }
             for variant in variants
-        ]
+        ],
+        'discounted_info': discount_info  # Add discount info to context
     }
     
     return render(request, 'user/SPPage.html', context)
@@ -439,6 +620,26 @@ def home_before_login(request):
 
 
 ################################################################################################################################################################################
+logger = logging.getLogger(__name__)
+
+def clean_cart_of_deleted_products(cart):
+    """
+    remove deleted/blocked products from cart
+    returns number of items removed
+    """
+    deleted_items = cart.items.filter(
+        Q(product_variant__product__Is_deleted=True) |
+        Q(product_variant__product__Is_active=False) |
+        Q(product_variant__product__product_quantity=0)
+    )
+    
+    removed_count = deleted_items.count()
+    deleted_items.delete()
+    if removed_count > 0:
+        cart.update_total()
+    return removed_count
+
+
 @require_POST
 @login_required
 def add_to_cart(request):
@@ -447,47 +648,47 @@ def add_to_cart(request):
         variant_id = data.get('variant_id')
         quantity = int(data.get('quantity', 1))
         
-        # Validate inputs
         if not variant_id or quantity < 1:
             return JsonResponse({
                 'success': False,
                 'message': 'Invalid input data'
             })
             
-        # Get variant
         try:
-            variant = VarianceTable.objects.select_related('product').get(id=variant_id)
-            product_price = variant.product.sale_Price  # Get the price from product
+            variant = VarianceTable.objects.select_related('product').get(
+                id=variant_id,
+                product__Is_deleted=False,
+                product__Is_active=True
+            )
+            discount_info = get_discounted_price(variant.product)
+            product_price = discount_info['final_price']
+            print(f"product_price from discount: {product_price}")
         except VarianceTable.DoesNotExist:
             return JsonResponse({
                 'success': False,
-                'message': 'Product variant not found'
+                'message': 'Product is no longer available'
             })
             
-        # Check stock
         if variant.Stock_Quantity < quantity:
             return JsonResponse({
                 'success': False,
                 'message': f'Only {variant.Stock_Quantity} items available'
             })
             
-        # Get or create cart
         cart, _ = Cart.objects.get_or_create(user=request.user)
         
         try:
-            # Get or create cart item
             cart_item, created = CartItem.objects.get_or_create(
                 cart=cart,
                 product_variant=variant,
                 defaults={
                     'quantity': quantity,
-                    'item_price': product_price,  # Use product's sale price
-                    'total_price': product_price * quantity  # Calculate initial total price
+                    'item_price': product_price,
+                    'total_price': product_price * quantity
                 }
             )
             
             if not created:
-                # Update quantity if item already exists
                 new_quantity = cart_item.quantity + quantity
                 if new_quantity > variant.Stock_Quantity:
                     return JsonResponse({
@@ -495,17 +696,22 @@ def add_to_cart(request):
                         'message': f'Cannot add {quantity} more items. Stock limit reached.'
                     })
                 cart_item.quantity = new_quantity
-                cart_item.save()  # This will trigger the save method which updates total_price
+                cart_item.total_price = product_price * new_quantity  # Explicitly set total_price
+                cart_item.save()
             
             cart.update_total()
+            print(f"cart.grand_total after update: {cart.grand_total}")
             
-            # Return success response with updated cart info
+            cart_count = CartItem.objects.filter(cart__user=request.user).count()
+            
             return JsonResponse({
                 'success': True,
-                'message': 'Product added to cart successfully',
+                'message': 'Item added to cart successfully',
                 'cart_count': cart.total_items,
                 'cart_total': float(cart.grand_total)
             })
+            
+            
             
         except ValidationError as e:
             return JsonResponse({
@@ -514,7 +720,7 @@ def add_to_cart(request):
             })
             
     except Exception as e:
-        print(f"Error in add_to_cart: {str(e)}")  # For debugging
+        print(f"Error in add_to_cart: {str(e)}")
         return JsonResponse({
             'success': False,
             'message': 'An error occurred while adding to cart'
@@ -522,45 +728,90 @@ def add_to_cart(request):
 #######################################################################################################################################################################################################################
 @login_required
 def cart(request):
-    cart,created = Cart.objects.get_or_create(
-        user=request.user,
-        defaults={'grand_total':0.00}
-    )
-    print(f"user:{request.user}")
-    print(f"cart:{cart}")
-    
-    
-    cart_items = cart.items.select_related(
-        'product_variant',
-        'product_variant__product',
-        'product_variant__size',
-        'product_variant__color'
+    try:
+        cart, created = Cart.objects.get_or_create(
+            user=request.user,
+            defaults={'grand_total': 0.00}
+        )
         
-    ).prefetch_related(
-        'product_variant__images'
-    ).all()
-    
-    print("Cart Items:", cart_items.count())
-    
-    subtotal = Decimal(cart.grand_total)
-    tax_rate = Decimal(0.10)
-    tax_amount = subtotal * tax_rate
-    total = subtotal + tax_amount
-    
-    context = {
-        "cart_items":cart_items,
-        'cart':cart,
-        "cart_total":cart.grand_total,
-        "subtotal": subtotal,
-        "tax_amount": tax_amount,
-        "total": total,
-        "item_count" : cart.total_items,
-    }
-    
-    
-    return render(request,'user/cart.html',context)
-#######################################################################################################################################################################################
+        removed_count = clean_cart_of_deleted_products(cart)
+        if removed_count > 0:
+            messages.warning(
+                request,
+                f'{removed_count} items were removed from your cart as they are no longer available'
+            )
+        
+        
+        cart_items = cart.items.select_related(
+            'product_variant',
+            'product_variant__product',
+            'product_variant__size',
+            'product_variant__color'
+        ).prefetch_related(
+            'product_variant__images'
+        ).all()
+        
+        for item in cart_items:
+            if item.quantity > item.product_variant.Stock_Quantity:
+                messages.warning(request, f"Quantity for {item.product_variant.product.name} exceeds available stock")
 
+        
+        #recalculate totals
+        subtotal = Decimal('0.00')
+        original_total = Decimal('0.00')
+        for item in cart_items:
+            discount_info = get_discounted_price(item.product_variant.product)
+            print(f"item.total_price:{item.total_price}")
+            subtotal += item.total_price
+            
+            original_total += discount_info['original_price'] * item.quantity
+            print(f"Item: {item.product_variant.product.name}, item_price={item.item_price}, total_price={item.total_price}, original_price={discount_info['original_price']}")
+        
+        #update cart grand_total if it differs
+        if cart.grand_total != subtotal:
+            cart.grand_total = subtotal
+            cart.save()
+            print(f"Updated cart.grand_total to: {cart.grand_total}")
+        
+        discount = original_total - subtotal
+        # tax_rate = Decimal('0')
+        # tax_amount = subtotal * tax_rate
+        total = subtotal 
+        
+        print(f"subtotal: {subtotal}")
+        print(f"original_total: {original_total}")
+        print(f"discount: {discount}")
+        # print(f"tax_amount: {tax_amount}")
+        print(f"total: {total}")
+        
+        context = {
+            "cart_items": cart_items,
+            'cart': cart,
+            "cart_total": cart.grand_total,
+            "subtotal": subtotal,
+            "original_total": original_total,
+            "discount": discount,
+            # "tax_amount": tax_amount,
+            "total": total,
+            "item_count": cart.total_items,
+        }
+        
+        return render(request, 'user/cart.html', context)
+    
+    except Exception as e:
+        print(f"Error in cart view: {str(e)}")
+        return render(request, 'user/cart.html', {'error': str(e)})
+#######################################################################################################################################################################################
+@login_required
+def get_cart_count(request):
+    try:
+        cart = Cart.objects.get(user=request.user, is_active=True)
+        cart_count = CartItem.objects.filter(cart=cart).count()
+    except Cart.DoesNotExist:
+        cart_count = 0
+    
+    return JsonResponse({'cart_count': cart_count})
+#############################################################################################################################################################################
 @login_required
 def update_cart_item(request, item_id):
     if request.method == 'POST':
@@ -594,6 +845,7 @@ def update_cart_item(request, item_id):
                 'item_count': int(cart.total_items),
                 'item_total': float(cart_item.total_price)
             })
+           
             
         except Exception as e:
             return JsonResponse({
@@ -689,29 +941,141 @@ def add_address(request):
     return render(request, 'user/add_address.html', {'form': form})
 #####################################################################################################################################################################################################
 @login_required
+def apply_coupon(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+    
+    coupon_code = request.POST.get('coupon_code', '').strip().upper()
+    if not coupon_code:
+        return JsonResponse({'success': False, 'message': 'Please enter a coupon code'})
+    
+    try:
+        coupon = Coupon.objects.get(coupon_code=coupon_code, is_active=True, is_deleted=False)
+        cart = Cart.objects.get(user=request.user)
+        cart_total = cart.items.aggregate(total=Sum('total_price'))['total'] or Decimal('0')
+        discount, error = coupon.apply(request.user, cart_total)
+        if discount is not None:
+            request.session['applied_coupon_code'] = coupon_code
+            return JsonResponse({
+                'success': True,
+                'message': f"Coupon '{coupon_code}' applied successfully!",
+                'discount': float(discount),
+                'coupon_name': coupon.coupon_name,
+                'total_amount': float(cart_total + Decimal('0') - discount)  # Adjust delivery_charge as needed
+            })
+        else:
+            if 'applied_coupon_code' in request.session:
+                del request.session['applied_coupon_code']
+            return JsonResponse({'success': False, 'message': error})
+    except Coupon.DoesNotExist:
+        if 'applied_coupon_code' in request.session:
+            del request.session['applied_coupon_code']
+        return JsonResponse({'success': False, 'message': 'Invalid coupon code'})
+    except Cart.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Your cart is empty'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': 'Server error occurred'}, status=500)
+
+@login_required
+@require_POST
+def remove_coupon(request):
+    try:
+        # Remove the coupon from session
+        if 'applied_coupon_code' in request.session:
+            del request.session['applied_coupon_code']
+        
+        # Get the cart total without discount
+        cart = Cart.objects.get(user=request.user)
+        cart_items = cart.items.filter(
+            product_variant__product__Is_deleted=False,
+            product_variant__product__Is_active=True
+        )
+        cart_total = cart_items.aggregate(total=Sum('total_price'))['total'] or Decimal('0')
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Coupon removed successfully',
+            'total_amount': float(cart_total)  # Return the updated total
+        })
+    except Cart.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Your cart is empty'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Server error occurred'
+        }, status=500)
+
+@login_required
 def checkout(request):
-    # Existing code remains the same until context
+    cart = None
+    cart_items = []
+    coupon_error = None
+    applied_coupon = None
+    coupon_discount = Decimal('0')
+    coupons = Coupon.objects.all()
     try:
         cart = Cart.objects.get(user=request.user)
-        cart_items = CartItem.objects.filter(cart=cart)
+        
+        removed_count = clean_cart_of_deleted_products(cart)
+        if removed_count > 0:
+            messages.warning(
+                request,
+                f'{removed_count} items were removed from your cart as they are no longer available'
+            )
+            return redirect('cart')
+        
+        cart_items = CartItem.objects.filter(
+            cart=cart,
+            product_variant__product__Is_deleted=False,
+            product_variant__product__Is_active=True    
+        )
+        for item in cart_items:
+            if item.quantity > item.product_variant.Stock_Quantity:
+                messages.warning(request, f"Cannot proceed to checkout! {item.product_variant.product.name} exceeds available stock.")
+                return redirect('cart')  
+                
+        if not cart_items.exists():
+            messages.error(request, "Your cart is empty")
+            return redirect('cart')
+        
     except Cart.DoesNotExist:
-        cart_items = []
-        cart = None
+        messages.error(request, "Your cart is empty.")
+        return redirect('cart')
 
     user_addresses = Address.objects.filter(user=request.user)
     
-    cart_total = 0
-    if cart_items:
-        cart_total = cart_items.aggregate(
-            total=Sum('total_price')
-        )['total'] or 0
+    # Calculate cart total
+    cart_total = cart_items.aggregate(total=Sum('total_price'))['total'] or Decimal('0')
+    delivery_charge = Decimal('0')
     
-    delivery_charge = 0  
-    coupon_discount = 0
+    #handleing POST actions
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'remove_coupon':
+            if 'applied_coupon_code' in request.session:
+                del request.session['applied_coupon_code']
+                messages.success(request, "Coupon removed successfully!")
+                
+    #validating applied coupon 
+    applied_coupon_code = request.session.get('applied_coupon_code')
+    if applied_coupon_code:
+        try:
+            coupon = Coupon.objects.get(coupon_code=applied_coupon_code)
+            discount, error = coupon.apply(request.user, cart_total)
+            if discount is not None:
+                applied_coupon = coupon
+                coupon_discount = discount
+            else:
+                coupon_error = error
+                del request.session['applied_coupon_code']
+        except Coupon.DoesNotExist:
+            coupon_error = "Invalid coupon code"
+            del request.session['applied_coupon_code']
     
     total_amount = cart_total + delivery_charge - coupon_discount
-    
-    
     wallet = request.user.wallet
     has_sufficient_balance = wallet.has_sufficient_balance(total_amount)
     
@@ -723,11 +1087,17 @@ def checkout(request):
         'coupon_discount': coupon_discount,
         'total_amount': total_amount,
         'address_form': AddressForm(),
-        'wallet_balance':wallet.balance,
-        'has_sufficient_balance': has_sufficient_balance
+        'wallet_balance': wallet.balance,
+        'has_sufficient_balance': has_sufficient_balance,
+        'applied_coupon': applied_coupon,
+        'coupon_error': coupon_error,
+        'coupons':coupons
     }
     
     return render(request, 'user/checkout.html', context)
+
+
+            
 
 @login_required
 def create_order(request):
@@ -739,7 +1109,24 @@ def create_order(request):
                 'items__product_variant',
                 'items__product_variant__product'
             ).get(user=request.user, is_active=True)
-
+            
+            
+            
+            removed_count = clean_cart_of_deleted_products(cart)
+            if removed_count > 0:
+                messages.warning(
+                    request,
+                    f'{removed_count} items were removed as they are no longer available'
+                )
+                return redirect('checkout')
+            
+            if not cart.items.exists():
+                messages.error(request, "Your cart is empty")
+                return redirect('checkout')
+            
+            cart_total = cart.items.aggregate(total=Sum('total_price'))['total'] or Decimal('0')
+            delivery_charge = Decimal('0')  
+            total_amount = cart_total + delivery_charge
 
             # Validate address
             address_id = request.POST.get('address')
@@ -748,31 +1135,84 @@ def create_order(request):
                 return redirect('checkout')
             address = Address.objects.get(id=address_id, user=request.user)
 
-
             # Validate payment method
             payment_method = request.POST.get('payment_method')
             if payment_method not in ['COD', 'WALLET', 'UPI']:
                 messages.error(request, "Invalid payment method")
                 return redirect('checkout')
-
-
-            # Calculate total
+            if payment_method == 'COD' and total_amount > Decimal('1000'):
+                messages.error(request, "Cash on Delivery is not available for orders above ₹1000. Please choose another payment method.")
+                return redirect('checkout')
+            has_offer_applied = False
+            
+            # Calculate total first
             total_amount = Decimal('0')
             for item in cart.items.all():
                 if item.product_variant.Stock_Quantity < item.quantity:
                     raise ValueError(f"Sorry, {item.product_variant} is out of stock")
-                total_amount += item.product_variant.product.sale_Price * item.quantity
-
+                total_amount += item.item_price * item.quantity
+                
+                discount_info = get_discounted_price(item.product_variant.product)
+                item_offer = discount_info['offer']
+                
+                if item_offer:
+                    has_offer_applied = True
 
             if total_amount <= 0:
                 messages.error(request, "Invalid order amount")
                 return redirect('checkout')
+                
+            #getting the applied coupon code if any is applied
+            applied_coupon_code = request.session.get('applied_coupon_code')
+            coupon = None
+            coupon_discount = Decimal('0')
+        
+            if applied_coupon_code:
+                try:
+                    coupon = Coupon.objects.get(coupon_code=applied_coupon_code, is_active=True, is_deleted=False)
+                    
+                    #checking if user has already used this coupon
+                    if CouponUsage.objects.filter(user=request.user, coupon=coupon).exists():
+                        messages.error(request, f"You have already used the coupon '{coupon.coupon_code}'.")
+                        del request.session['applied_coupon_code']#deleting the session
+                        return redirect('checkout')
+                    
+                    #checking if coupon is still valid and usable
+                    if not coupon.is_valid() or not coupon.can_use():
+                        messages.error(request, f"The coupon '{coupon.coupon_code}' is no longer valid or has reached its usage limit.")
+                        del request.session['applied_coupon_code']
+                        return redirect('checkout')
+                    
+                    
+                    #checking minimum purchase amount
+                    if cart_total < coupon.min_purchase_amount:
+                        messages.error(request, f"This coupon requires a minimum purchase of ₹{coupon.min_purchase_amount}.")
+                        del request.session['applied_coupon_code']
+                        return redirect('checkout')
+                    
+                    if coupon.discount_type == 'fixed':
+                        coupon_discount = min(coupon.discount,cart_total)
+                    else: #percentage
+                        coupon_discount = min((cart_total * coupon_discount / 100),cart_total)
+                    
+                    
+                                        
+                    # Update the total amount with the discount
+                    total_amount -= coupon_discount
+                    
+                except Coupon.DoesNotExist:
+                    messages.error(request, "Applied coupon is no longer valid.")
+                    return redirect('checkout')
+            
+            
+            
+            
 
             # Generate order ID
             order_id = f"ORD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
             
             if payment_method == 'WALLET':
-                #check wallet balance
+                # Check wallet balance
                 wallet = request.user.wallet
                 if not wallet.has_sufficient_balance(total_amount):
                     messages.error(request, "Insufficient wallet balance")
@@ -780,10 +1220,10 @@ def create_order(request):
                 
                 try:
                     with transaction.atomic():
-                        #processing wallet payment
-                        wallet.debit(total_amount,f"Payment for order #{order_id}")
+                        # Process wallet payment
+                        wallet.debit(total_amount, f"Payment for order #{order_id}")
                         
-                        #creating the order with paid status
+                        # Create the order with paid status
                         order = create_order_instance(
                             order_id=order_id,
                             user=request.user,
@@ -791,18 +1231,37 @@ def create_order(request):
                             payment_method=payment_method,
                             total_amount=total_amount,
                             cart=cart,
-                            payment_status='PAID'
+                            payment_status='PAID',
+                            offer_applied=has_offer_applied
                         )
+                        
+                        # Mark coupon as used only after successful order creation
+                        if coupon:
+                            order.coupon = coupon
+                            order.coupon_discount = coupon_discount
+                            order.save()
+                            CouponUsage.objects.create(
+                                user=request.user,
+                                coupon=coupon
+                            )
+                            del request.session['applied_coupon_code']
                     
                     messages.success(request, f"Order placed successfully! Order ID: {order_id}")
                     return redirect('order_confirmation', order_id=order_id)
                 
                 except Exception as e:
-                    # If anything fails, transaction will be rolled back
+                    # If anything fails, transaction will be rolled back (including coupon usage)
                     messages.error(request, f"Error processing wallet payment: {str(e)}")
                     return redirect('checkout')
             
             elif payment_method == 'UPI':
+                
+                
+                logger.info("Processing UPI payment")
+                logger.info(f"Preparing session data for cart with {cart.items.count()} items")
+                for item in cart.items.all():
+                    logger.info(f"Cart Item - Product ID: {item.product_variant.product.id}, Variant ID: {item.product_variant.id}, Quantity: {item.quantity}, Price: {item.item_price}")
+                
                 # Store necessary data in session instead of creating order
                 request.session['pending_order'] = {
                     'address_id': address_id,
@@ -811,10 +1270,13 @@ def create_order(request):
                         {
                             'variant_id': item.product_variant.id,
                             'quantity': item.quantity,
-                            'price': str(item.product_variant.product.sale_Price)
+                            'price': str(item.item_price)
                         } for item in cart.items.all()
-                    ]
+                    ],
+                    'coupon_id': coupon.id if coupon else None,
+                    'coupon_discount': str(coupon_discount) if coupon_discount > 0 else '0'
                 }
+                logger.info(f"Session data stored: {request.session['pending_order']}")
 
                 # Create PayPal payment
                 paypal_dict = {
@@ -827,7 +1289,7 @@ def create_order(request):
                     'return_url': request.build_absolute_uri(reverse('payment_success')),
                     'cancel_return': request.build_absolute_uri(reverse('payment_cancelled')),
                 }
-                print(f"paypal_dict:{paypal_dict}")
+                print(f"paypal_dict: {paypal_dict}")
                 logger.info(f"PayPal payment initiated with: {paypal_dict}")
 
                 form = PayPalPaymentsForm(initial=paypal_dict)
@@ -836,18 +1298,29 @@ def create_order(request):
                     'total_amount': total_amount
                 })
             
-            else:  #handle COD 
+            else:  # Handle COD
                 # Create order
-                order = Order.objects.create(
-                    order_id=order_id,
-                    user=request.user,
-                    shipping_address=address,
-                    payment_method=payment_method,
-                    total_amount=total_amount,
-                    order_status='PENDING',
-                    payment_status='PENDING' if payment_method == 'COD' else 'PAID'
-                )
-
+                order = create_order_instance(
+                            order_id=order_id,
+                            user=request.user,
+                            address=address,
+                            payment_method=payment_method,
+                            total_amount=total_amount,
+                            cart=cart,
+                            payment_status='PENDING',  #COD is pending until delivery
+                            offer_applied=has_offer_applied
+                        )
+                
+                #marking coupon as used only after successful order creation
+                if coupon:
+                    order.coupon = coupon
+                    order.coupon_discount = coupon_discount
+                    order.save()
+                    CouponUsage.objects.create(
+                        user=request.user,
+                        coupon=coupon
+                    )
+                    del request.session['applied_coupon_code']
 
                 messages.success(request, f"Order placed successfully! Order ID: {order_id}")
                 return redirect('order_confirmation', order_id=order_id)
@@ -858,40 +1331,84 @@ def create_order(request):
 
     return redirect('checkout')
 
-def create_order_instance(order_id, user, address, payment_method, total_amount, cart, payment_status):
-    """helper function to create order and order items"""
+def create_order_instance(order_id, user, address, payment_method, total_amount, cart, payment_status, offer_applied=False):
+    """Helper function to create order and order items"""
     with transaction.atomic():
+        # Debug cart contents
+        print("Cart contents:")
+        for cart_item in cart.items.all():
+            variant = cart_item.product_variant
+            product = variant.product
+            print(f"Cart Item - Product ID: {product.id}, Variant ID: {variant.id}, Quantity: {cart_item.quantity}")
+
+        removed_count = clean_cart_of_deleted_products(cart)
+        if removed_count > 0:
+            raise ValueError("Some items in your cart are no longer available")
+        
+        if not cart.items.exists():
+            raise ValueError('Your cart is empty')
+        
         # Create order
         order = Order.objects.create(
             order_id=order_id,
             user=user,
-            shipping_address=address,
             payment_method=payment_method,
             total_amount=total_amount,
             order_status='PENDING',
-            payment_status=payment_status
+            payment_status=payment_status,
+            offer_applied=offer_applied
+        )
+        #create the order address 
+        OrderAddress.objects.create(
+            order=order,
+            full_name=address.name,  
+            phone=address.phone,
+            email=address.email,
+            address_type = address.address_type,
+            house_name=address.house_name,
+            city=address.city,
+            state=address.state,
+            pincode=address.pincode
         )
 
         # Create order items and update stock
         order_items = []
         for cart_item in cart.items.all():
-            cart_item.product_variant.Stock_Quantity -= cart_item.quantity
-            cart_item.product_variant.save()
-            
-            product = cart_item.product_variant.product
+            variant = cart_item.product_variant
+            product = variant.product  # Get product from variant
+
+            # Update stock for variant
+            if variant.Stock_Quantity < cart_item.quantity:
+                raise ValueError(f"Insufficient stock for {product.name}")
+            variant.Stock_Quantity -= cart_item.quantity
+            variant.save()
+
+            # Update total product quantity
             product.product_quantity = product.variances.aggregate(
                 total=Sum('Stock_Quantity')
             )['total'] or 0
             product.save()
-            
+
+            # Get offer info
+            discount_info = get_discounted_price(product)
+            item_offer = discount_info['offer']
+
+            # Create OrderItem
             order_items.append(OrderItem(
                 order=order,
-                variant=cart_item.product_variant,
+                variant=variant,
+                product=product,
                 quantity=cart_item.quantity,
-                price_per_item=cart_item.product_variant.product.sale_Price,
-                total_amount=cart_item.quantity * cart_item.product_variant.product.sale_Price
+                price_per_item=cart_item.item_price,
+                total_amount=cart_item.quantity * cart_item.item_price,
+                item_status='PENDING',
+                item_payment_status=payment_status,
+                offer=item_offer
             ))
         
+        if not order_items:
+            raise ValueError("No valid items to create order from")
+
         OrderItem.objects.bulk_create(order_items)
         cart.items.all().delete()
         
@@ -901,33 +1418,54 @@ def create_order_instance(order_id, user, address, payment_method, total_amount,
 def payment_success(request):
     pending_order = request.session.get('pending_order')
     if not pending_order:
+        logger.error("No pending order found in session")
         messages.error(request, "No pending order found")
         return redirect('home')
 
     try:
-        # Get address
-        address = Address.objects.get(
-            id=pending_order['address_id'],
-            user=request.user
-        )
+        logger.info("Processing payment success for UPI")
+        logger.info(f"Pending order data from session: {pending_order}")
+        
+        address = Address.objects.get(id=pending_order['address_id'], user=request.user)
+        
+        has_offer_applied = False
+        for item in pending_order['cart_items']:
+            variant = VarianceTable.objects.get(id=item['variant_id'])
+            product = variant.product
+            logger.info(f"Processing Item - Variant ID: {variant.id}, Product ID: {product.id}, Quantity: {item['quantity']}, Price: {item['price']}")
+            discount_info = get_discounted_price(product)
+            if discount_info['offer']:
+                has_offer_applied = True
 
-        # Create order
         order_id = f"ORD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
         order = Order.objects.create(
             order_id=order_id,
             user=request.user,
-            shipping_address=address,
             payment_method='UPI',
             total_amount=Decimal(pending_order['total_amount']),
             order_status='PENDING',
-            payment_status='PAID'
+            payment_status='PAID',
+            offer_applied=has_offer_applied
+        )
+        OrderAddress.objects.create(
+            order=order,
+            full_name=address.name,  
+            phone=address.phone,
+            email=address.email,
+            address_type = address.address_type,
+            house_name=address.house_name,
+            city=address.city,
+            state=address.state,
+            pincode=address.pincode
         )
 
-        # Create order items
         order_items = []
         for item in pending_order['cart_items']:
             variant = VarianceTable.objects.get(id=item['variant_id'])
+            product = variant.product
             quantity = item['quantity']
+            
+            logger.info(f"Creating OrderItem - Order: {order_id}, Product ID: {product.id}, Variant ID: {variant.id}, Quantity: {quantity}")
             
             if variant.Stock_Quantity < quantity:
                 order.delete()
@@ -936,27 +1474,37 @@ def payment_success(request):
             variant.Stock_Quantity -= quantity
             variant.save()
             
+            discount_info = get_discounted_price(product)
+            item_offer = discount_info['offer']
+            
             order_items.append(OrderItem(
                 order=order,
                 variant=variant,
+                product=product,
                 quantity=quantity,
                 price_per_item=Decimal(item['price']),
-                total_amount=Decimal(item['price']) * quantity
+                total_amount=Decimal(item['price']) * quantity,
+                item_status='PENDING',
+                item_payment_status='PAID',
+                offer=item_offer
             ))
         
         OrderItem.objects.bulk_create(order_items)
         
-        # Clear cart
         cart = Cart.objects.get(user=request.user)
         cart.items.all().delete()
         
-        # Clear session
         del request.session['pending_order']
+        
+        logger.info(f"Order {order_id} created successfully with {len(order_items)} items")
+        for item in order.items.all():
+            logger.info(f"Created OrderItem - Product ID: {item.product.id}, Variant ID: {item.variant.id}")
         
         messages.success(request, "Payment completed successfully!")
         return redirect('order_confirmation', order_id=order_id)
         
     except Exception as e:
+        logger.error(f"Payment success failed: {str(e)}", exc_info=True)
         messages.error(request, str(e))
         return redirect('checkout')
 
@@ -1002,7 +1550,7 @@ def order_confirmation(request, order_id):
         context = {
             'order': order,
             'items': order.items.all(),
-            'address': order.shipping_address,
+            'address': order.order_address,
         }
         
         return render(request, 'user/order_confirmation.html', context)
@@ -1010,6 +1558,74 @@ def order_confirmation(request, order_id):
         messages.error(request, "Order not found")
         return redirect('home')
 ##############################################################################################################################################################################################
+@login_required
+def generate_invoice(request,order_id):
+    try:
+        #fetching the order with all related items and product informations
+        order = Order.objects.prefetch_related(
+            'items__variant__product'
+        ).select_related(
+            'user','order_address'
+        ).get(
+            order_id=order_id,
+            user=request.user
+        )
+        
+        #checking if the payment is completed
+        if order.payment_status != 'PAID':
+            messages.warning(request,"Invoice is only availabe for paid orders")
+            return redirect('order_detail',order_id=order_id)
+        
+        #calculating the subtotal
+        subtotal = order.total_amount
+        if hasattr(order,'coupon_discount') and order.coupon_discount:
+            subtotal = order.coupon_discount
+            
+        context = {
+            'order': order,
+            'items': order.items.all(),
+            'address': order.order_address,
+            'subtotal': subtotal,
+            'company_name': 'Your Company Name',
+            'company_address': 'Your Company Address',
+            'company_phone': 'Your Company Phone',
+            'company_email': 'your@email.com',
+            
+        }
+        
+        #get the template
+        template = get_template('user/invoice_template.html')
+        
+        #rendering the template with context
+        html  = template.render(context)
+        
+        #creating a file like buffer to receive pdf data
+        buffer = BytesIO()
+        
+        #create the pdf object using the bytesio buffer as its file
+        pisa_status = pisa.CreatePDF(
+            html,
+            dest=buffer,
+            encoding='UTF-8'
+        )
+        
+        #closing the pdf buffer
+        buffer.seek(0)
+        
+        #generate filename
+        filename = f"Invoice_{order_id}.pdf"
+        
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Order.DoesNotExist:
+        messages.error(request, "Order not found")
+        return redirect('home')
+##############################################################################################################################################################################################################
+
+
 @login_required
 def user_profile(request):
     return render(request,'user/user_profile.html',{'user':request.user})
@@ -1195,11 +1811,26 @@ def order_list(request):
 def order_detail(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     items = order.items.all()
+    if order.return_status == 'REQUESTED':
+        messages.warning(request, 'Your return request is being reviewed by our team.')
+    elif order.return_status == 'APPROVED':
+        messages.success(request, 'Your return request has been approved.')
+        if order.refund_amount:
+            messages.success(request, f'Refund amount: ₹{order.refund_amount}')
+            if order.refund_date:
+                messages.success(request, f'Refunded on {order.refund_date.strftime("%B %d, %Y")}')
+    elif order.return_status == 'REJECTED':
+        messages.error(request, 'Your return request has been rejected.')
+        if order.return_requests.last() and order.return_requests.last().admin_notes:
+            messages.error(request, f'Reason: {order.return_requests.last().admin_notes}')
+
     return render(request, 'user/order_detail.html', {
         'order': order,
-        'items': items
+        'items':items
     })
     
+logger = logging.getLogger(__name__)  # Add logging for debugging
+
 @login_required
 def cancel_order(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
@@ -1220,26 +1851,43 @@ def cancel_order(request, order_id):
                     order.canceled_date = datetime.datetime.now()
                     order.cancellation_reason = form.cleaned_data['reason']
                     
-                    #handleing refund based on payment method
+                    # Restock quantities
+                    for item in order.items.all():
+                        product = item.product
+                        variant = item.variant
+                        quantity = item.quantity
+                        if product:
+                            product.product_quantity += quantity
+                            product.save()
+                        if variant:
+                            variant.Stock_Quantity += quantity
+                            variant.save()
+                    
+                    # Handle refund based on payment method
                     if order.payment_status == 'PAID':
                         order.payment_status = 'REFUNDED'
                         order.refund_amount = order.total_amount
                         order.refund_date = datetime.datetime.now()
                         
-                        #if payment was made via UPI refund to wallet
-                        if order.payment_method == 'UPI':
+                        if order.payment_method in ['UPI', 'WALLET']:
+                            logger.info(f"Refunding {order.total_amount} to wallet for order {order.order_id}")
                             request.user.wallet.credit(
                                 amount=order.total_amount,
-                                description=f"Refund for canceled order #{order.order_id}"
+                                description=f"Refund for canceled order #{order.order_id}",
+                                order=order,
+                                transaction_category='ORDER_CANCELLATION'
                             )
                             messages.success(request, f'₹{order.total_amount} has been credited to your wallet')
+                        else:
+                            logger.info(f"No wallet refund for {order.payment_method} payment method")
                     
                     order.save()
                     messages.success(request, 'Your order has been canceled successfully.')
-                    
+                
                 return redirect('order_list')
                 
             except Exception as e:
+                logger.error(f"Error in cancel_order: {str(e)}")
                 messages.error(request, f'Error processing cancellation: {str(e)}')
                 return redirect('order_detail', order_id=order_id)
     
@@ -1253,7 +1901,8 @@ def cancel_order_item(request, order_id, item_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
     
-    if order.order_status in ['DELIVERED', 'CANCELED', 'RETURNED'] or item.is_returned:
+    # Check if item can be canceled
+    if order.order_status in ['DELIVERED', 'CANCELED', 'RETURNED'] or item.is_canceled or item.is_returned:
         messages.error(request, 'This item cannot be canceled.')
         return redirect('order_detail', order_id=order_id)
     
@@ -1264,41 +1913,57 @@ def cancel_order_item(request, order_id, item_id):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    item.is_returned = True
-                    item.return_date = datetime.datetime.now()
-                    item.return_reason = form.cleaned_data['reason']
+                    # Update item status
+                    item.is_canceled = True
+                    item.cancelation_reason = form.cleaned_data['reason']
+                    item.item_status = 'CANCELED'
+                    
+                    # Restore stock quantities
+                    if item.product:
+                        item.product.product_quantity += item.quantity
+                        item.product.save()
+                    if item.variant:
+                        item.variant.Stock_Quantity += item.quantity
+                        item.variant.save()
+                    
                     item.save()
                     
-                    #recalculateing order total
-                    remaining_items = order.items.filter(is_returned=False)
-                    if remaining_items.count() == 0:
+                    # Recalculate order total and status
+                    active_items = order.items.filter(is_canceled=False, is_returned=False)
+                    if active_items.count() == 0:
                         order.order_status = 'CANCELED'
                         order.canceled_date = datetime.datetime.now()
                         order.cancellation_reason = "All items canceled"
+                        if order.payment_status == 'PAID':
+                            order.payment_status = 'REFUNDED'
                     else:
-                        new_total = sum(item.total_amount for item in remaining_items)
-                        order.total_amount = new_total
+                        order.total_amount = sum(item.total_amount for item in active_items)
                     
-                    #handleing refund for the specific item
-                    if order.payment_status == 'PAID':
+                    # Handle refund for the specific item
+                    if order.payment_status in ['PAID', 'REFUNDED']:
                         refund_amount = item.total_amount
-                        order.refund_amount = (order.refund_amount or 0) + refund_amount
+                        order.refund_amount = (order.refund_amount or Decimal('0.00')) + refund_amount
                         order.refund_date = datetime.datetime.now()
                         
-                        #if payment was made via UPI refund to wallet
-                        if order.payment_method == 'UPI':
+                        if order.payment_method in ['UPI', 'WALLET']:
+                            logger.info(f"Refunding {refund_amount} to wallet for item {item.id} in order {order.order_id}")
                             request.user.wallet.credit(
                                 amount=refund_amount,
-                                description=f"Refund for canceled item from order #{order.order_id}"
+                                description=f"Refund for canceled item from order #{order.order_id}",
+                                order=order,
+                                transaction_category='ORDER_CANCELLATION'
                             )
                             messages.success(request, f'₹{refund_amount} has been credited to your wallet')
+                        else:
+                            logger.info(f"No wallet refund for {order.payment_method} payment method")
                     
                     order.save()
                     messages.success(request, 'The item has been canceled successfully.')
-                    
+                
                 return redirect('order_detail', order_id=order_id)
                 
             except Exception as e:
+                logger.error(f"Error in cancel_order_item: {str(e)}")
                 messages.error(request, f'Error processing cancellation: {str(e)}')
                 return redirect('order_detail', order_id=order_id)
     
@@ -1339,16 +2004,17 @@ def toggle_wishlist(request, product_id):
 @login_required
 @login_required
 def wishlist_view(request):
-    # Get wishlist items with all related data in a single query
+    # getting wishlist items with all related data in a single query
     wishlist_items = Wishilist.objects.filter(user=request.user)\
         .select_related('product')\
         .prefetch_related(
-            'product__variances',           # Use the correct related_name
-            'product__variances__images'    # Chain to fetch images
+            'product__variances',           
+            'product__variances__images'    
         )
     
-    # For each wishlist item get all the available variants
+    #for each wishlist item getting all the available variants and discount adding price
     for item in wishlist_items:
+        item.discount_data = get_discounted_price(item.product)
         item.available_variants = VarianceTable.objects.filter(
             product=item.product,
             Stock_Quantity__gt=0
@@ -1360,13 +2026,18 @@ def wishlist_view(request):
     
     return render(request, 'user/wishlist.html', context)
     
+logger = logging.getLogger(__name__)
+
 @login_required
 @require_POST
 def add_to_cart_from_wishlist(request):
     try:
+        # Log the incoming request data for debugging
+        logger.info(f"add_to_cart_from_wishlist request data: {request.POST}")
+        
         product_id = request.POST.get('product_id')
         variant_id = request.POST.get('variant_id')
-        remove_from_wishlist = request.POST.get('remove_from_wishlist') == 'true'
+        remove_from_wishlist = request.POST.get('remove_from_wishlist', 'false').lower() == 'true'
         
         if not variant_id:
             return JsonResponse({
@@ -1374,29 +2045,46 @@ def add_to_cart_from_wishlist(request):
                 'message': 'Please select a variant'
             }, status=400)
             
-        variant = get_object_or_404(VarianceTable, id=variant_id)
+        # Get variant with additional checks
+        variant = get_object_or_404(VarianceTable, id=variant_id, product__Is_deleted=False, product__Is_active=True)
+        logger.info(f"Found variant: {variant}")
         
-        #get or create user's cart
-        cart, _ = Cart.objects.get_or_create(user=request.user, is_active=True)
+        # Get or create user's cart
+        cart, created = Cart.objects.get_or_create(user=request.user, is_active=True)
+        logger.info(f"Cart for user {request.user.username}, created: {created}")
         
-        # adding the item to cart using the model's method
-        cart.add_item(variant)
+        # Add item to cart using the model's method
+        try:
+            cart_item = cart.add_item(variant)
+            logger.info(f"Added item to cart: {cart_item}")
+        except Exception as e:
+            logger.error(f"Error adding item to cart: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Failed to add item to cart: {str(e)}'
+            }, status=400)
         
         if remove_from_wishlist:
             Wishilist.objects.filter(
                 user=request.user,
                 product_id=product_id
             ).delete()
+            logger.info(f"Removed product {product_id} from wishlist for user {request.user.username}")
         
+        # Return success response with cart count and total (optional for frontend update)
         return JsonResponse({
             'status': 'success',
-            'message': 'Item added to cart successfully'
+            'message': 'Item added to cart successfully',
+            'cart_count': cart.total_items,  # Assuming Cart has a total_items property
+            'cart_total': float(cart.grand_total) if cart.grand_total else 0.0
         })
+    
     except Exception as e:
+        logger.error(f"Unexpected error in add_to_cart_from_wishlist: {str(e)}")
         return JsonResponse({
             'status': 'error',
-            'message': str(e)
-        }, status=400)
+            'message': f'An unexpected error occurred: {str(e)}'
+        }, status=500)
 
 @login_required
 @require_POST
@@ -1465,11 +2153,13 @@ def process_refund_to_wallet(request, order_id):
         # Credit the refund amount to wallet
         request.user.wallet.credit(
             refund_amount,
-            f"Refund for order #{order_id}"
+            f"Refund for order #{order_id}",
+            order=order
         )
         
         # Update order status
         order.status = 'refunded'
+        order.payment_status = 'refunded'
         order.save()
         
         messages.success(request, f'Refund of {refund_amount} has been credited to your wallet')
@@ -1483,80 +2173,87 @@ def process_refund_to_wallet(request, order_id):
 def return_order(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     
-    #checking if the order can be returned only delivered oreders
+    # Check if the order can be returned (only delivered orders)
     if order.order_status != 'DELIVERED':
         messages.error(request, 'Only delivered orders can be returned')
-        return redirect ('order_detail', order_id=order_id)
+        return redirect('order_detail', order_id=order_id)
     
+    # Check if a return request is already being processed
+    if order.return_status in ['REQUESTED', 'APPROVED']:
+        messages.info(request, 'A return request for this order is already being processed')
+        return redirect('order_detail', order_id=order_id)
     
-    #check if return period has expired 
-    # return_window = timezone.now() - timezone.timedelta(days=7)
-    # if order.delivered_date and order.delivered_date < return_window:
-    #     messages.error(request, 'Return period has expired')
-    #     return redirect('order_details', order_id=order_id)
+    # Filter returnable items (not canceled and not already returned)
+    returnable_items = order.items.filter(
+        is_canceled=False,
+        item_return_status='NONE'
+    )
     
     if request.method == 'GET':
         form = ReturnForm()
-        return render(request, 'user/return_order.html',{
-            'order':order,
-            'form':form
+        return render(request, 'user/return_order.html', {
+            'order': order,
+            'form': form,
+            'returnable_items': returnable_items
         })
         
     form = ReturnForm(request.POST)
     if form.is_valid():
         try:
             with transaction.atomic():
-                #creating return entries for selected items
+                # Get selected items for return
                 selected_items = request.POST.getlist('return_items')
                 if not selected_items:
                     messages.error(request, 'Please select at least one item to return')
-                    return redirect('return_order',order_id=order_id)
+                    return redirect('return_order', order_id=order_id)
                 
-                total_refund = 0
+                # Create a return request
+                return_request = ReturnRequest.objects.create(
+                    order=order,
+                    user=request.user,
+                    reason=form.cleaned_data['reason'],
+                    status='REQUESTED'
+                )
+                
+                # Add items to return request
                 for item_id in selected_items:
                     item = get_object_or_404(OrderItem, id=item_id, order=order)
                     
-                    #checking if the item is already returned
-                    if hasattr(item, 'returneditem'):
+                    # Skip if item is canceled or already returned
+                    if item.is_canceled or item.item_return_status != 'NONE':
                         continue
                     
-                    #creating return record
-                    ReturnedItem.objects.create(
-                        order_item = item,
-                        return_reason=form.cleaned_data['reason']
+                    # Create return record
+                    ReturnRequestItem.objects.create(
+                        return_request=return_request,
+                        order_item=item
                     )
                     
-                    total_refund += item.total_amount
+                    # Update item return status
+                    item.item_return_status = 'REQUESTED'
+                    item.return_reason = form.cleaned_data['reason']
+                    item.save()
                 
-                #updating order status if all items are returned
-                all_items_returned = all(
-                    hasattr(item, 'returneditem') 
-                    for item in order.items.all()
-                )
-                if all_items_returned:
-                    order.order_status = 'RETURNED'
-                    
-                #processing refund to wallet
-                if total_refund > 0:
-                    request.user.wallet.credit(
-                        amount=total_refund,
-                        description=f"Refund for returned items from order #{order.order_id}"
-                    )
-                    messages.success(
-                        request, 
-                        f'₹{total_refund} has been credited to your wallet'
-                    )
+                # Update order return status only if at least one item is being returned
+                if return_request.items.exists():
+                    order.return_status = 'REQUESTED'
+                    order.save()
+                else:
+                    return_request.delete()
+                    messages.error(request, 'No valid items selected for return')
+                    return redirect('return_order', order_id=order_id)
                 
-                order.save()
-                messages.success(request, 'Return request submitted successfully.')
+                messages.success(request, 'Return request submitted successfully. Your request is under review.')
                 return redirect('order_detail', order_id=order_id)
                 
         except Exception as e:
-            messages.error(request, f'Error processing return: {str(e)}')
+            messages.error(request, f'Error processing return request: {str(e)}')
             return redirect('order_detail', order_id=order_id)
     
     return render(request, 'user/return_order.html', {
         'order': order,
-        'form': form
+        'form': form,
+        'returnable_items': returnable_items
     })
-                    
+#########################################################################################################################################################################################################
+    

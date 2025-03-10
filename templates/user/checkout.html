@@ -18,26 +18,25 @@
         Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
     </div>
 
-    <!-- Navigation -->
     <nav class="border-b relative">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div class="text-xl font-bold">Sneakers</div>
                 <div class="flex space-x-6">
-                    <a href="#" class="text-gray-600">Home</a>
+                    <a href="{% url 'home' %}" class="text-gray-600">Home</a>
                     <!-- Shop Dropdown -->
-                    <div class="relative group">
-                        <button class="text-gray-600 flex items-center space-x-1">
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
                             <span>Shop</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <!-- Dropdown Menu -->
-                        <div class="absolute hidden group-hover:block w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
-                            <a href="{% url 'MenPage' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Men</a>
-                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Women</a>
-                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Kids</a>
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                            <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                            <a href="{% url "Boots" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100"></a>
                         </div>
                     </div>
                     <a href="#" class="text-gray-600">Sale</a>
@@ -48,11 +47,56 @@
                     <button class="p-2"><i class="fas fa-heart"></i></button>
                     <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                         <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
-                        </a>
-                    <button class="p-2"><i class="fas fa-user"></i></button>
+                    </a>
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        {% if messages %}
+        <div class="fixed top-4 right-4 z-50">
+            {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                        px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+            {% endfor %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Get all message elements
+                    const messages = document.querySelectorAll('[id^="message-"]');
+                    messages.forEach(function(message) {
+                        // Set a timeout to fade out and remove after 5 seconds
+                        setTimeout(function() {
+                            // Fade out by setting opacity to 0
+                            message.classList.remove('opacity-100');
+                            message.classList.add('opacity-0');
+                            
+                            // Remove the element from the DOM after the transition (500ms)
+                            setTimeout(function() {
+                                message.remove();
+                            }, 500); // Matches the duration-500 class
+                        }, 5000); // 5 seconds delay before starting fade-out
+                    });
+                });
+            </script>
+        </div>
+        {% endif %}
     </nav>
     <!-- Breadcrumb -->
     <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
@@ -66,13 +110,13 @@
     <div class="container mx-auto px-4 py-8">
     <h1 class="text-2xl font-semibold mb-6">Checkout</h1>
 
-    {% if messages %}
+    {% comment %} {% if messages %}
             {% for msg in messages %}
               <div class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} px-4 py-2 rounded">
                 {{ msg }}
               </div>
             {% endfor %}
-          {% endif %}
+          {% endif %} {% endcomment %}
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Left Column - User Info & Addresses -->
@@ -174,6 +218,29 @@
             <!-- Payment Summary -->
             <div class="bg-gray-100 p-6 rounded-lg">
                 <h2 class="text-lg font-medium mb-4">Payment</h2>
+                <div class="mb-4 border-b pb-4">
+                    <!-- Current Applied Coupon Display -->
+                    <div id="current-coupon-section" class="flex justify-between items-center {% if not applied_coupon %}hidden{% endif %}">
+                        <div>
+                            <p class="text-green-600">
+                                Applied Coupon: 
+                                <span id="applied-coupon-name">{{ applied_coupon.coupon_name }}</span>
+                            </p>
+                            <p class="text-sm text-gray-600">
+                                Discount: ₹<span id="applied-coupon-discount">{{ coupon_discount }}</span>
+                            </p>
+                        </div>
+                        <button id="remove_coupon_btn" class="text-red-600 hover:bg-red-100 p-2 rounded">
+                            Remove Coupon
+                        </button>
+                    </div>
+                
+                    <!-- Open Coupons Modal Button -->
+                    <button id="open-coupons-modal" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+                        View Coupons
+                    </button>
+                </div>
+                                
                 <div class="space-y-2">
                     <div class="flex justify-between">
                         <span>Order Value</span>
@@ -192,7 +259,7 @@
                     <div class="border-t pt-2 mt-2">
                         <div class="flex justify-between font-medium">
                             <span>Total</span>
-                            <span>₹{{ total_amount }}</span>
+                            <span id="total_amount">₹{{ total_amount }}</span>
                         </div>
                     </div>
                 </div>
@@ -232,16 +299,12 @@
                 <button type="submit" class="w-full bg-black text-white py-3 rounded-lg mt-6 hover:bg-gray-800 transition duration-300">
                     Complete Purchase
                 </button>
+                
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-
-        
-
-
 
 
 
@@ -269,48 +332,262 @@
         </div>
     </footer>
 
+    <div id="coupons-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Available Coupons</h2>
+                    <button id="close-coupons-modal" class="text-gray-600 hover:text-gray-900">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
     
+                {% if coupons %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for coupon in coupons %}
+                    <div class="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow 
+                        {% if applied_coupon and applied_coupon.id == coupon.id %}border-green-500{% endif %}">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xl font-bold text-blue-600">{{ coupon.coupon_name }}</span>
+                            <span class="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                {{ coupon.coupon_code }}
+                            </span>
+                        </div>
+                        <div class="text-sm text-gray-700 mb-2">
+                            {% if coupon.minimum_purchase %}
+                            <p>Minimum Purchase: ₹{{ coupon.minimum_purchase }}</p>
+                            {% endif %}
+                            
+                            {% if coupon.discount_type == 'percent' %}
+                            <p>Discount: {{ coupon.discount }}% off</p>
+                            {% else %}
+                            <p>Discount: ₹{{ coupon.discount }} off</p>
+                            {% endif %}
+                        </div>
+                        
+                        {% if coupon.expiry_date %}
+                        <div class="text-xs text-gray-500 mb-2">
+                            Expires: {{ coupon.expiry_date|date:"M d, Y" }}
+                        </div>
+                        {% endif %}
+                        
+                        <button type="button" 
+                                data-coupon-code="{{ coupon.coupon_code }}" 
+                                class="apply-coupon-btn w-full bg-blue-500 text-white py-2 rounded 
+                                {% if applied_coupon and applied_coupon.id == coupon.id %}bg-green-500 cursor-not-allowed{% else %}hover:bg-blue-600{% endif %}"
+                                {% if applied_coupon and applied_coupon.id == coupon.id %}disabled{% endif %}>
+                            {% if applied_coupon and applied_coupon.id == coupon.id %}
+                                Applied
+                            {% else %}
+                                Apply Coupon
+                            {% endif %}
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center">No coupons available at the moment</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
-</body>
-<script>
-    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
-        const selectedAddress = document.querySelector('input[name="address"]:checked');
-        const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const checkoutForm = document.getElementById('checkoutForm');
+            const couponsModal = document.getElementById('coupons-modal');
+            const openCouponsModalBtn = document.getElementById('open-coupons-modal');
+            const closeCouponsModalBtn = document.getElementById('close-coupons-modal');
+            const currentCouponSection = document.getElementById('current-coupon-section');
+            const removeCouponBtn = document.getElementById('remove_coupon_btn');
         
-        if (!selectedAddress) {
-            e.preventDefault();
-            alert('Please select a delivery address');
-        }
+            // Form submission handler
+            checkoutForm.addEventListener('submit', function(e) {
+                const selectedAddress = document.querySelector('input[name="address"]:checked');
+                const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+                
+                if (!selectedAddress) {
+                    e.preventDefault();
+                    alert('Please select a delivery address');
+                    return;
+                }
+                
+                if (!selectedPayment) {
+                    e.preventDefault();
+                    alert('Please select a payment method');
+                    return;
+                }
+                
+                if (selectedPayment.value === 'WALLET') {
+                    const hasBalance = {{ has_sufficient_balance|lower }};
+                    if (!hasBalance) {
+                        e.preventDefault();
+                        alert('Insufficient wallet balance');
+                        return;
+                    }
+                }
+            });
         
-        if (!selectedPayment) {
-            e.preventDefault();
-            alert('Please select a payment method');
-        }
-    });
-    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
-        const selectedAddress = document.querySelector('input[name="address"]:checked');
-        const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+            // Modal controls
+            openCouponsModalBtn.addEventListener('click', () => {
+                couponsModal.classList.remove('hidden');
+            });
         
-        if (!selectedAddress) {
-            e.preventDefault();
-            alert('Please select a delivery address');
-            return;
-        }
+            closeCouponsModalBtn.addEventListener('click', () => {
+                couponsModal.classList.add('hidden');
+            });
         
-        if (!selectedPayment) {
-            e.preventDefault();
-            alert('Please select a payment method');
-            return;
-        }
+            couponsModal.addEventListener('click', (e) => {
+                if (e.target === couponsModal) {
+                    couponsModal.classList.add('hidden');
+                }
+            });
         
-        if (selectedPayment.value === 'WALLET') {
-            const hasBalance = {{ has_sufficient_balance|lower }};
-            if (!hasBalance) {
-                e.preventDefault();
-                alert('Insufficient wallet balance');
-                return;
+            // Coupon application
+            function setupCouponApply() {
+                const couponButtons = document.querySelectorAll('.apply-coupon-btn');
+                couponButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const couponCode = this.getAttribute('data-coupon-code');
+                        applyCoupon(couponCode);
+                    });
+                });
             }
+        
+            function applyCoupon(couponCode) {
+    if (!couponCode) {
+        showMessage('Please select a coupon', false);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('coupon_code', couponCode);
+
+    fetch('{% url "apply_coupon" %}', {
+        method: 'POST',
+        headers: { 
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || `Server error: ${response.status}`);
+            });
         }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            updateCouponUI(data.coupon_name, data.discount, data.total_amount);
+            couponsModal.classList.add('hidden');
+            updateCouponButtons(couponCode);
+            showMessage(data.message || 'Coupon applied successfully', true);
+        } else {
+            showMessage(data.message || 'Invalid coupon', false);
+        }
+    })
+    .catch(error => {
+        console.error('Coupon Apply Error:', error.message);
+        showMessage(error.message || 'Error applying coupon', false);
     });
-    </script>
+}
+        
+            function updateCouponUI(couponName, discount, totalAmount) {
+                currentCouponSection.classList.remove('hidden');
+                document.getElementById('applied-coupon-name').textContent = couponName;
+                document.getElementById('applied-coupon-discount').textContent = Number(discount).toFixed(2);
+                const totalElement = document.querySelector('.font-medium span:last-child');
+                if (totalElement) {
+                    totalElement.textContent = `₹${Number(totalAmount).toFixed(2)}`;
+                }
+            }
+        
+            function updateCouponButtons(appliedCouponCode) {
+                document.querySelectorAll('.apply-coupon-btn').forEach(button => {
+                    const couponCode = button.getAttribute('data-coupon-code');
+                    if (couponCode === appliedCouponCode) {
+                        button.disabled = true;
+                        button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                        button.classList.add('bg-green-500', 'cursor-not-allowed');
+                        button.textContent = 'Applied';
+                    } else {
+                        button.disabled = false;
+                        button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                        button.classList.remove('bg-green-500', 'cursor-not-allowed');
+                        button.textContent = 'Apply Coupon';
+                    }
+                });
+            }
+        
+            // Remove coupon
+            removeCouponBtn.addEventListener('click', function() {
+                const formData = new FormData();  // No data needed, but keeping it consistent with applyCoupon
+
+                fetch('{% url "remove_coupon" %}', {
+                    method: 'POST',
+                    headers: { 
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || `Server error: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        currentCouponSection.classList.add('hidden');
+                        const totalElement = document.querySelector('#total_amount');  // Use ID instead of class
+                        if (totalElement) {
+                            totalElement.textContent = `₹${Number(data.total_amount).toFixed(2)}`;  // Use returned total_amount
+                        }
+                        updateCouponButtons(null);
+                        showMessage(data.message || 'Coupon removed successfully', true);
+                    } else {
+                        showMessage(data.message || 'Error removing coupon', false);
+                    }
+                })
+                .catch(error => {
+                    console.error('Remove Coupon Error:', error.message);
+                    showMessage(error.message || 'Error removing coupon', false);
+                });
+            });
+            // Message display function
+            function showMessage(message, isSuccess) {
+                // Remove existing message if any
+                const existingMessage = document.querySelector('.coupon-message');
+                if (existingMessage) existingMessage.remove();
+        
+                // Create new message element
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `coupon-message p-2 mb-4 rounded ${
+                    isSuccess ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`;
+                messageDiv.textContent = message;
+                
+                // Insert message above the payment section
+                const paymentSection = document.querySelector('.bg-gray-100.p-6.rounded-lg');
+                paymentSection.insertBefore(messageDiv, paymentSection.firstChild);
+        
+                // Remove message after 5 seconds
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        
+            // Initialize coupon interactions
+            setupCouponApply();
+
+            
+        });
+        </script>
+</body>
 </html>

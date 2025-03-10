@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ order.order_id }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .invoice-header {
+            margin-bottom: 30px;
+        }
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .company-details {
+            text-align: left;
+            float: left;
+            width: 50%;
+        }
+        .invoice-details {
+            text-align: right;
+            float: right;
+            width: 50%;
+        }
+        .clearfix:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        .billing-shipping {
+            margin-bottom: 20px;
+        }
+        .billing-address {
+            float: left;
+            width: 50%;
+        }
+        .shipping-address {
+            float: right;
+            width: 50%;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .totals-table {
+            width: 40%;
+            float: right;
+            margin-top: 20px;
+        }
+        .totals-table td {
+            border: none;
+            padding: 5px;
+        }
+        .totals-table .label {
+            font-weight: bold;
+            text-align: right;
+        }
+        .totals-table .value {
+            text-align: right;
+        }
+        .grand-total {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 10px;
+            color: #777;
+        }
+        .payment-info {
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <div class="invoice-title">INVOICE</div>
+        <div class="clearfix">
+            <div class="company-details">
+                <div class="section-title">Sneakers</div>
+                <p>Bangalore</p>
+                <p>Phone: +91 8848981881</p>
+                <p>Email: Sneakers@gmail.com</p>
+                {% if gst_number %}
+                <p>GSTIN: {{ gst_number }}</p>
+                {% endif %}
+            </div>
+            <div class="invoice-details">
+                <div class="section-title">Invoice Information</div>
+                <p><strong>Invoice #:</strong> {{ order.order_id }}</p>
+                <p><strong>Date:</strong> {{ order.ordered_date|date:"F d, Y" }}</p>
+                <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                <p><strong>Payment Status:</strong> {{ order.payment_status }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="billing-shipping clearfix">
+        <div class="billing-address">
+            <div class="section-title">Bill To</div>
+            <p><strong>{{ order.user.get_full_name }}</strong></p>
+            <p>{{ order.user.email }}</p>
+            {% if order.user.phone_number %}
+            <p>{{ order.user.phone_number }}</p>
+            {% endif %}
+        </div>
+        <div class="shipping-address">
+            <div class="section-title">Ship To</div>
+            <p><strong>{{ address.full_name }}</strong></p>
+            <p>{{ address.street_address }}</p>
+            <p>{{ address.city }}, {{ address.state }} {{ address.pincode }}</p>
+            <p>{{ address.country }}</p>
+            <p>{{ address.phone_number }}</p>
+        </div>
+    </div>
+
+    <div class="section-title">Order Items</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Variant</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.variant.product.name }}</td>
+                <td>{{ item.variant.variation_value }}</td>
+                <td>${{ item.price_per_item|floatformat:2 }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.total_amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals-table">
+        <table>
+            <tr>
+                <td class="label">Subtotal:</td>
+                <td class="value">₹{{ subtotal|floatformat:2 }}</td>
+            </tr>
+            {% if order.coupon %}
+            <tr>
+                <td class="label">Discount ({{ order.coupon.coupon_code }}):</td>
+                <td class="value">-₹{{ order.coupon_discount|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            {% if order.shipping_cost %}
+            <tr>
+                <td class="label">Shipping:</td>
+                <td class="value">₹{{ order.shipping_cost|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            <tr class="grand-total">
+                <td class="label">Grand Total:</td>
+                <td class="value">₹{{ order.total_amount|floatformat:2 }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="clearfix"></div>
+
+    <div class="payment-info">
+        <div class="section-title">Payment Information</div>
+        <p>Payment Method: {{ order.payment_method }}</p>
+        <p>Payment Status: {{ order.payment_status }}</p>
+        {% if order.transaction_id %}
+        <p>Transaction ID: {{ order.transaction_id }}</p>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>Thank you for your purchase!</p>
+        <p>For any questions or concerns regarding this invoice, please contact us at {{ company_email }}</p>
+        <p>This is a computer-generated invoice and does not require a signature.</p>
+    </div>
+</body>
+</html>

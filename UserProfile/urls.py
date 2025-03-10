@@ -7,7 +7,9 @@ urlpatterns = [
     # path('setnewtpsswrd/',views.setnewtpsswrd,name='setnewtpsswrd'),
     path('home/',views.home,name='home'),
     path('logout/',views.logout,name='logout'),
-    path('menpage/',views.MenPage,name='MenPage'),
+    path('Sneakers/',views.Sneakers,name='Sneakers'),
+    path('Boots/',views.Boots,name='Boots'),
+    path('Runners/',views.Runners,name='Runners'),
     path('signin/',views.signin,name='signin'),
     path('verify_otp/',views.verify_otp,name='verify_otp'),
     path('products/<int:product_id>/single_product_page/', views.single_product_page, name='single_product_page'),
@@ -44,5 +46,10 @@ urlpatterns = [
     path('wallet/process-payment/', views.process_wallet_payment, name='process_wallet_payment'),
     path('wallet/process-refund/<int:order_id>/', views.process_refund_to_wallet, name='process_refund_to_wallet'),
     path('orders-<str:order_id>/return/', views.return_order, name='return_order'),
+    path('apply_coupon/', views.apply_coupon, name='apply_coupon'),
+    path('remove_coupon/', views.remove_coupon, name='remove_coupon'),
+    path('order/<str:order_id>/invoice/', views.generate_invoice, name='generate_invoice'),
+    path('order/<str:order_id>/return/', views.return_order, name='return_order'),
+    path('get-cart-count/', views.get_cart_count, name='get_cart_count'),
     
 ]

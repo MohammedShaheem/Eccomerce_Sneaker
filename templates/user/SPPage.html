@@ -58,55 +58,150 @@
             cursor: pointer;
             z-index: 1001;
         }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .offer-badge {
+            animation: pulse 2s infinite;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
-    <!-- Navigation -->
-    <nav class="border-b bg-white sticky top-0 z-50 shadow-sm">
-        <div class="container mx-auto px-4 py-3">
-            <div class="flex justify-between items-center">
-                <div class="text-xl font-bold">Sneakers</div>
+            <!-- Navigation -->
+            <nav class="border-b relative">
+                <div class="container mx-auto px-4 py-4">
+                    <div class="flex justify-between items-center">
+                        <div class="text-xl font-bold">Sneakers</div>
+                        <div class="flex space-x-6">
+                            <a href="#" class="text-gray-600">Home</a>
+                            <!-- Shop Dropdown -->
+                            <div class="relative">
+                                <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
+                                    <span>Shop</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <!-- Dropdown Menu -->
+                                <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                                    <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                                    <a href="{% url "Boots" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                                    <a href="{% url "Runners" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Runners</a>
+                                </div>
+                            </div>
+                            <a href="#" class="text-gray-600">Sale</a>
+                        </div>
+                <!-- Actions: Search, Wishlist, Cart, User -->
                 <div class="flex items-center space-x-4">
-                    <a href="#" class="text-gray-600 hover:text-black">Home</a>
-                    <a href="#" class="text-gray-600 hover:text-black">Shop</a>
-                    <a href="#" class="p-2 relative">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span id="cartCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                            {{ cart_count|default:0 }}
-                        </span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Notification Container -->
-    <div id="notificationContainer" class="fixed right-4 top-20 z-50"></div>
-
-    <!-- Breadcrumb -->
-    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
-        <a href="#" class="hover:underline">Home</a> /
-        <a href="#" class="hover:underline">Shop</a> /
-        <span class="text-gray-800">{{ product.name }}</span>
-    </nav>
-
-    <!-- Product Section -->
-    <section class="container mx-auto px-6 py-10">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <!-- Left Side: Product Images -->
-            <div class="relative">
-                <div class="flex flex-col">
-                    <!-- Main Image -->
-                    <div class="zoom-container mb-4">
-                        <img id="mainImage" 
-                             class="main-image" 
-                             src="{% if variants.0.images.first %}{{ variants.0.images.first.image.url }}{% else %}{% static 'images/no-image.jpg' %}{% endif %}" 
-                             alt="{{ product.name }}">
+                    <!-- Search form -->
+                    <div class="hidden md:block relative">
+                        <input type="text" placeholder="What are you looking for?" 
+                               class="border rounded-full px-4 py-2 w-64 focus:outline-none focus:ring-1 focus:ring-gray-400">
+                        <button class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </button>
                     </div>
 
-                    <!-- Color Selection -->
-                    <div class="flex flex-wrap gap-3 mb-4">
-                        {% for variant in variants %}
+                    <!-- Mobile search icon -->
+                    <button class="md:hidden p-2">
+                        <i class="fas fa-search"></i>
+                    </button>
+
+                    <!-- Wishlist icon -->
+                    <a href="{% url 'wishlist_view' %}" class="text-gray-600 hover:text-black transition-colors">
+                        <button class="p-2 relative">
+                            <i class="fas fa-heart"></i>
+                            <span class="absolute -top-1 -right-1 bg-black text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[16px] h-[16px] flex items-center justify-center">
+                                {{wishlist_count|default:"0"}}
+                            </span>
+                        </button>
+                    </a>
+                    
+                    <!-- Cart -->
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i> <span id="cartCount">{{ item_count }}</span></button>
+                    </a>
+
+                    <!-- User dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    </div>
+                </div>
+                {% if messages %}
+                <div class="fixed top-4 right-4 z-50">
+                {% for msg in messages %}
+                    <div id="message-{{ forloop.counter }}" 
+                        class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                            px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+                </div>
+                {% endif %}
+            </nav>
+            <!-- Breadcrumb -->
+            <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+                <a href="{% url 'home' %}" class="hover:underline">Home</a> /
+            
+            </nav>
+
+
+    <!-- Product Section -->
+        <section class="container mx-auto px-6 py-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <!-- Left Side: Product Images -->
+                <div class="relative">
+                    <div class="flex flex-col">
+                        <!-- Main Image with Offer Badge -->
+                        <div class="zoom-container mb-4 relative">
+                            <img id="mainImage" 
+                                class="main-image" 
+                                src="{% if variants.0.images.first %}{{ variants.0.images.first.image.url }}{% else %}{% static 'images/no-image.jpg' %}{% endif %}" 
+                                alt="{{ product.name }}">
+                            {% if discounted_info.offer %}
+                            <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs rounded-full font-bold offer-badge">
+                                {% if discounted_info.offer.discount_type == 'percentage' %}
+                                    {{ discounted_info.offer.discount_value }}% OFF
+                                {% else %}
+                                    ₹{{ discounted_info.offer.discount_value }} OFF
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <!-- Wishlist Button -->
+                            {% if product.product_quantity > 0 %}
+                            <button onclick="toggleWishlist('{{ product.id }}')"
+                                    class="wishlist-btn absolute top-3 right-3 p-2 bg-white rounded-full shadow-md"
+                                    data-product-id="{{ product.id }}">
+                                <svg class="w-5 h-5 {% if product.id in user_wishlist_items %}text-red-500 fill-current{% else %}text-gray-500{% endif %}"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+                                </svg>
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- Color Selection -->
+                        <div class="flex flex-wrap gap-3 mb-4">
+                            {% for variant in variants %}
                             <button 
                                 class="color-btn w-10 h-10 rounded-full border-2 hover:border-black transition-colors {% if forloop.first %}border-black{% endif %}"
                                 style="background-color: {{ variant.color.color|lower }}"
@@ -115,289 +210,595 @@
                                 title="{{ variant.color.color }}"
                                 onclick="selectVariant('{{ variant.id }}', '{{ variant.color.id }}')">
                             </button>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Thumbnails -->
-                    <div id="thumbnailContainer" class="flex flex-wrap gap-2">
-                        {% for variant in variants %}
-                            {% for image in variant.images.all %}
-                                <img src="{{ image.image.url }}"
-                                     alt="{{ product.name }} - {{ variant.color.color }}"
-                                     class="thumbnail w-16 h-16 border rounded-lg cursor-pointer hover:border-black transition-all {% if variant.color.id != variants.0.color.id %}hidden{% endif %}"
-                                     data-color-id="{{ variant.color.id }}"
-                                     onclick="changeImage('{{ image.image.url }}')">
                             {% endfor %}
-                        {% endfor %}
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Zoom Overlay -->
-                <div class="zoom-overlay" id="zoomOverlay">
-                    <span class="zoom-close">×</span>
-                    <div class="zoom-view">
-                        <img id="zoomedImage" class="zoomed-image" src="" alt="Zoomed Product Image">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Side: Product Details -->
-            <div class="flex flex-col space-y-6">
-                <h1 class="text-3xl font-bold">{{ product.name }}</h1>
-                <p class="text-gray-600">{{ product.description }}</p>
-                <p class="text-2xl font-bold">₹{{ product.sale_Price|floatformat:2 }}</p>
-
-                <!-- Form for Add to Cart -->
-                <form id="addToCartForm" class="space-y-6">
-                    {% csrf_token %}
-                    
-                    <!-- Color Selection (display only) -->
-                    <div>
-                        <h2 class="text-lg font-semibold mb-2">Selected Color</h2>
-                        <span id="selectedColor" class="text-gray-600">{{ variants.0.color.color }}</span>
-                    </div>
-
-                    <!-- Size Selection -->
-                    <!-- Size Selection -->
-                    <div>
-                        <h2 class="text-lg font-semibold mb-2">Select Size</h2>
-                        <div class="grid grid-cols-3 gap-2">
-                            {% regroup variants by color as color_variants %}
-                            {% for color in color_variants %}
-                                <div class="size-group" data-color-id="{{ color.grouper.id }}">
-                                    {% for variant in color.list %}
-                                        <button type="button"
-                                                class="size-btn px-4 py-3 border border-gray-300 rounded-lg text-center
-                                                    {% if variant.Stock_Quantity == 0 %}
-                                                        opacity-50 cursor-not-allowed bg-gray-100
-                                                    {% else %}
-                                                        hover:border-black transition-colors
-                                                    {% endif %}
-                                                    {% if not forloop.parentloop.first %}hidden{% endif %}"
-                                                data-variant-id="{{ variant.id }}"
-                                                data-stock="{{ variant.Stock_Quantity }}"
-                                                {% if variant.Stock_Quantity == 0 %}disabled{% endif %}>
-                                            UK {{ variant.size.size }}
-                                            <span class="block text-sm {% if variant.Stock_Quantity == 0 %}text-red-500{% else %}text-gray-500{% endif %}">
-                                                {% if variant.Stock_Quantity == 0 %}
-                                                    Out of Stock
-                                                {% else %}
-                                                    {{ variant.Stock_Quantity }} left
-                                                {% endif %}
-                                            </span>
-                                        </button>
-                                    {% endfor %}
-                                </div>
+                        <!-- Thumbnails -->
+                        <div id="thumbnailContainer" class="flex flex-wrap gap-2">
+                            {% for variant in variants %}
+                                {% for image in variant.images.all|slice:":3" %}
+                                <img src="{{ image.image.url }}"
+                                    alt="{{ product.name }} - {{ variant.color.color }}"
+                                    class="thumbnail w-16 h-16 border rounded-lg cursor-pointer hover:border-black transition-all {% if variant.color.id != variants.0.color.id %}hidden{% endif %}"
+                                    data-color-id="{{ variant.color.id }}"
+                                    onclick="changeImage('{{ image.image.url }}')">
+                                {% endfor %}
                             {% endfor %}
                         </div>
                     </div>
 
-                    <!-- Quantity Selection -->
-                    <div class="flex items-center space-x-4">
-                        <h2 class="text-lg font-semibold">Quantity:</h2>
-                        <button type="button" id="decreaseQty" class="px-3 py-1 border rounded">-</button>
-                        <input type="number" 
-                               id="quantity" 
-                               name="quantity" 
-                               value="1" 
-                               min="1" 
-                               class="w-20 text-center border rounded" 
-                               readonly>
-                        <button type="button" id="increaseQty" class="px-3 py-1 border rounded">+</button>
+                    <!-- Zoom Overlay -->
+                    <div class="zoom-overlay" id="zoomOverlay">
+                        <span class="zoom-close" onclick="closeZoom()">×</span>
+                        <div class="zoom-view">
+                            <img id="zoomedImage" class="zoomed-image" src="" alt="Zoomed Product Image">
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Add to Cart Button -->
-                    <button type="submit"
-                            id="addToCartBtn"
-                            class="w-full bg-black text-white py-4 rounded-full hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            {% if is_out_of_stock %}disabled{% endif %}>
-                        Add to Cart
-                    </button>
+                <!-- Right Side: Product Details -->
+                <div class="flex flex-col space-y-6">
+                    <h1 class="text-3xl font-bold">{{ product.name }}</h1>
+                    <p class="text-gray-600">{{ product.description }}</p>
 
-                    <input type="hidden" id="selectedVariant" name="variant_id" value="{{ variants.0.id }}">
-                </form>
+                    <!-- Price Display with Offer -->
+                    {% if discounted_info.offer %}
+                    <div class="flex items-center space-x-4">
+                        <p class="text-2xl font-bold text-red-600">₹{{ discounted_info.final_price|floatformat:2 }}</p>
+                        <p class="text-lg line-through text-gray-500">₹{{ discounted_info.original_price|floatformat:2 }}</p>
+                        <p class="text-sm text-green-600">Save ₹{{ discounted_info.saved_amount|floatformat:2 }}</p>
+                    </div>
+                    {% if discounted_info.offer.offer_title %}
+                    <p class="text-sm text-green-600">{{ discounted_info.offer.offer_title }}</p>
+                    {% endif %}
+                    {% if discounted_info.offer.valid_till %}
+                    <div class="text-sm text-gray-600 offer-timer" 
+                        data-expires="{{ discounted_info.offer.valid_till|date:'Y-m-d' }}">
+                        <i class="fas fa-clock mr-1"></i> Ends in: <span class="countdown">Loading...</span>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-2xl font-bold">₹{{ product.sale_Price|floatformat:2 }}</p>
+                    {% endif %}
+
+                    <!-- Form for Add to Cart -->
+                    <form id="addToCartForm" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <!-- Color Selection (display only) -->
+                        <div>
+                            <h2 class="text-lg font-semibold mb-2">Selected Color</h2>
+                            <span id="selectedColor" class="text-gray-600">{{ variants.0.color.color }}</span>
+                        </div>
+
+                        <!-- Size Selection -->
+                        <div>
+                            <h2 class="text-lg font-semibold mb-2">Select Size</h2>
+                            <div class="grid grid-cols-3 gap-2">
+                                {% regroup variants by color as color_variants %}
+                                {% for color in color_variants %}
+                                <div class="size-group" data-color-id="{{ color.grouper.id }}">
+                                    {% for variant in color.list %}
+                                    <button type="button"
+                                            class="size-btn px-4 py-3 border border-gray-300 rounded-lg text-center
+                                                {% if variant.Stock_Quantity == 0 %}
+                                                    opacity-50 cursor-not-allowed bg-gray-100
+                                                {% else %}
+                                                    hover:border-black transition-colors
+                                                {% endif %}
+                                                {% if not forloop.parentloop.first %}hidden{% endif %}"
+                                            data-variant-id="{{ variant.id }}"
+                                            data-stock="{{ variant.Stock_Quantity }}"
+                                            {% if variant.Stock_Quantity == 0 %}disabled{% endif %}>
+                                        UK {{ variant.size.size }}
+                                        <span class="block text-sm {% if variant.Stock_Quantity == 0 %}text-red-500{% else %}text-gray-500{% endif %}">
+                                            {% if variant.Stock_Quantity == 0 %}
+                                                Out of Stock
+                                            {% else %}
+                                                {{ variant.Stock_Quantity }} left
+                                            {% endif %}
+                                        </span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Quantity Selection -->
+                        <div class="flex items-center space-x-4">
+                            <h2 class="text-lg font-semibold">Quantity:</h2>
+                            <button type="button" id="decreaseQty" class="px-3 py-1 border rounded">-</button>
+                            <input type="number" 
+                                id="quantity" 
+                                name="quantity" 
+                                value="1" 
+                                min="1" 
+                                class="w-20 text-center border rounded" 
+                                readonly>
+                            <button type="button" id="increaseQty" class="px-3 py-1 border rounded">+</button>
+                        </div>
+
+                        <!-- Add to Cart Button -->
+                        <button type="submit"
+                                id="addToCartBtn"
+                                class="w-full bg-black text-white py-4 rounded-full hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                {% if is_out_of_stock %}disabled{% endif %}>
+                            Add to Cart
+                        </button>
+
+                        <input type="hidden" id="selectedVariant" name="variant_id" value="{{ variants.0.id }}">
+                    </form>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <script>
-    // Get CSRF token
-    function getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
+        <!-- Related Products Section -->
+        <section class="container mx-auto px-6 py-16">
+            <h2 class="text-2xl font-bold mb-8">Related Products</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {% for item in related_products %}
+                
+                <div class="group relative">
+                    <div class="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                        <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 relative">
+                            {% with first_variant=item.product.variances.first %}
+                            {% if first_variant and first_variant.images.first %}
+                            <img src="{{ first_variant.images.first.image.url }}"
+                                alt="{{ item.product.name }}"
+                                class="h-64 w-full object-cover object-center group-hover:opacity-75 transition-opacity">
+                            {% else %}
+                            <img src="{% static 'images/no-image.jpg' %}"
+                                alt="No image available"
+                                class="h-64 w-full object-cover object-center">
+                            {% endif %}
+                            {% if item.discounted_info.offer %}
+                            <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs rounded-full font-bold offer-badge">
+                                {% if item.discounted_info.offer.discount_type == 'percentage' %}
+                                    {{ item.discounted_info.offer.discount_value }}% OFF
+                                {% else %}
+                                    ₹{{ item.discounted_info.offer.discount_value }} OFF
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <!-- Wishlist Button for Related Products -->
+                            {% if item.product.product_quantity > 0 %}
+                            <button onclick="toggleWishlist('{{ item.product.id }}')"
+                                    class="wishlist-btn absolute top-3 right-3 p-2 bg-white rounded-full shadow-md"
+                                    data-product-id="{{ item.product.id }}">
+                                <svg class="w-5 h-5 {% if item.product.id in user_wishlist_items %}text-red-500 fill-current{% else %}text-gray-500{% endif %}"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+                                </svg>
+                            </button>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                        <div class="p-4">
+                            {% if item.product.product_quantity == 0 %}
+                                <div class="absolute inset-0 bg-black bg-opacity-50 z-10 flex items-center justify-center">
+                                    <span class="bg-red-500 text-white px-4 py-2 rounded-md font-medium">Out of Stock</span>
+                                </div>
+                                {% endif %}
+                            <h3 class="text-lg font-medium text-gray-900">
+                                <a href="{% url 'single_product_page' item.product.id %}" class="hover:underline">
+                                    {{ item.product.name }}
+                                </a>
+                            </h3>
+                            {% if item.discounted_info.offer %}
+                            <div class="flex items-center space-x-2">
+                                <p class="text-lg font-semibold text-red-600">₹{{ item.discounted_info.final_price|floatformat:2 }}</p>
+                                <p class="text-sm line-through text-gray-500">₹{{ item.discounted_info.original_price|floatformat:2 }}</p>
+                            </div>
+                            {% else %}
+                            <p class="mt-1 text-lg font-semibold text-gray-900">₹{{ item.product.sale_Price|floatformat:2 }}</p>
+                            {% endif %}
+                            <div class="mt-2 flex gap-1">
+                                {% with variants=item.product.variances.all %}
+                                {% for variant in variants %}
+                                {% if forloop.first or variant.color.color != prev_color %}
+                                <div class="w-4 h-4 rounded-full border border-gray-300"
+                                    style="background-color: {{ variant.color.color|lower }}"
+                                    title="{{ variant.color.color }}">
+                                </div>
+                                {% endif %}
+                                {% with prev_color=variant.color.color %}{% endwith %}
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="col-span-full text-center text-gray-500">No related products found</p>
+                {% endfor %}
+            </div>
+        </section>
 
-    // Notification system
-    function showNotification(message, type) {
-        const container = document.getElementById('notificationContainer');
-        const notification = document.createElement('div');
-        const classes = {
-            success: 'bg-green-500 text-white',
-            error: 'bg-red-500 text-white'
-        };
-        
-        notification.className = `p-4 rounded-lg shadow-lg mb-4 transition-all duration-300 ${classes[type] || classes.error}`;
-        notification.style.opacity = '0';
-        notification.textContent = message;
-        
-        container.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.opacity = '1';
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }, 50);
-    }
+        <!-- Notification Container -->
+        <div id="notificationContainer" class="fixed bottom-4 right-4 z-50"></div>
 
-    // Image handling
-    function changeImage(imageSrc) {
-        document.getElementById('mainImage').src = imageSrc;
-    }
 
-    // Variant selection
-    function selectVariant(variantId, colorId) {
-        // Update color buttons
-        const colorBtns = document.querySelectorAll('.color-btn');
-        colorBtns.forEach(btn => {
-            btn.classList.remove('border-black');
-            if (btn.dataset.colorId === colorId) {
-                btn.classList.add('border-black');
-            }
-        });
-    
-        // Update size buttons visibility
-        const sizeGroups = document.querySelectorAll('.size-group');
-        sizeGroups.forEach(group => {
-            const isMatchingColor = group.dataset.colorId === colorId;
-            const sizeButtons = group.querySelectorAll('.size-btn');
-            sizeButtons.forEach(btn => {
-                btn.classList.toggle('hidden', !isMatchingColor);
+        {% load static %}
+        <script src="{% static 'js/wishlist-feedback.js' %}"></script>
+        <script>
+
+            document.addEventListener('DOMContentLoaded', function () {
+                new Splide('#carousel', {
+                    type: 'loop',
+                    perPage: 3,
+                    gap: '1rem',
+                    breakpoints: {
+                        640: { perPage: 1 },
+                        768: { perPage: 2 }
+                    }
+                }).mount();
             });
-        });
     
-        // Update thumbnails
-        const thumbnails = document.querySelectorAll('.thumbnail');
-        thumbnails.forEach(thumbnail => {
-            thumbnail.classList.toggle('hidden', thumbnail.dataset.colorId !== colorId);
-        });
-    
-        // Set first image of selected color
-        const firstThumbnail = document.querySelector(`.thumbnail[data-color-id="${colorId}"]:not(.hidden)`);
-        if (firstThumbnail) {
-            document.getElementById('mainImage').src = firstThumbnail.src;
-        }
-    
-        // Update selected color display
-        const selectedColor = document.getElementById('selectedColor');
-        const selectedBtn = document.querySelector(`.color-btn[data-color-id="${colorId}"]`);
-        selectedColor.textContent = selectedBtn.title;
-    
-        // Update hidden variant input and reset size selection
-        document.getElementById('selectedVariant').value = '';
-        const sizeBtns = document.querySelectorAll('.size-btn');
-        sizeBtns.forEach(btn => btn.classList.remove('border-black', 'bg-gray-100'));
+                // Shop dropdown
+                const shopButton = document.getElementById('shopButton');
+                const shopDropdown = document.getElementById('shopDropdown');
         
-        // Disable add to cart button until size is selected
-        document.getElementById('addToCartBtn').disabled = true;
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('addToCartForm');
-        const sizeBtns = document.querySelectorAll('.size-btn');
-        const quantityInput = document.getElementById('quantity');
-        const decreaseQty = document.getElementById('decreaseQty');
-        const increaseQty = document.getElementById('increaseQty');
-        const addToCartBtn = document.getElementById('addToCartBtn');
-        let selectedStock = {{ variants.0.Stock_Quantity|default:0 }};
-
-        // Size selection
-        sizeBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (btn.disabled) return;
-
-                sizeBtns.forEach(b => b.classList.remove('border-black', 'bg-gray-100'));
-                btn.classList.add('border-black', 'bg-gray-100');
+                // User dropdown
+                const userButton = document.getElementById('userDropdownButton');
+                const userDropdown = document.getElementById('userDropdownMenu');
                 
-                const variantId = btn.dataset.variantId;
-                selectedStock = parseInt(btn.dataset.stock);
-                document.getElementById('selectedVariant').value = variantId;
-                
-                quantityInput.max = selectedStock;
-                if (parseInt(quantityInput.value) > selectedStock) {
-                    quantityInput.value = selectedStock;
+                // Function to close all dropdowns
+                function closeAllDropdowns() {
+                    shopDropdown.classList.add('hidden');
+                    userDropdown.classList.add('hidden');
                 }
                 
-                addToCartBtn.disabled = false;
-            });
-        });
-
-        // Quantity controls
-        decreaseQty.addEventListener('click', function() {
-            let qty = parseInt(quantityInput.value);
-            if (qty > 1) {
-                quantityInput.value = qty - 1;
+                // Toggle shop dropdown
+                shopButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    userDropdown.classList.add('hidden'); // Close user dropdown
+                    shopDropdown.classList.toggle('hidden');
+                });
+                
+                // Toggle user dropdown
+                userButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    shopDropdown.classList.add('hidden'); // Close shop dropdown
+                    userDropdown.classList.toggle('hidden');
+                });
+                
+                // Close dropdowns when clicking outside
+                document.addEventListener('click', (event) => {
+                    const isClickInside = shopButton.contains(event.target) || 
+                                        shopDropdown.contains(event.target) ||
+                                        userButton.contains(event.target) || 
+                                        userDropdown.contains(event.target);
+                    
+                    if (!isClickInside) {
+                        closeAllDropdowns();
+                    }
+                });
+                
+                // Close dropdowns when pressing Escape key
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        closeAllDropdowns();
+                    }
+                });
+        // CSRF Token Helper
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
             }
-        });
+            return cookieValue;
+        }
 
-        increaseQty.addEventListener('click', function() {
-            let qty = parseInt(quantityInput.value);
-            if (qty < selectedStock) {
-                quantityInput.value = qty + 1;
+        // Notification Function
+        function showNotification(message, type) {
+            const container = document.getElementById('notificationContainer') || document.createElement('div');
+            if (!container.id) {
+                container.id = 'notificationContainer';
+                container.className = 'fixed bottom-4 right-4 z-50';
+                document.body.appendChild(container);
             }
-        });
+            const notification = document.createElement('div');
+            const classes = {
+                success: 'bg-green-500 text-white',
+                error: 'bg-red-500 text-white'
+            };
+            notification.className = `p-4 rounded-lg shadow-lg mb-4 transition-all duration-300 ${classes[type] || classes.error}`;
+            notification.style.opacity = '0';
+            notification.textContent = message;
+            container.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }, 50);
+        }
 
-        // Add to cart submission
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Wishlist Toggle Function
+        async function toggleWishlist(productId) {
+            const wishlistBtn = document.querySelector(`.wishlist-btn[data-product-id="${productId}"]`);
+            const isOutOfStock = productId && document.querySelector(`input[name="variant_id"]`)?.value === '' && document.querySelector('#addToCartBtn').disabled;
 
-            const variantId = document.getElementById('selectedVariant').value;
-            const quantity = parseInt(quantityInput.value);
-
-            if (!variantId) {
-                showNotification('Please select a size', 'error');
+            if (isOutOfStock) {
+                showNotification('Cannot add out of stock items to wishlist', 'error');
                 return;
             }
 
-            addToCartBtn.disabled = true;
-            addToCartBtn.textContent = 'Adding...';
-
-            fetch('{% url "add_to_cart" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({
-                    variant_id: variantId,
-                    quantity: quantity
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('cartCount').textContent = data.cart_count;
-                    showNotification(data.message, 'success');
-                    quantityInput.value = 1;
-                    sizeBtns.forEach(btn => btn.classList.remove('border-black', 'bg-gray-100'));
-                } else {
-                    showNotification(data.message, 'error');
+            try {
+                const response = await fetch(`/wishlist/toggle/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                
+                if (wishlistBtn) {
+                    const icon = wishlistBtn.querySelector('svg');
+                    if (data.status === 'added') {
+                        icon.classList.add('text-red-500', 'fill-current');
+                        icon.classList.remove('text-gray-500');
+                        showNotification('Added to wishlist', 'success');
+                    } else {
+                        icon.classList.remove('text-red-500', 'fill-current');
+                        icon.classList.add('text-gray-500');
+                        showNotification('Removed from wishlist', 'success');
+                    }
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
-                showNotification('An error occurred', 'error');
-            })
-            .finally(() => {
-                addToCartBtn.disabled = false;
-                addToCartBtn.textContent = 'Add to Cart';
-            });
-        });
+                showNotification('Error updating wishlist', 'error');
+            }
+        }
 
-        // Initial setup
-        addToCartBtn.disabled = true;
-        quantityInput.max = selectedStock;
-    });
-    </script>
+        async function updateWishlistCount() {
+            try {
+                // Fetch the wishlist count from your Django backend
+                const response = await fetch('/wishlist/count/', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest', // For Django AJAX recognition
+                    }
+                });
+        
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+        
+                const data = await response.json();
+                // Update the count in the span
+                const countElement = document.querySelector('.wishlist-count');
+                if (countElement) {
+                    countElement.textContent = data.count || 0;
+                }
+            } catch (error) {
+                console.error('Error updating wishlist count:', error);
+                // Set to 0 if there's an error
+                const countElement = document.querySelector('.wishlist-count');
+                if (countElement) {
+                    countElement.textContent = '0';
+                }
+            }
+        }
+
+        
+        function changeImage(imageSrc) {
+            document.getElementById('mainImage').src = imageSrc;
+        }
+
+        function selectVariant(variantId, colorId) {
+            const colorBtns = document.querySelectorAll('.color-btn');
+            colorBtns.forEach(btn => {
+                btn.classList.remove('border-black');
+                if (btn.dataset.colorId === colorId) btn.classList.add('border-black');
+            });
+            const sizeGroups = document.querySelectorAll('.size-group');
+            sizeGroups.forEach(group => {
+                const isMatchingColor = group.dataset.colorId === colorId;
+                group.querySelectorAll('.size-btn').forEach(btn => {
+                    btn.classList.toggle('hidden', !isMatchingColor);
+                });
+            });
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            thumbnails.forEach(thumbnail => {
+                thumbnail.classList.toggle('hidden', thumbnail.dataset.colorId !== colorId);
+            });
+            const firstThumbnail = document.querySelector(`.thumbnail[data-color-id="${colorId}"]:not(.hidden)`);
+            if (firstThumbnail) document.getElementById('mainImage').src = firstThumbnail.src;
+            const selectedColor = document.getElementById('selectedColor');
+            const selectedBtn = document.querySelector(`.color-btn[data-color-id="${colorId}"]`);
+            selectedColor.textContent = selectedBtn.title;
+            document.getElementById('selectedVariant').value = '';
+            const sizeBtns = document.querySelectorAll('.size-btn');
+            sizeBtns.forEach(btn => btn.classList.remove('border-black', 'bg-gray-100'));
+            document.getElementById('addToCartBtn').disabled = true;
+        }
+
+        function updateOfferTimers() {
+            const timerElements = document.querySelectorAll('.offer-timer');
+            timerElements.forEach(element => {
+                const expiryDate = new Date(element.dataset.expires);
+                const now = new Date();
+                if (now >= expiryDate) {
+                    element.querySelector('.countdown').textContent = 'Expired';
+                    return;
+                }
+                const timeDiff = expiryDate - now;
+                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+                let countdownText = '';
+                if (days > 0) countdownText += `${days}d `;
+                countdownText += `${hours}h ${minutes}m ${seconds}s`;
+                element.querySelector('.countdown').textContent = countdownText;
+            });
+        }
+
+        function zoomImage(event) {
+            const mainImage = document.getElementById('mainImage');
+            const zoomedImage = document.getElementById('zoomedImage');
+            const zoomOverlay = document.getElementById('zoomOverlay');
+            zoomedImage.src = mainImage.src;
+            zoomOverlay.style.display = 'flex';
+            const rect = mainImage.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const scale = 2;
+            zoomedImage.style.transform = `scale(${scale})`;
+            zoomedImage.style.left = `-${x * (scale - 1)}px`;
+            zoomedImage.style.top = `-${y * (scale - 1)}px`;
+        }
+
+        function closeZoom() {
+            document.getElementById('zoomOverlay').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('addToCartForm');
+            const sizeBtns = document.querySelectorAll('.size-btn');
+            const quantityInput = document.getElementById('quantity');
+            const decreaseQty = document.getElementById('decreaseQty');
+            const increaseQty = document.getElementById('increaseQty');
+            const addToCartBtn = document.getElementById('addToCartBtn');
+            const mainImage = document.getElementById('mainImage');
+            let selectedStock = {{ variants.0.Stock_Quantity|default:0 }};
+            
+            // Function to update cart count on page load
+            function updateCartCount() {
+                fetch('{% url "get_cart_count" %}')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const cartCountElements = document.querySelectorAll('#cartCount');
+                        cartCountElements.forEach(element => {
+                            if (element) {
+                                element.textContent = data.cart_count;
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching cart count:', error);
+                    });
+            }
+            
+            // Update cart count when page loads
+            updateCartCount();
+        
+            // Size selection
+            sizeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (btn.disabled) return;
+                    sizeBtns.forEach(b => b.classList.remove('border-black', 'bg-gray-100'));
+                    btn.classList.add('border-black', 'bg-gray-100');
+                    const variantId = btn.dataset.variantId;
+                    selectedStock = parseInt(btn.dataset.stock);
+                    document.getElementById('selectedVariant').value = variantId;
+                    quantityInput.max = selectedStock;
+                    if (parseInt(quantityInput.value) > selectedStock) quantityInput.value = selectedStock;
+                    addToCartBtn.disabled = false;
+                });
+            });
+        
+            // Quantity controls
+            decreaseQty.addEventListener('click', function() {
+                let qty = parseInt(quantityInput.value);
+                if (qty > 1) quantityInput.value = qty - 1;
+            });
+        
+            increaseQty.addEventListener('click', function() {
+                let qty = parseInt(quantityInput.value);
+                if (qty < selectedStock) quantityInput.value = qty + 1;
+            });
+        
+            // Add to cart submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const variantId = document.getElementById('selectedVariant').value;
+                const quantity = parseInt(quantityInput.value);
+                if (!variantId) {
+                    showNotification('Please select a size', 'error');
+                    return;
+                }
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'Adding...';
+                fetch('{% url "add_to_cart" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        variant_id: variantId,
+                        quantity: quantity
+                    })
+                })
+                .then(response => {
+                    console.log('Response Status:', response.status);
+                    console.log('Response Headers:', response.headers);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update all cart count elements
+                        const cartCountElements = document.querySelectorAll('#cartCount');
+                        cartCountElements.forEach(element => {
+                            if (element) {
+                                element.textContent = data.cart_count;
+                            }
+                        });
+                        
+                        showNotification(data.message, 'success');
+                        quantityInput.value = 1;
+                        sizeBtns.forEach(btn => btn.classList.remove('border-black', 'bg-gray-100'));
+                        document.getElementById('selectedVariant').value = '';
+                        addToCartBtn.disabled = true;
+                    } else {
+                        showNotification(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    showNotification(`Failed to add to cart: ${error.message}`, 'error');
+                })
+                .finally(() => {
+                    addToCartBtn.disabled = false;
+                    addToCartBtn.textContent = 'Add to Cart';
+                });
+            });
+        
+            // Image zoom
+            mainImage.addEventListener('click', zoomImage);
+        
+            // Offer timer
+            if (document.querySelectorAll('.offer-timer').length > 0) {
+                updateOfferTimers();
+                setInterval(updateOfferTimers, 1000);
+            }
+        });
+        
+</script>
 </body>
 </html>

@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,33 +16,82 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="border-b">
+    <nav class="border-b relative">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div class="text-xl font-bold">Sneakers</div>
                 <div class="flex space-x-6">
-                    <a href="{% url 'home' %}" class="text-gray-600">Home</a>
-                    <a href="#" class="text-gray-600">Latest</a>
+                    <a href="#" class="text-gray-600">Home</a>
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
+                            <span>Shop</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                            <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                            <a href="{% url 'Boots' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                        </div>
+                    </div>
                     <a href="#" class="text-gray-600">Sale</a>
                 </div>
                 <div class="flex items-center space-x-4">
                     <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
                     <button class="p-2"><i class="fas fa-search"></i></button>
                     <button class="p-2"><i class="fas fa-heart"></i></button>
-                    <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
-                    <button class="p-2"><i class="fas fa-user"></i></button>
-                    <i class="fas fa-shopping-cart"></i>
-                        {% if cart.total_items > 0 %}
-                        <span class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center cart-count">
-                            {{ cart.total_items }}
-                        </span>
-                        {% endif %}
-                
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i> <span id="cartCount">{{ item_count }}</span></button>
+                    </a>
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-
             </div>
         </div>
+        {% if messages %}
+        <div class="fixed top-4 right-4 z-50">
+            {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                        px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+            {% endfor %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Get all message elements
+                    const messages = document.querySelectorAll('[id^="message-"]');
+                    messages.forEach(function(message) {
+                        // Set a timeout to fade out and remove after 5 seconds
+                        setTimeout(function() {
+                            // Fade out by setting opacity to 0
+                            message.classList.remove('opacity-100');
+                            message.classList.add('opacity-0');
+                            
+                            // Remove the element from the DOM after the transition (500ms)
+                            setTimeout(function() {
+                                message.remove();
+                            }, 500); // Matches the duration-500 class
+                        }, 5000); // 5 seconds delay before starting fade-out
+                    });
+                });
+            </script>
+        </div>
+        {% endif %}
     </nav>
 
     <!-- Main Content -->
@@ -90,21 +138,15 @@
 
                         <!-- Right side: Price, quantity, and actions -->
                         <div class="flex flex-col items-end gap-4 mt-4 sm:mt-0">
-                            <!-- Remove button -->
                             <button class="remove-item-btn text-gray-400 hover:text-gray-600"
                                     onclick="handleRemoveFromCart('{% url 'remove_from_cart' item.id %}', {{ item.id }})">
                                 <i class="fas fa-times"></i>
                             </button>
-
-                            <!-- Price -->
                             <p class="font-medium item-total">Rs. {{ item.total_price|floatformat:2 }}</p>
-
-                            <!-- Quantity controls -->
                             <div class="flex items-center gap-4">
-                                <button class="p-2" onclick="addToWishlist({{ item.product_variant.product.id }})">
+                                {% comment %} <button class="p-2" onclick="addToWishlist({{ item.product_variant.product.id }})">
                                     <i class="far fa-heart"></i>
-                                </button>
-
+                                </button> {% endcomment %}
                                 <div class="quantity-controls flex items-center border rounded">
                                     <button type="button" 
                                             class="quantity-decrease px-3 py-1 border-r hover:bg-gray-100 select-none"
@@ -133,20 +175,28 @@
                     <h2 class="text-lg font-medium mb-4">Cart Total</h2>
                     <div class="space-y-3">
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Order Value</span>
-                            <span>Rs. {{ cart.grand_total|floatformat:2 }}</span>
+                            <span class="text-gray-600">Original Value</span>
+                            <span>Rs. {{ original_total|floatformat:2 }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Discount</span>
-                            <span>Rs. 0.00</span>
+                            <span class="text-green-600">-Rs. {{ discount|floatformat:2 }}</span>
                         </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Subtotal</span>
+                            <span>Rs. {{ subtotal|floatformat:2 }}</span>
+                        </div>
+                        {% comment %} <div class="flex justify-between">
+                            <span class="text-gray-600">Tax (1%)</span>
+                            <span>Rs. {{ tax_amount|floatformat:2 }}</span>
+                        </div> {% endcomment %}
                         <div class="flex justify-between border-t pt-3">
                             <span class="font-medium">Total</span>
-                            <span class="font-medium cart-total">Rs. {{ cart.grand_total|floatformat:2 }}</span>
+                            <span class="font-medium cart-total">Rs. {{ total|floatformat:2 }}</span>
                         </div>
                     </div>
                     <a href="{% url 'checkout' %}"
-                            class="block w-full bg-black text-white py-3 rounded mt-6 hover:bg-gray-800 transition-colors text-center">
+                       class="block w-full bg-black text-white py-3 rounded mt-6 hover:bg-gray-800 transition-colors text-center">
                         Continue to checkout
                     </a>
                     <button onclick="handleClearCart('{% url 'clear_cart' %}')"
@@ -160,7 +210,7 @@
         <div class="text-center py-12">
             <h2 class="text-xl font-medium mb-4">Your cart is empty</h2>
             <p class="text-gray-600 mb-8">Add some products to your cart and they will appear here</p>
-            <a href="{% url 'MenPage' %}" 
+            <a href="{% url 'Sneakers' %}" 
                class="bg-black text-white px-6 py-3 rounded inline-block hover:bg-gray-900">
                 Continue Shopping
             </a>
@@ -172,7 +222,6 @@
     <footer class="bg-black text-white mt-16">
         <div class="container mx-auto px-4 py-12">
             <div class="grid grid-cols-4 gap-8">
-                <!-- Subscribe -->
                 <div>
                     <h3 class="font-medium mb-4">Subscribe</h3>
                     <p class="text-sm mb-4">Get 10% off your first order</p>
@@ -183,8 +232,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Support -->
                 <div>
                     <h3 class="font-medium mb-4">Support</h3>
                     <div class="space-y-2 text-sm">
@@ -194,8 +241,6 @@
                         <p>+88015-88888-9999</p>
                     </div>
                 </div>
-
-                <!-- Account -->
                 <div>
                     <h3 class="font-medium mb-4">Account</h3>
                     <div class="space-y-2 text-sm">
@@ -206,8 +251,6 @@
                         <p>Shop</p>
                     </div>
                 </div>
-
-                <!-- Quick Link -->
                 <div>
                     <h3 class="font-medium mb-4">Quick Link</h3>
                     <div class="space-y-2 text-sm">
@@ -218,8 +261,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Download App Section -->
             <div class="mt-12">
                 <h3 class="font-medium mb-4">Download App</h3>
                 <div class="flex items-center space-x-4">
@@ -230,8 +271,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Social Icons -->
             <div class="flex space-x-4 mt-8">
                 <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
                 <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
@@ -240,27 +279,20 @@
             </div>
         </div>
     </footer>
+
     <script>
         async function updateQuantity(itemId, change) {
             try {
-                // Find the cart item container using data attribute
                 const cartItem = document.querySelector(`.cart-item-container[data-item-id="${itemId}"]`);
-                if (!cartItem) {
-                    throw new Error('Cart item not found');
-                }
+                if (!cartItem) throw new Error('Cart item not found');
                 
-                // Find the quantity input within this specific cart item
                 const input = cartItem.querySelector('.quantity-input');
-                if (!input) {
-                    throw new Error('Quantity input not found');
-                }
+                if (!input) throw new Error('Quantity input not found');
         
-                // Get current quantity and limits
                 const currentQuantity = parseInt(input.value) || 1;
                 const minQuantity = parseInt(input.getAttribute('min')) || 1;
                 const maxQuantity = parseInt(input.getAttribute('max')) || 99999;
         
-                // Calculate new quantity
                 let newQuantity;
                 if (typeof change === 'number') {
                     newQuantity = currentQuantity + change;
@@ -268,47 +300,19 @@
                     newQuantity = parseInt(change);
                 }
         
-                // Validate quantity
-                if (isNaN(newQuantity)) {
-                    throw new Error('Invalid quantity value');
+                if (isNaN(newQuantity) || newQuantity < minQuantity) {
+                    throw new Error(`Quantity must be at least ${minQuantity}`);
                 }
         
-                // Enforce min/max bounds
-                if (newQuantity < minQuantity) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: `Quantity cannot be less than ${minQuantity}`,
-                        confirmButtonText: 'OK'
-                    });
-                    return;
-                }
-                if (newQuantity > maxQuantity) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: `Quantity cannot exceed ${maxQuantity}`,
-                        confirmButtonText: 'OK'
-                    });
-                    return;
-                }
+                if (newQuantity === currentQuantity) return;
         
-                // Prevent unnecessary API calls if quantity hasn't changed
-                if (newQuantity === currentQuantity) {
-                    return;
-                }
-        
-                // Show loading state
                 const loadingToast = Swal.fire({
                     title: 'Updating...',
-                    didOpen: () => {
-                        Swal.showLoading();
-                    },
+                    didOpen: () => Swal.showLoading(),
                     allowOutsideClick: false,
                     showConfirmButton: false
                 });
         
-                // Make the update request
                 const response = await fetch(`/cart/update/${itemId}/`, {
                     method: 'POST',
                     headers: {
@@ -322,14 +326,10 @@
                 await loadingToast.close();
         
                 if (data.success) {
-                    // Update input value
                     input.value = newQuantity;
                     input.defaultValue = newQuantity;
-        
-                    // Update button states
                     const decreaseBtn = cartItem.querySelector('.quantity-decrease');
                     const increaseBtn = cartItem.querySelector('.quantity-increase');
-                    
                     if (decreaseBtn) {
                         decreaseBtn.disabled = newQuantity <= minQuantity;
                         decreaseBtn.classList.toggle('opacity-50', newQuantity <= minQuantity);
@@ -338,17 +338,11 @@
                         increaseBtn.disabled = newQuantity >= maxQuantity;
                         increaseBtn.classList.toggle('opacity-50', newQuantity >= maxQuantity);
                     }
-        
-                    // Update cart totals
-                    updateCartDisplay(data);
-        
-                    // Update item total price if it exists
                     const itemTotalElement = cartItem.querySelector('.item-total');
                     if (itemTotalElement && data.item_total) {
                         itemTotalElement.textContent = `Rs. ${Number(data.item_total).toFixed(2)}`;
                     }
-        
-                    // Show success toast
+                    updateCartDisplay(data);
                     Swal.fire({
                         icon: 'success',
                         title: 'Quantity Updated',
@@ -357,41 +351,52 @@
                         showConfirmButton: false
                     });
                 } else {
-                    throw new Error(data.message || 'Error updating quantity');
+                    // Show a more specific error message for stock availability issues
+                    if (data.message.includes('exceeds available stock')) {
+                        // Get current stock information from the server response
+                        const stockWarning = `The requested quantity is not available. Current stock: ${data.available_stock || 'Limited'}`;
+                        
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Stock Limitation',
+                            text: stockWarning,
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        throw new Error(data.message || 'Error updating quantity');
+                    }
                 }
             } catch (error) {
-                console.error('Error:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: error.message || 'Error updating cart quantity',
+                    text: error.message,
                     confirmButtonText: 'OK'
                 });
-                
-                // Reset input to previous valid value
                 const cartItem = document.querySelector(`.cart-item-container[data-item-id="${itemId}"]`);
                 const input = cartItem?.querySelector('.quantity-input');
-                if (input && input.defaultValue) {
-                    input.value = input.defaultValue;
-                }
+                if (input && input.defaultValue) input.value = input.defaultValue;
             }
         }
         
         function updateCartDisplay(data) {
-            // Update cart total
-            const cartTotalElements = document.querySelectorAll('.cart-total');
-            cartTotalElements.forEach(element => {
-                element.textContent = `Rs. ${Number(data.new_total).toFixed(2)}`;
-            });
-        
-            // Update cart count if it exists
-            const cartCountElements = document.querySelectorAll('.cart-count');
+            const cartTotalElement = document.querySelector('.cart-total');
+            if (cartTotalElement) {
+                cartTotalElement.textContent = `Rs. ${Number(data.new_total).toFixed(2)}`;
+            } else {
+                console.error('Cart total element not found');
+            }
+            
+            const cartCountElements = document.querySelectorAll('#cartCount');
             cartCountElements.forEach(element => {
-                element.textContent = data.item_count;
+                if (element) {
+                    element.textContent = data.item_count;
+                } else {
+                    console.error('Cart count element not found');
+                }
             });
         }
         
-    
         async function addToWishlist(productId) {
             try {
                 const response = await fetch(`/wishlist/add/${productId}/`, {
@@ -400,17 +405,33 @@
                         'X-CSRFToken': getCookie('csrftoken'),
                     }
                 });
-                
                 const data = await response.json();
                 if (data.success) {
-                    alert('Product added to wishlist');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Product added to wishlist',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
                 } else {
-                    alert(data.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    });
                 }
             } catch (error) {
-                alert('Error adding to wishlist');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error adding to wishlist',
+                    confirmButtonText: 'OK'
+                });
             }
         }
+        
         async function handleRemoveFromCart(removeUrl, itemId) {
             const result = await Swal.fire({
                 title: 'Remove Item',
@@ -426,9 +447,7 @@
                 try {
                     const response = await fetch(removeUrl);
                     const data = await response.json();
-                    
                     if (data.success) {
-                        // Show success message
                         await Swal.fire({
                             title: 'Removed!',
                             text: data.message,
@@ -436,23 +455,21 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
-        
-                        // Redirect to cart page after the alert
-                        window.location.href = '/cart/';  // Update this to your cart URL
-                        
+                        window.location.href = '/cart/';
                     } else {
-                        // Show error message
                         Swal.fire({
                             title: 'Error!',
                             text: data.message || 'Error removing item from cart',
-                            icon: 'error'
+                            icon: 'error',
+                            confirmButtonText: 'OK'
                         });
                     }
                 } catch (error) {
                     Swal.fire({
                         title: 'Error!',
                         text: 'Something went wrong',
-                        icon: 'error'
+                        icon: 'error',
+                        confirmButtonText: 'OK'
                     });
                 }
             }
@@ -478,9 +495,7 @@
                             'Content-Type': 'application/json',
                         }
                     });
-                    
                     const data = await response.json();
-                    
                     if (data.success) {
                         await Swal.fire({
                             title: 'Cart Cleared!',
@@ -489,31 +504,26 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
-                        
-                        // Redirect to cart page after the alert
                         window.location.href = '/cart/';
                     } else {
                         Swal.fire({
                             title: 'Error!',
                             text: data.message || 'Error clearing cart',
-                            icon: 'error'
+                            icon: 'error',
+                            confirmButtonText: 'OK'
                         });
                     }
                 } catch (error) {
                     Swal.fire({
                         title: 'Error!',
                         text: 'Something went wrong',
-                        icon: 'error'
+                        icon: 'error',
+                        confirmButtonText: 'OK'
                     });
                 }
             }
-        }                
-    
-        function updateCartDisplay(data) {
-            document.querySelector('.cart-total').textContent = `Rs. ${data.new_total.toFixed(2)}`;
-            document.querySelector('.cart-count').textContent = data.item_count;
         }
-        // Helper function to get CSRF token
+        
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -528,6 +538,6 @@
             }
             return cookieValue;
         }
-        </script>
+    </script>
 </body>
 </html>

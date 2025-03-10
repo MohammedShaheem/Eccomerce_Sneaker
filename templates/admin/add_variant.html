@@ -19,6 +19,7 @@
         <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+        <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
       </nav>
     </div>
 
@@ -61,7 +62,7 @@
             </div>
             {% endif %}
     
-            {% if existing_images %}
+            {% comment %} {% if existing_images %}
             <div class="mb-6">
                 <h3 class="text-md font-semibold mb-2 text-white">Existing Product Images</h3>
                 <div class="grid grid-cols-4 gap-4">
@@ -72,7 +73,7 @@
                     {% endfor %}
                 </div>
             </div>
-            {% endif %}
+            {% endif %} {% endcomment %}
     
             <form method="POST" enctype="multipart/form-data" id="VariantForm" class="space-y-6">
                 {% csrf_token %}
@@ -165,7 +166,7 @@
               return false;
           }
   
-          const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+          const validTypes = ['image/jpeg', 'image/png', 'image/gif','image/avif'];
           const maxSize = 5 * 1024 * 1024; // 5MB
           const targetWidth = 800;
           const targetHeight = 800;

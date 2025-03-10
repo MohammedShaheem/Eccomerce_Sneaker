@@ -1,10 +1,14 @@
 from django import forms
-from AdminProfile.models import Product,Category,ProductTable,VarianceTable,Size,Color,Product_Images_Table
+from AdminProfile.models import Product,Category,ProductTable,VarianceTable,Size,Color,Product_Images_Table,Offer,Coupon
 from django.forms.widgets import FileInput
 from django.core.exceptions import ValidationError
 import re
 from decimal import Decimal
 import os
+import datetime
+from datetime import date
+from django.utils import timezone
+from django.db import models
 
 ##################################################################################################################################################################################
 
@@ -313,6 +317,9 @@ class CategoryForm(forms.ModelForm):
             if len(category_name) < 3:
                 raise forms.ValidationError("Category name must be at least 3 characters long")
             
+            if not re.match(r"^[a-zA-Z]", category_name):
+                raise forms.ValidationError("Category name must start with a letter")
+  
             if not re.match(r"^[a-zA-Z0-9\s\-_]+$", category_name):
                 raise forms.ValidationError("Category name can only contain letters, numbers, spaces, hyphens, and underscores")
             
@@ -325,27 +332,211 @@ class CategoryForm(forms.ModelForm):
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if image:
+            # Debug logging
+            print(f"Processing image: {image.name}, Content-Type: {getattr(image, 'content_type', 'N/A')}")
             
-            
-            #checking if itis a new upload 
+            # Handle new uploads
             if hasattr(image, 'content_type'):
-                
-                # Check file size
+                print("New upload detected")
                 if image.size > 5 * 1024 * 1024:  # 5 MB limit
                     raise forms.ValidationError("Image size should not exceed 5 MB")
-            
-                # Check file type
+                
                 valid_types = ['image/jpeg', 'image/png', 'image/gif']
                 if image.content_type not in valid_types:
-                    raise forms.ValidationError("Please upload only JPEG, PNG, or GIF images")
+                    # Additional check using file extension as a fallback
+                    ext = os.path.splitext(image.name)[1].lower()
+                    if ext not in ['.jpg', '.jpeg', '.png', '.gif']:
+                        raise forms.ValidationError("Please upload only JPEG, PNG, or GIF images")
             
+            # Handle existing files (e.g., when updating with current image)
             else:
-                #if itis an existing file
+                print("Existing file detected")
                 valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
                 ext = os.path.splitext(image.name)[1].lower()
                 if ext not in valid_extensions:
                     raise forms.ValidationError("Invalid file extension. Only JPEG, PNG, or GIF images are allowed")
             
-            
         return image
+##################################################################################################################################################################################################
     
+class OfferForm(forms.ModelForm):
+    class Meta:
+        model = Offer
+        fields = [
+            'offer_title',
+            'discount_value',
+            'discount_type',
+            'valid_from',
+            'valid_till',
+            'offer_description',
+            'is_active'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        offer_type = kwargs.pop('offer_type', None)
+        super().__init__(*args, **kwargs)
+        
+        # Add common styling
+        base_class = 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100'
+        
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, (forms.TextInput, forms.NumberInput, forms.Select, forms.DateTimeInput)):
+                field.widget.attrs.update({'class': base_class})
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.update({
+                    'class': base_class,
+                    'rows': 3
+                })
+
+        # Set minimum date for date fields
+        today = date.today().strftime('%Y-%m-%d')
+        self.fields['valid_from'].widget.attrs['min'] = today
+        self.fields['valid_till'].widget.attrs['min'] = today
+
+
+        # Add type-specific fields
+        if offer_type:
+            if offer_type == 'product':
+                self.fields['product'] = forms.ModelChoiceField(
+                    queryset=ProductTable.objects.filter(Is_deleted=False, Is_active=True),
+                    widget=forms.Select(attrs={'class': base_class}),
+                    required=True
+                )
+            else:
+                self.fields['category'] = forms.ModelChoiceField(
+                    queryset=Category.objects.filter(is_delete=False, status=True),
+                    widget=forms.Select(attrs={'class': base_class}),
+                    required=True
+                )
+                
+    def clean(self):
+        cleaned_data = super().clean()
+        discount_type = cleaned_data.get('discount_type')
+        discount_value = cleaned_data.get('discount_value')
+        category = cleaned_data.get('category')
+
+        # Validation for category offers with fixed discount
+        if category and discount_type == 'fixed' and discount_value is not None:
+            # Get the lowest priced product in the category
+            lowest_price = ProductTable.objects.filter(
+                category=category,
+                Is_deleted=False,
+                Is_active=True
+            ).aggregate(min_price=models.Min('sale_Price'))['min_price']
+
+            if lowest_price is not None:
+                min_allowed_discount = lowest_price - 500
+                if discount_value >= min_allowed_discount:
+                    raise ValidationError(
+                        f"The fixed discount amount ({discount_value}₹) must be at least 500₹ less than "
+                        f"the lowest priced product in the category ({lowest_price}₹). "
+                        f"Maximum allowed discount is {min_allowed_discount}₹."
+                    )
+
+        return cleaned_data
+##########################################################################################################################################################################################
+class CouponCreationForm(forms.ModelForm):
+    class Meta:
+        model = Coupon
+        fields = [
+            'coupon_name', 
+            'coupon_code', 
+            'min_purchase_amount', 
+            'discount', 
+            'discount_type',
+            'valid_from', 
+            'valid_till', 
+            'max_uses',
+            'is_active'
+        ]
+        widgets = {
+            'coupon_name': forms.TextInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
+                'placeholder': 'Enter coupon name (e.g., Summer Sale 2025)'
+            }),
+            'coupon_code': forms.TextInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
+                'placeholder': 'Enter coupon code (e.g., SUMMER25)'
+            }),
+            'min_purchase_amount': forms.NumberInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-1000',
+                'placeholder': 'Minimum order amount required',
+                'step': '0.01'
+            }),
+            'discount': forms.NumberInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
+                'placeholder': 'Discount amount',
+                'step': '0.01'
+            }),
+            'discount_type': forms.Select(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100'
+            }),
+            'valid_from': forms.DateTimeInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
+                'type': 'datetime-local'
+            }),
+            'valid_till': forms.DateTimeInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
+                'type': 'datetime-local'
+            }),
+            'max_uses': forms.NumberInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100',
+                'placeholder': 'Maximum number of uses'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-100'
+            })
+        }
+    
+    
+    def __init__(self, *args, **kwargs):
+        super(CouponCreationForm, self).__init__(*args, **kwargs)
+        #makeing all fields required except is_active
+        for field_name, field in self.fields.items():
+            if field_name != 'is_active':
+                field.required = True
+                
+        #setting defaults for datetime fields if not already set
+        if not self.initial.get('valid_from'):
+            self.initial['valid_from'] = timezone.now().strftime('%Y-%m-%dT%H:%M')
+        if not self.initial.get('valid_till'):
+            #default end date is 30 days from now
+            self.initial['valid_till'] = (timezone.now() + timezone.timedelta(days=30)).strftime('%Y-%m-%dT%H:%M')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        valid_from = cleaned_data.get('valid_from')
+        valid_till = cleaned_data.get('valid_till')
+        discount = cleaned_data.get('discount')
+        discount_type = cleaned_data.get('discount_type')
+        
+        #validate dates
+        if valid_from and valid_till:
+            if valid_from >= valid_till:
+                raise forms.ValidationError("End date must be after start date.")
+        
+        #validate discount based on type
+        if discount is not None and discount_type:
+            if discount_type == 'percent' and discount > 100:
+                raise forms.ValidationError({
+                    'discount': "Percentage discount cannot exceed 100%."
+                })
+            elif discount <= 0:
+                raise forms.ValidationError({
+                    'discount': "Discount must be greater than zero."
+                })
+        
+        #validate min purchase amount
+        min_purchase = cleaned_data.get('min_purchase_amount')
+        if min_purchase is not None and min_purchase < 0:
+            raise forms.ValidationError({
+                'min_purchase_amount': "Minimum purchase amount cannot be negative."
+            })
+            
+        #validate coupon code format (optional)
+        coupon_code = cleaned_data.get('coupon_code')
+        if coupon_code:
+            #remove spaces and convert to uppercase
+            cleaned_data['coupon_code'] = coupon_code.strip().upper()
+            
+        return cleaned_data

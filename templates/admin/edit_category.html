@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Category</title>
+  <title>Edit Category</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -22,6 +22,7 @@
         <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+        <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
       </nav>
   </div>
 
@@ -30,13 +31,7 @@
     <div class="container mx-auto px-4 py-8">
         <div class="bg-gray-900 rounded-lg shadow-md p-6">
             <h1 class="text-2xl font-bold mb-6 text-white">Edit Category</h1>
-            {% if messages %}
-            {% for message in messages %}
-                <div class="{% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} px-4 py-2 rounded mb-4">
-                    {{ message }}
-                </div>
-            {% endfor %}
-            {% endif %}
+            
             
             <form method="POST" enctype="multipart/form-data" id="editCategoryForm">
                 {% csrf_token %}
@@ -153,6 +148,22 @@
                     return false;
                 }
                 
+                // Check if category name starts with a letter
+                if (!/^[a-zA-Z]/.test(categoryName)) {
+                    categoryNameError.textContent = 'Category name must start with a letter.';
+                    categoryNameError.classList.remove('hidden');
+                    categoryNameInput.classList.add('border-red-500');
+                    return false;
+                }
+                
+                // Check if it contains only allowed characters
+                if (!/^[a-zA-Z0-9\s\-_]+$/.test(categoryName)) {
+                    categoryNameError.textContent = 'Category name can only contain letters, numbers, spaces, hyphens, and underscores.';
+                    categoryNameError.classList.remove('hidden');
+                    categoryNameInput.classList.add('border-red-500');
+                    return false;
+                }
+                
                 if (categoryName !== originalName && existingCategories.includes(categoryName)) {
                     categoryNameError.textContent = 'This category name already exists.';
                     categoryNameError.classList.remove('hidden');
@@ -164,7 +175,7 @@
                 categoryNameInput.classList.remove('border-red-500');
                 return true;
             }
-            
+
             function validateDescription(description) {
                 if (!description) {
                     descriptionError.textContent = 'Description is required.';
@@ -191,7 +202,7 @@
                 descriptionInput.classList.remove('border-red-500');
                 return true;
             }
-            
+                        
             function validateImage(file) {
                 if (!file) return true; // Skip validation if no file
                 
@@ -289,5 +300,5 @@
             });
         });
     </script> 
-    </body>
-    </html>
+</body>
+</html>

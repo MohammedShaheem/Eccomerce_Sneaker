@@ -18,13 +18,27 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="border-b">
+    <nav class="border-b relative">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div class="text-xl font-bold">Sneakers</div>
                 <div class="flex space-x-6">
-                    <a href="{% url 'home' %}" class="text-gray-600">Home</a>
-                    <a href="#" class="text-gray-600">Latest</a>
+                    <a href="#" class="text-gray-600">Home</a>
+                    <!-- Shop Dropdown -->
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
+                            <span>Shop</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                            <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                            <a href="{% url "Boots" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100"></a>
+                        </div>
+                    </div>
                     <a href="#" class="text-gray-600">Sale</a>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -34,19 +48,6 @@
                     <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                         <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
                     </a>
-                    {% if messages %}
-                    <div class="fixed top-4 right-4 z-50">
-                        {% for msg in messages %}
-                            <div id="message-{{ forloop.counter }}" 
-                                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
-                                       px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
-                                {{ msg }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    
-                    <!-- User dropdown -->
                     <div class="relative">
                         <button id="userDropdownButton" class="p-2 focus:outline-none">
                             <i class="fas fa-user"></i>
@@ -59,7 +60,6 @@
                                 <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
                                 <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
                                 <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
-                               
                                 <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
                             </div>
                         </div>
@@ -67,13 +67,43 @@
                 </div>
             </div>
         </div>
+        {% if messages %}
+        <div class="fixed top-4 right-4 z-50">
+            {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                        px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+            {% endfor %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Get all message elements
+                    const messages = document.querySelectorAll('[id^="message-"]');
+                    messages.forEach(function(message) {
+                        // Set a timeout to fade out and remove after 5 seconds
+                        setTimeout(function() {
+                            // Fade out by setting opacity to 0
+                            message.classList.remove('opacity-100');
+                            message.classList.add('opacity-0');
+                            
+                            // Remove the element from the DOM after the transition (500ms)
+                            setTimeout(function() {
+                                message.remove();
+                            }, 500); // Matches the duration-500 class
+                        }, 1000); // 5 seconds delay before starting fade-out
+                    });
+                });
+            </script>
+        </div>
+        {% endif %}
     </nav>
 
     <!-- Breadcrumb -->
     <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
         <a href="#" class="hover:underline">Home</a> /
-        <a href="#" class="hover:underline">Shop</a> /
-        <span class="text-gray-800">Nike Dunk Low Retro SE</span>
+        <a href="#" class="hover:underline">Orders</a> /
+        <span class="text-gray-800">Order Detail</span>
     </nav>
         <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
@@ -94,15 +124,7 @@
             <h1 class="text-2xl font-bold">Order #{{ order.order_id }}</h1>
         </div>
         
-        {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-            <div class="p-4 {{ message.tags|yesno:'bg-green-100 text-green-800,bg-red-100 text-red-800' }} rounded-md">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+        
         
         <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
             <div class="border-t border-gray-200">
@@ -137,7 +159,11 @@
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Shipping Address</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ order.shipping_address.full_address|default:"Not available" }}
+                            {{ order.order_address.full_name|default:"Not available" }},
+                            {{ order.order_address.house_name|default:"Not available" }},
+                            {{ order.order_address.city|default:"Not available" }},
+                            {{ order.order_address.pincode|default:"Not available" }},
+                            {{ order.order_address.address_type|default:"Not available" }}
                         </dd>
                     </div>
                     {% if order.estimated_delivery_date %}
@@ -176,8 +202,9 @@
                 <li class="p-4">
                     <div class="flex items-start">
                         <div class="flex-shrink-0 w-20 h-20 bg-gray-200 rounded-md overflow-hidden">
-                            {% if item.product.image %}
-                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                            {% with variant_image=item.variant.images.first %}
+                                {% if variant_image and variant_image.image %}
+                                <img src="{{ variant_image.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover rounded">
                             {% else %}
                             <div class="w-full h-full flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,6 +212,7 @@
                                 </svg>
                             </div>
                             {% endif %}
+                            {% endwith %}
                         </div>
                         
                         <div class="ml-4 flex-1">
@@ -206,8 +234,19 @@
                                     <p class="mt-1 text-sm font-semibold text-gray-900">Total: ₹{{ item.total_amount }}</p>
                                 </div>
                             </div>
+                            {% if order.payment_status == 'PAID' %}
+                                <div class="mt-6 flex justify-center">
+                                    <a href="{% url 'generate_invoice' order_id=order.order_id %}" 
+                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Download Invoice
+                                    </a>
+                                </div>
+                                {% endif %}
                             
-                            {% if item.is_returned %}
+                            {% if item.is_canceled %}
                             <div class="mt-2">
                                 <p class="text-sm text-red-600">This item has been canceled</p>
                                 {% if item.return_reason %}
@@ -267,19 +306,70 @@
             </div>
         </div>
         {% endif %}
-        {% if order.order_status == 'DELIVERED' %}
+        {% if order.order_status == 'DELIVERED' and order.return_status == 'NONE' %}
             {% with has_returnable_items=order.items.exists %}
                 {% if has_returnable_items %}
-                    <div class="mt-4">
-                        <a href="{% url 'return_order' order_id=order.order_id %}" 
-                        class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md inline-block">
-                            Return Items
-                        </a>
-                    </div>
+                <div class="mt-4">
+                    <a href="{% url 'return_order' order_id=order.order_id %}" 
+                    class="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-md inline-block">
+                        Return Order
+                    </a>
+                </div>
                 {% endif %}
             {% endwith %}
-        {% endif %}
+            {% endif %}
     </div>
+        {% if order.return_status != 'NONE' %}
+            <div class="mt-6 {% if order.return_status == 'REQUESTED' %}bg-yellow-50 border-yellow-200{% elif order.return_status == 'APPROVED' %}bg-green-50 border-green-200{% elif order.return_status == 'REJECTED' %}bg-red-50 border-red-200{% endif %} border rounded-md p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        {% if order.return_status == 'REQUESTED' %}
+                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        {% elif order.return_status == 'APPROVED' %}
+                        <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        {% elif order.return_status == 'REJECTED' %}
+                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium {% if order.return_status == 'REQUESTED' %}text-yellow-800{% elif order.return_status == 'APPROVED' %}text-green-800{% elif order.return_status == 'REJECTED' %}text-red-800{% endif %}">
+                            Return Request {{ order.get_return_status_display }}
+                        </h3>
+                        <div class="mt-2 text-sm {% if order.return_status == 'REQUESTED' %}text-yellow-700{% elif order.return_status == 'APPROVED' %}text-green-700{% elif order.return_status == 'REJECTED' %}text-red-700{% endif %}">
+                            {% if order.return_status == 'REQUESTED' %}
+                                <p>Your return request is being reviewed by our team.</p>
+                            {% elif order.return_status == 'APPROVED' %}
+                                <p>All items are returned.</p>
+                            {% elif order.return_status == 'REJECTED' %}
+                                <p>Your return request has been rejected.</p>
+                                {% if order.return_requests.last.admin_notes %}
+                                    <p class="mt-1">Reason: {{ order.return_requests.last.admin_notes }}</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% comment %} {% if order.order_status == 'DELIVERED' and order.return_status == 'NONE' %}
+                {% with has_returnable_items=order.items.exists %}
+                    {% if has_returnable_items %}
+                        <div class="mt-4">
+                            <a href="{% url 'return_order' order_id=order.order_id %}" 
+                            class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md inline-block">
+                                Return Items
+                            </a>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            {% endif %} {% endcomment %}
     <!-- Footer -->
     <footer class="bg-black text-white py-6">
         <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 px-4 lg:px-6">

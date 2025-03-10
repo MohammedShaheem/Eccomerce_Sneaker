@@ -1,0 +1,511 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sneakers Shop</title>
+    <!-- Tailwind CSS and Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Splide Slider -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js" defer></script>
+    <!-- Custom Styles -->
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .offer-badge { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+    <!-- Top Banner -->
+    <div class="bg-black text-white text-xs py-1.5 text-center font-medium">
+        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    </div>
+
+    <!-- Navigation -->
+    <nav class="border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Sneakers</div>
+                <div class="flex space-x-6">
+                    <a href="{% url 'home' %}" class="text-gray-600 hover:text-black">Home</a>
+                    <!-- Shop Dropdown -->
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
+                            <span>Shop</span>
+                            <svg class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2 z-10">
+                            <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                            <a href="{% url 'Boots' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                            <a href="{% url "Runners" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Runners</a>
+                        </div>
+                    </div>
+                    <a href="#" class="text-gray-600 hover:text-black">Sale</a>
+                </div>
+                <!-- Actions -->
+                <div class="flex items-center space-x-4">
+                    <!-- Search -->
+                    <div class="hidden md:block relative">
+                        <input type="text" placeholder="What are you looking for?" 
+                               class="border rounded-full px-4 py-2 w-64 focus:outline-none focus:ring-1 focus:ring-gray-400">
+                        <button class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </button>
+                    </div>
+                    <button id="mobileSearchBtn" class="md:hidden p-2"><i class="fas fa-search"></i></button>
+                    <!-- Wishlist -->
+                    <a href="{% url 'wishlist_view' %}" class="p-2 relative text-gray-600 hover:text-black">
+                        <i class="fas fa-heart"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+                    </a>
+                    <!-- Cart -->
+                    <a href="{% url 'cart' %}" class="p-2 relative text-gray-600 hover:text-black">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{{ cart_count }}</span>
+                    </a>
+                    <!-- User Dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2"><i class="fas fa-user"></i></button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Search Form -->
+            <div id="mobileSearchForm" class="hidden md:hidden w-full bg-white p-4 absolute left-0 top-full z-50 shadow-md">
+                <div class="relative">
+                    <input type="text" placeholder="What are you looking for?" 
+                           class="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-1 focus:ring-gray-400">
+                    <button class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="fixed top-20 right-4 z-50">
+        {% for msg in messages %}
+        <div id="message-{{ forloop.counter }}" 
+             class="px-4 py-3 rounded-md shadow-md flex justify-between items-center mb-3 transition-all duration-500 {% if msg.tags == 'success' %}bg-green-100 text-green-700 border border-green-300{% else %}bg-red-100 text-red-700 border border-red-300{% endif %}">
+            <div>{{ msg }}</div>
+            <button onclick="this.parentElement.remove()" class="ml-4 text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+            <script>
+                setTimeout(() => {
+                    const msg = document.getElementById('message-{{ forloop.counter }}');
+                    if (msg) {
+                        msg.style.opacity = '0';
+                        setTimeout(() => msg.remove(), 500);
+                    }
+                }, 5000);
+            </script>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Breadcrumb -->
+    <nav class="container mx-auto py-4 px-6 text-sm text-gray-600">
+        <a href="{% url 'home' %}" class="hover:underline">Home</a> /
+        <a href="{% url 'Sneakers' %}" class="hover:underline">Sneakers</a> /
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 flex-1">
+        <!-- Featured Offers Section -->
+        {% if featured_offers %}
+        <div class="mb-12">
+            <h2 class="text-2xl font-bold mb-6">Special Offers</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for item in featured_offers %}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-200 hover:shadow-xl hover:-translate-y-1">
+                    <div class="relative">
+                        {% with first_variant=item.product.variances.first %}
+                        {% if first_variant and first_variant.images.first %}
+                        <img src="{{ first_variant.images.first.image.url }}" 
+                             alt="{{ item.product.name }}" 
+                             class="w-full h-64 object-cover">
+                        {% endif %}
+                        {% endwith %}
+                        <div class="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full font-bold offer-badge">
+                            {% if item.discount_info.offer.discount_type == 'percentage' %}
+                                {{ item.discount_info.offer.discount_value }}% OFF
+                            {% else %}
+                                ₹{{ item.discount_info.offer.discount_value }} OFF
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-xl font-medium mb-2">{{ item.product.name }}</h3>
+                        <div class="flex items-center mb-2">
+                            <span class="text-xl font-bold text-red-600">₹{{ item.discount_info.final_price|floatformat:2 }}</span>
+                            <span class="ml-2 text-sm line-through text-gray-500">₹{{ item.discount_info.original_price|floatformat:2 }}</span>
+                        </div>
+                        <div class="text-green-600 text-sm mb-3">Save ₹{{ item.discount_info.saved_amount|floatformat:2 }}</div>
+                        {% if item.discount_info.offer.valid_till %}
+                        <div class="offer-timer text-sm text-gray-600 mb-4" 
+                             data-expires="{{ item.discount_info.offer.valid_till|date:'Y-m-d' }}">
+                            <i class="fas fa-clock mr-1"></i> Ends in: <span class="countdown font-medium">Loading...</span>
+                        </div>
+                        {% endif %}
+                        <a href="{% url 'single_product_page' item.product.id %}" 
+                           class="block w-full py-2 bg-black hover:bg-gray-800 text-white text-center rounded-md transition-colors text-sm font-medium">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Page Header and Sorting -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold mb-4 sm:mb-0">Boots Collection</h1>
+            <div class="relative">
+                <select id="sort-select" onchange="applySorting()" class="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-4 pr-10 focus:outline-none focus:border-black">
+                    <option value="default" {% if current_sort == 'default' %}selected{% endif %}>Default Sorting</option>
+                    <option value="price_low_high" {% if current_sort == 'price_low_high' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_high_low" {% if current_sort == 'price_high_low' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="new_arrival" {% if current_sort == 'new_arrival' %}selected{% endif %}>New Arrivals</option>
+                    <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name: A to Z</option>
+                    <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name: Z to A</option>
+                </select>
+                <div class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" hidden></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for item in products %}
+            <div class="group bg-white shadow-md rounded-lg overflow-hidden transform transition duration-200 hover:shadow-xl hover:-translate-y-1 relative">
+                <!-- Out of Stock Overlay -->
+                {% if item.product.product_quantity == 0 %}
+                <div class="absolute inset-0 bg-black bg-opacity-50 z-10 flex items-center justify-center">
+                    <span class="bg-red-500 text-white px-4 py-2 rounded-md font-medium">Out of Stock</span>
+                </div>
+                {% endif %}
+                <div class="relative">
+                    <a href="{% url 'single_product_page' item.product.id %}" class="block">
+                        <div class="aspect-w-1 aspect-h-1 overflow-hidden">
+                            {% with first_variant=item.product.variances.first %}
+                            {% if first_variant and first_variant.images.first %}
+                            <img src="{{ first_variant.images.first.image.url }}"
+                                 alt="{{ item.product.name }}"
+                                 class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300 {% if item.product.product_quantity == 0 %}opacity-50{% endif %}">
+                            {% else %}
+                            <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                                <span class="text-gray-400">No image</span>
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </a>
+                    {% if item.discounted_info.offer %}
+                    <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs rounded-full font-bold offer-badge">
+                        {% if item.discounted_info.offer.discount_type == 'percentage' %}
+                            {{ item.discounted_info.offer.discount_value }}% OFF
+                        {% else %}
+                            ₹{{ item.discounted_info.offer.discount_value }} OFF
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if item.product.product_quantity > 0 %}
+                    <button onclick="toggleWishlist('{{ item.product.id }}')"
+                            class="wishlist-btn absolute top-3 right-3 p-2 bg-white rounded-full shadow-md"
+                            data-product-id="{{ item.product.id }}">
+                        <svg class="w-5 h-5 {% if item.product.id in user_wishlist_items %}text-red-500 fill-current{% else %}text-gray-500{% endif %}"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+                        </svg>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-medium truncate mb-1">{{ item.product.name }}</h3>
+                    {% if item.discounted_info.offer %}
+                    <div class="flex items-center">
+                        <span class="text-red-600 font-bold">₹{{ item.discounted_info.final_price|floatformat:2 }}</span>
+                        <span class="ml-2 text-sm line-through text-gray-500">₹{{ item.discounted_info.original_price|floatformat:2 }}</span>
+                    </div>
+                    {% if item.discounted_info.offer.offer_title %}
+                    <div class="text-xs text-green-600 mt-1">{{ item.discounted_info.offer.offer_title }}</div>
+                    {% endif %}
+                    {% if item.discounted_info.offer.valid_till %}
+                    <div class="text-xs text-gray-600 mt-1 offer-timer" 
+                         data-expires="{{ item.discounted_info.offer.valid_till|date:'Y-m-d' }}">
+                        <i class="fas fa-clock mr-1"></i> Ends in: <span class="countdown">Loading...</span>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-red-600 font-bold">₹{{ item.product.sale_Price|floatformat:2 }}</p>
+                    {% endif %}
+                    <p class="text-{% if item.product.product_quantity > 0 %}green{% else %}red{% endif %}-600 text-sm mt-1">
+                        {% if item.product.product_quantity > 0 %}In Stock{% else %}Out of Stock{% endif %}
+                    </p>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        {% with item.product.variances.all|slice:":3" as variants %}
+                        {% for variant in variants %}
+                        <span class="inline-block px-2 py-1 text-xs bg-gray-100 rounded-md">
+                            {{ variant.size.name }} / {{ variant.color.name }}
+                        </span>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="flex space-x-2 mt-4">
+                        <a href="{% url 'single_product_page' item.product.id %}" 
+                           class="flex-grow py-2 {% if item.product.product_quantity == 0 %}bg-gray-400 cursor-not-allowed{% else %}bg-black hover:bg-gray-800{% endif %} text-white text-center rounded-md transition-colors text-sm font-medium">
+                            {% if item.product.product_quantity == 0 %}Out of Stock{% else %}View Details{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full py-16 px-4 flex flex-col items-center justify-center bg-white rounded-lg shadow-md">
+                <svg class="h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p class="text-gray-500 text-lg mb-2">No products found</p>
+                <p class="text-gray-400 text-sm mb-6 text-center max-w-md">Try adjusting your search or filter criteria, or browse our categories to find what you're looking for.</p>
+                <a href="{% url 'home' %}" class="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors">
+                    Continue Shopping
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if products.has_other_pages %}
+        <div class="flex justify-center mt-8">
+            <nav class="flex items-center space-x-1">
+                {% if products.has_previous %}
+                <a href="?page={{ products.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                   class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Previous</a>
+                {% endif %}
+                {% for num in products.paginator.page_range %}
+                {% if num == products.number %}
+                <span class="px-3 py-2 rounded-md bg-black text-white">{{ num }}</span>
+                {% else %}
+                <a href="?page={{ num }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                   class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">{{ num }}</a>
+                {% endif %}
+                {% endfor %}
+                {% if products.has_next %}
+                <a href="?page={{ products.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                   class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Next</a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-10">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 px-6">
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Subscribe to our Newsletter</h3>
+                <p class="text-gray-400 mb-4 text-sm">Get the latest updates, offers and special announcements.</p>
+                <form class="mb-4">
+                    <input type="email" placeholder="Your Email" 
+                           class="w-full py-2 px-4 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500">
+                    <button type="submit" class="w-full mt-2 py-2 bg-white text-black hover:bg-gray-200 rounded-md font-medium transition-colors">
+                        Subscribe
+                    </button>
+                </form>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Support</h3>
+                <ul class="space-y-2 text-gray-300">
+                    <li><a href="#" class="hover:text-white transition-colors">Shipping Policy</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Refund Policy</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                <ul class="space-y-2 text-gray-300">
+                    <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">FAQs</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Store Locator</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Download Our App</h3>
+                <p class="text-gray-400 mb-4 text-sm">Shop on the go with our mobile app.</p>
+                <img src="https://via.placeholder.com/120x120" alt="QR Code" class="mb-4 rounded-md">
+                <div class="flex space-x-4">
+                    <a href="#" class="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"><i class="fab fa-facebook-f text-white"></i></a>
+                    <a href="#" class="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"><i class="fab fa-twitter text-white"></i></a>
+                    <a href="#" class="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"><i class="fab fa-instagram text-white"></i></a>
+                    <a href="#" class="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"><i class="fab fa-linkedin-in text-white"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="container mx-auto mt-8 pt-6 border-t border-gray-800 text-center text-gray-400 text-sm">
+            <p>© 2025 Sneakers. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // CSRF Token Helper
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Notification Function
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white z-50`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Wishlist Toggle
+        async function toggleWishlist(productId) {
+            const wishlistBtn = document.querySelector(`.wishlist-btn[data-product-id="${productId}"]`);
+            const isOutOfStock = wishlistBtn?.closest('.group')?.querySelector('.text-red-600.text-sm')?.textContent === 'Out of Stock';
+            
+            if (isOutOfStock) {
+                showNotification('Cannot add out of stock items to wishlist', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/wishlist/toggle/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                if (wishlistBtn) {
+                    const icon = wishlistBtn.querySelector('svg');
+                    if (data.status === 'added') {
+                        icon.classList.add('text-red-500', 'fill-current');
+                        icon.classList.remove('text-gray-500');
+                        showNotification('Added to wishlist', 'success');
+                    } else {
+                        icon.classList.remove('text-red-500', 'fill-current');
+                        icon.classList.add('text-gray-500');
+                        showNotification('Removed from wishlist', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error updating wishlist', 'error');
+            }
+        }
+
+        // Sorting
+        function applySorting() {
+            const sortValue = document.getElementById('sort-select').value;
+            const currentUrl = new URL(window.location.href);
+            if (sortValue === 'default') {
+                currentUrl.searchParams.delete('sort');
+            } else {
+                currentUrl.searchParams.set('sort', sortValue);
+            }
+            currentUrl.searchParams.set('page', '1'); // Reset to page 1
+            window.location.href = currentUrl.toString();
+        }
+
+        // Offer Timers
+        function updateOfferTimers() {
+            document.querySelectorAll('.offer-timer').forEach(element => {
+                const expiryDate = new Date(element.dataset.expires + ' 23:59:59');
+                const now = new Date();
+                if (now >= expiryDate) {
+                    element.querySelector('.countdown').textContent = 'Expired';
+                    return;
+                }
+                const timeDiff = expiryDate - now;
+                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+                element.querySelector('.countdown').textContent = `${days > 0 ? days + 'd ' : ''}${hours}h ${minutes}m ${seconds}s`;
+            });
+        }
+
+        // DOMContentLoaded Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dropdowns
+            const shopButton = document.getElementById('shopButton');
+            const shopDropdown = document.getElementById('shopDropdown');
+            const userDropdownButton = document.getElementById('userDropdownButton');
+            const userDropdownMenu = document.getElementById('userDropdownMenu');
+            shopButton?.addEventListener('click', () => shopDropdown.classList.toggle('hidden'));
+            userDropdownButton?.addEventListener('click', () => userDropdownMenu.classList.toggle('hidden'));
+            document.addEventListener('click', (e) => {
+                if (!shopButton?.contains(e.target) && !shopDropdown?.contains(e.target)) shopDropdown?.classList.add('hidden');
+                if (!userDropdownButton?.contains(e.target) && !userDropdownMenu?.contains(e.target)) userDropdownMenu?.classList.add('hidden');
+            });
+
+            // Mobile Search
+            const mobileSearchBtn = document.getElementById('mobileSearchBtn');
+            const mobileSearchForm = document.getElementById('mobileSearchForm');
+            mobileSearchBtn?.addEventListener('click', () => mobileSearchForm.classList.toggle('hidden'));
+
+            // Offer Timers
+            if (document.querySelector('.offer-timer')) {
+                updateOfferTimers();
+                setInterval(updateOfferTimers, 1000);
+            }
+
+            // Unauthenticated Wishlist Redirect
+            if (document.querySelector('[data-user-authenticated]')?.getAttribute('data-user-authenticated') === 'false') {
+                document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        window.location.href = `/accounts/login/?next=${window.location.pathname}`;
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

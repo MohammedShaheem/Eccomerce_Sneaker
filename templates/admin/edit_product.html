@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>Add Products</title>
+    <title>Edit Products</title>
     <script>
         window.existingProducts = {{ existing_products|safe }};
     </script>
@@ -14,45 +14,26 @@
     <!-- Navigation Header -->
     <header class="bg-gray-800 p-4 flex justify-between items-center">
         <div class="flex items-center">
-            <button class="text-gray-400 mr-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
-            <input type="search" placeholder="Search" class="bg-gray-700 px-4 py-2 rounded-lg text-gray-300 w-64">
         </div>
         <div class="flex items-center space-x-4">
-            <button class="text-gray-400">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
-            </button>
-            <button class="text-gray-400">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-            </button>
-            <div class="flex items-center">
-                <div class="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
-                    <span class="text-white font-semibold">A</span>
-                </div>
-                <span class="ml-2 text-white">Admin</span>
-            </div>
         </div>
     </header>
 
     <!-- Sidebar -->
     <div class="flex">
-        <aside class="w-64 bg-gray-900 min-h-screen p-4">
-            <nav class="space-y-2">
-                <a href="#" class="flex items-center space-x-2 text-purple-500 p-2 rounded-lg">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
+        <div class="bg-gray-800 p-6 h-screen">
+            <h2 class="text-lg font-bold mb-4">Pages</h2>
+            <nav>
+              <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+              <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
+              <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md bg-gray-700">Products</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+              <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+              <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
             </nav>
-        </aside>
+          </div>
 
         <!-- Main Content -->
         <main class="flex-1 p-8">
@@ -130,7 +111,7 @@
         
                 <!-- Variants -->
         
-                <!-- Product Images -->
+                {% comment %} <!-- Product Images -->
                 <div class="bg-gray-800 rounded-lg p-6">
                     <h2 class="text-lg font-semibold mb-4 text-gray-100">Product Images</h2>
                     
@@ -159,18 +140,33 @@
                         <p class="text-gray-400 text-sm mt-1">You can select multiple images. Maximum size: 5MB per image</p>
                     </div>
                 </div>
-        
+         {% endcomment %}
                 <!-- Action Buttons -->
                 <div class="flex space-x-4">
                     <button type="submit" name="action" value="update"
                         class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
                         Update Product
                     </button>
+                    
+                    <!-- Separate form for delete button -->
                     <form method="POST" class="inline">
                         {% csrf_token %}
                         <button type="submit" name="delete_product" 
                                 class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
                             Delete Product
+                        </button>
+                    </form>
+                    
+                    <!-- Separate form for block/unblock button -->
+                    <form method="POST" action="{% url 'toggle_product_status' product.id %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="px-4 py-2 {% if product.Is_active %}bg-red-500 hover:bg-red-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white rounded transition-colors">
+                            {% if product.Is_active %}
+                                Block Product
+                            {% else %}
+                                Unblock Product
+                            {% endif %}
                         </button>
                     </form>
                 </div>

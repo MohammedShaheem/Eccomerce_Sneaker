@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-
+from decouple import config # type: ignore
 
 
 
@@ -31,7 +31,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media') # This creates a physical directory 
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 
-SECRET_KEY = 'django-insecure-$q+!d)(ksc!!rgd4p1yhovnbp6&@4^shr(1t*gh!))0v$*u#xp'
+SECRET_KEY = config('SECRET_KEY')
 
 
 DEBUG = True
@@ -64,8 +64,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'mohammedshaheemtk2@gmail.com'
-EMAIL_HOST_PASSWORD = 'iickllsglnvobktx'
+
+EMAIL_HOST_USER = ('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = ('EMAIL_HOST_PASSWORD')
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 #Google authentication
@@ -76,10 +77,9 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 ACCOUNT_USERNAME_REQUIRED = False
 
 
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 
-
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = "1054359230807-tntqf85jrsr3k1cedpof48ooluhbambj.apps.googleusercontent.com"
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = "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"
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -102,6 +102,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'EccomerceProject.middleware.RestrictAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'UserProfile.middleware.NoCacheMiddleware',
@@ -138,12 +139,12 @@ WSGI_APPLICATION = 'EccomerceProject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'EccomerceProject',         # The name of your PostgreSQL database
-        'USER': 'postgres',          # Your PostgreSQL username
-        'PASSWORD': 'postgres1234',  # Your PostgreSQL password
-        'HOST': 'localhost',             # Or the host where PostgreSQL is running
-        'PORT': '5433', 
+        'ENGINE': config('DB_ENGINE'),
+        'NAME': config('DB_NAME'),         # The name of your PostgreSQL database
+        'USER': config('DB_USER'),          # Your PostgreSQL username
+        'PASSWORD': config('DB_PASSWORD'),  # Your PostgreSQL password
+        'HOST': config('DB_HOST'),             # Or the host where PostgreSQL is running
+        'PORT': config('DB_PORT'), 
     }
 }
 
@@ -246,6 +247,6 @@ LOGOUT_REDIRECT_URL = 'home_before_login'
 
 PAYPAL_RECEIVER_EMAIL = 'mohammedbusiness@gmail.com'#sandbox business account
 PAYPAL_TEST = True
-PAYPAL_CLIENT_ID = 'AXgpBXPi4ZMjXal-46frbxDexfuo8h2wvtHdIm_SgIw1ikOJNBXxoUlkUcTntaJqgVr3sBtX_DO6y_Ib'
-PAYPAL_CLIENT_SECRET = 'EEi0H6feXKNCz681Kkra_5SNr_sLHT68EYIUyhKMFBCwL9re8TdxYADlHjD8p8Pa7L2ZbWzgJ8_mY9W_'
+PAYPAL_CLIENT_ID = config('PAYPAL_CLIENT_ID')
+PAYPAL_CLIENT_SECRET = config('PAYPAL_CLIENT_SECRET')
 PAYPAL_MODE = 'sandbox'

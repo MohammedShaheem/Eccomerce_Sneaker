@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Side Navigation Bar -->
+    <div class="bg-gray-800 w-64 p-6 h-screen fixed">
+        <h2 class="text-lg font-bold text-gray-100 mb-6">Pages</h2>
+        <nav class="space-y-2">
+            <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+            <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
+            <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+            <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md bg-gray-700">Orders</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+            <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+<!-- Main Content Area -->
+<div class="min-h-screen bg-black text-white p-6 ml-64 flex justify-center">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex items-center mb-6">
+            <a href="{% url 'admin_return_requests' %}" class="text-indigo-600 hover:text-indigo-900 mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to return requests
+            </a>
+            <h1 class="text-2xl font-bold">Return Request #{{ return_request.id }}</h1>
+        </div>
+        
+        <!-- Request Info Card -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">Request Information</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between border-b border-gray-700 pb-2">
+                            <span class="text-gray-400">Status:</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if return_request.status == 'APPROVED' %}
+                                    bg-green-700 text-green-100
+                                {% elif return_request.status == 'REQUESTED' %}
+                                    bg-yellow-700 text-yellow-100
+                                {% elif return_request.status == 'REJECTED' %}
+                                    bg-red-700 text-red-100
+                                {% endif %}">
+                                {{ return_request.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-700 pb-2">
+                            <span class="text-gray-400">Order ID:</span>
+                            <span>{{ return_request.order.order_id }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-700 pb-2">
+                            <span class="text-gray-400">Customer:</span>
+                            <span>{{ return_request.user.username }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-700 pb-2">
+                            <span class="text-gray-400">Request Date:</span>
+                            <span>{{ return_request.created_at|date:"F j, Y, g:i a" }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-700 pb-2">
+                            <span class="text-gray-400">Order Status:</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if return_request.order.order_status == 'DELIVERED' %}
+                                    bg-green-700 text-green-100
+                                {% elif return_request.order.order_status == 'PROCESSING' %}
+                                    bg-blue-700 text-blue-100
+                                {% elif return_request.order.order_status == 'PENDING' %}
+                                    bg-yellow-700 text-yellow-100
+                                {% elif return_request.order.order_status == 'RETURNED' %}
+                                    bg-purple-700 text-purple-100
+                                {% elif return_request.order.order_status == 'PARTIALLY_RETURNED' %}
+                                    bg-indigo-700 text-indigo-100
+                                {% elif return_request.order.order_status == 'CANCELED' %}
+                                    bg-red-700 text-red-100
+                                {% endif %}">
+                                {{ return_request.order.get_order_status_display }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-700 pb-2">
+                            <span class="text-gray-400">Order Return Status:</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if return_request.order.return_status == 'APPROVED' %}
+                                    bg-green-700 text-green-100
+                                {% elif return_request.order.return_status == 'PARTIALLY_APPROVED' %}
+                                    bg-blue-700 text-blue-100
+                                {% elif return_request.order.return_status == 'REJECTED' %}
+                                    bg-red-700 text-red-100
+                                {% else %}
+                                    bg-gray-700 text-gray-100
+                                {% endif %}">
+                                {{ return_request.order.get_return_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">Return Reason</h2>
+                    <div class="bg-gray-900 p-4 rounded-md">
+                        <p class="text-gray-300">{{ return_request.reason }}</p>
+                    </div>
+                    
+                    {% if return_request.status != 'REQUESTED' %}
+                    <h2 class="text-lg font-semibold mt-4 mb-2">Admin Notes</h2>
+                    <div class="bg-gray-900 p-4 rounded-md">
+                        <p class="text-gray-300">{{ return_request.admin_notes|default:"No admin notes" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Return Items -->
+        <h2 class="text-xl font-semibold mb-4">Return Items</h2>
+        <div class="bg-gray-800 rounded-lg overflow-hidden mb-6">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                            Product
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                            Quantity
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                            Price
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                            Total
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                            Item Status
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-gray-800 divide-y divide-gray-700">
+                    {% for item in return_items %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 flex-shrink-0">
+                                    {% with variant_image=item.order_item.variant.images.first product_image=item.order_item.product.images.first %}
+                                {% if variant_image and variant_image.image %}
+                                    <img src="{{ variant_image.image.url }}" alt="{{ item.order_item.product.name }}" class="h-full w-full object-cover rounded-lg">
+                                {% elif product_image and product_image.image %}
+                                    <img src="{{ product_image.image.url }}" alt="{{ item.order_item.product.name }}" class="h-full w-full object-cover rounded-lg">
+                                {% else %}
+                                    <div class="h-full w-full bg-gray-200 rounded-lg flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-white">{{ item.order_item.product.name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-white">{{ item.order_item.quantity }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-white">₹{{ item.order_item.price_per_item }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-white">₹{{ item.order_item.total_amount }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if item.order_item.item_status == 'RETURNED' %}
+                                    bg-purple-700 text-purple-100
+                                {% elif item.order_item.item_status == 'DELIVERED' %}
+                                    bg-green-700 text-green-100
+                                {% elif item.order_item.item_status == 'PROCESSING' %}
+                                    bg-blue-700 text-blue-100
+                                {% elif item.order_item.item_status == 'PENDING' %}
+                                    bg-yellow-700 text-yellow-100
+                                {% else %}
+                                    bg-gray-700 text-gray-100
+                                {% endif %}">
+                                {{ item.order_item.get_item_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-gray-700">
+                    <tr>
+                        <td colspan="4" class="px-6 py-3 text-right text-sm font-medium text-gray-300">
+                            Total Refund Amount:
+                        </td>
+                        <td class="px-6 py-3 text-sm font-bold text-white">
+                            ₹{{ total_refund_amount }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        {% if return_request.status == 'REQUESTED' %}
+        <!-- Admin Action Form -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Take Action</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="admin_notes" class="block text-sm font-medium text-gray-400 mb-2">Admin Notes</label>
+                    <textarea id="admin_notes" name="admin_notes" rows="4" 
+                        class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="flex space-x-4">
+                    <button type="submit" name="action" value="approve" 
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        Approve Return
+                    </button>
+                    <button type="submit" name="action" value="reject" 
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+                        Reject Return
+                    </button>
+                </div>
+            </form>
+            {% if has_pending_return_requests %}
+                <div class="text-yellow-500 text-sm mt-2">
+                    This order has pending return requests. Status will be updated automatically when processed.
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Order Details Link -->
+        <div class="text-center mt-4">
+            {% comment %} <a href="{% url 'admin_order_detail' return_request.order.id %}" class="text-indigo-500 hover:text-indigo-400">
+                View Full Order Details
+            </a> {% endcomment %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

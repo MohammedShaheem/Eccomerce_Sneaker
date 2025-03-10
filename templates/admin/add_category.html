@@ -22,20 +22,30 @@
         <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Coupons</a>
         <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+        <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
       </nav>
   </div>
 
     <!-- Main Content Area -->
     <div class="flex-1 p-8">
   <!-- Header -->
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold">Add Category</h1>
-    <p class="text-sm text-gray-400">Category > Add category</p>
-  </div>
+  <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl font-bold mb-2">Add Category</h1>
+            <p class="text-gray-400">Categories > Add Category</p>
+        </div>
+        <a href="{% url 'category' %}" 
+        class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back to Categories
+        </a>
+    </div>
 
   <!-- Form Section -->
   <div>
-    <h2 class="text-lg font-bold mb-4">Add Category</h2>
+    
     <form class="space-y-6" method="POST" enctype="multipart/form-data">
       {% csrf_token %}
 
@@ -110,9 +120,6 @@
       <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white">Add Category</button>
       
     </form>
-    <a href="{% url 'category' %}" class="inline-block">
-      <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white">back</button>
-      </a>
   </div>
 </div>
 
@@ -209,29 +216,34 @@
 
       // Validation functions
       function validateName() {
-          const value = nameInput.value.trim();
-          if (!value) {
-              showError(nameInput, 'nameError', 'Category name is required');
-              return false;
-          }
-          if (value.length < 3) {
-              showError(nameInput, 'nameError', 'Category name must be at least 3 characters');
-              return false;
-          }
-          if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
-              showError(nameInput, 'nameError', 'Category name can only contain letters, numbers, spaces, hyphens, and underscores');
-              return false;
-          }
-          
-          // Check for duplicates (case-insensitive)
-          if (existingCategories.includes(value.toLowerCase())) {
-              showError(nameInput, 'nameError', 'This category name already exists');
-              return false;
-          }
-
-          clearError(nameInput, 'nameError');
-          return true;
-      }
+        const value = nameInput.value.trim();
+        if (!value) {
+            showError(nameInput, 'nameError', 'Category name is required');
+            return false;
+        }
+        if (value.length < 3) {
+            showError(nameInput, 'nameError', 'Category name must be at least 3 characters');
+            return false;
+        }
+        // Check if it starts with a letter
+        if (!/^[a-zA-Z]/.test(value)) {
+            showError(nameInput, 'nameError', 'Category name must start with a letter');
+            return false;
+        }
+        if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
+            showError(nameInput, 'nameError', 'Category name can only contain letters, numbers, spaces, hyphens, and underscores');
+            return false;
+        }
+        
+        // Check for duplicates (case-insensitive)
+        if (existingCategories.includes(value.toLowerCase())) {
+            showError(nameInput, 'nameError', 'This category name already exists');
+            return false;
+        }
+        
+        clearError(nameInput, 'nameError');
+        return true;
+    }
       // Add debounced name validation
       function debounce(func, wait) {
           let timeout;
@@ -250,18 +262,30 @@
       }, 300);
 
       function validateDescription() {
-          const value = descriptionInput.value.trim();
-          if (!value) {
-              showError(descriptionInput, 'descriptionError', 'Description is required');
-              return false;
-          }
-          if (value.length > 500) {
-              showError(descriptionInput, 'descriptionError', 'Description cannot exceed 500 characters');
-              return false;
-          }
-          clearError(descriptionInput, 'descriptionError');
-          return true;
-      }
+        const value = descriptionInput.value.trim();
+        if (!value) {
+            showError(descriptionInput, 'descriptionError', 'Description is required');
+            return false;
+        }
+        if (value.length < 10) {
+            showError(descriptionInput, 'descriptionError', 'Description must be at least 10 characters long');
+            return false;
+        }
+        if (value.length > 500) {
+            showError(descriptionInput, 'descriptionError', 'Description cannot exceed 500 characters');
+            return false;
+        }
+        clearError(descriptionInput, 'descriptionError');
+        return true;
+    }
+    
+    // Add debounced description validation
+    const debouncedDescriptionValidation = debounce(() => {
+        validateDescription();
+    }, 300);
+    
+    // Add the event listener
+    descriptionInput.addEventListener('input', debouncedDescriptionValidation);
 
       function validateImage() {
           const files = imageInput.files;
