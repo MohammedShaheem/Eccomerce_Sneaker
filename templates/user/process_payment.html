@@ -1,128 +1,133 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart</title>
+    <title>Payment - LaceUp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+        }
+    </style>
 </head>
-<body class="bg-white">
+<body class="bg-gray-50 flex flex-col min-h-screen">
     <!-- Top Banner -->
     <div class="bg-black text-white text-xs py-1 text-center">
-        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+        Step into style and comfort – discover the perfect pair of sneakers for every journey!
     </div>
 
-    <!-- Navigation -->
-    <div class="max-w-2xl mx-auto py-8 px-4">
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold mb-6">Complete Your Payment</h1>
-        
-        <!-- Order Summary -->
-        <div class="mb-6">
-            <h2 class="text-lg font-medium mb-2">Order Summary</h2>
-            <div class="flex justify-between mb-2">
-                <span>Total Amount:</span>
-                <span class="font-medium">₹{{ total_amount }}</span>
+    <!-- Simplified Navigation -->
+    <nav class="border-b shadow-sm py-4">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-center items-center">
+                <a href="{% url 'home' %}" class="text-black">
+                    <div class="text-2xl font-bold">LaceUp</div>
+                </a>
             </div>
-            {% if debug %}
-            <div class="mt-4 p-4 bg-gray-100 rounded">
-                <p>Debug Info:</p>
-                <p>Passed Total: {{ total_amount }}</p>
-            </div>
-            {% endif %}
         </div>
+        
+        {% if messages %}
+        <div class="fixed top-4 right-4 z-50">
+            {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                        px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+            {% endfor %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Get all message elements
+                    const messages = document.querySelectorAll('[id^="message-"]');
+                    messages.forEach(function(message) {
+                        // Set a timeout to fade out and remove after 5 seconds
+                        setTimeout(function() {
+                            // Fade out by setting opacity to 0
+                            message.classList.remove('opacity-100');
+                            message.classList.add('opacity-0');
+                            
+                            // Remove the element from the DOM after the transition (500ms)
+                            setTimeout(function() {
+                                message.remove();
+                            }, 500); // Matches the duration-500 class
+                        }, 1000); // 5 seconds delay before starting fade-out
+                    });
+                });
+            </script>
+        </div>
+        {% endif %}
+    </nav>   
 
-        <!-- PayPal Button -->
-        <div class="paypal-button-container">
-            {{ form.render }}
-        </div>
-        
-        <!-- Cancel Button -->
-        <div class="mt-6 text-center">
-            <a href="{% url 'payment_cancelled' %}" class="text-gray-600 hover:text-gray-800">
-                Cancel and return to checkout
-            </a>
+    <!-- Main Content -->
+    <div class="main-content flex items-center justify-center py-16 px-4">
+        <div class="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold mb-2">Complete Your Payment</h1>
+                <p class="text-gray-500 text-sm">Secure checkout powered by PayPal</p>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="mb-8 border-b pb-6">
+                <h2 class="text-lg font-medium mb-4">Order Summary</h2>
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-600">Subtotal</span>
+                    <span class="font-medium">₹{{ total_amount }}</span>
+                </div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-600">Shipping</span>
+                    <span class="font-medium">Free</span>
+                </div>
+                <div class="flex justify-between pt-4 border-t mt-4">
+                    <span class="font-semibold">Total Amount</span>
+                    <span class="font-bold text-lg">₹{{ total_amount }}</span>
+                </div>
+                
+                {% if debug %}
+                <div class="mt-4 p-4 bg-gray-100 rounded">
+                    <p>Debug Info:</p>
+                    <p>Passed Total: {{ total_amount }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- PayPal Button -->
+            <div class="paypal-button-container mb-6">
+                {{ form.render }}
+            </div>
+            
+            <!-- Back Button -->
+            <div class="text-center">
+                <a href="{% url 'payment_cancelled' %}" class="inline-flex items-center text-gray-600 hover:text-gray-800 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Return to checkout
+                </a>
+            </div>
         </div>
     </div>
-</div>
-        
 
     <!-- Footer -->
-    <footer class="bg-black text-white mt-16">
-        <div class="container mx-auto px-4 py-12">
-            <div class="grid grid-cols-4 gap-8">
-                <!-- Subscribe -->
-                <div>
-                    <h3 class="font-medium mb-4">Subscribe</h3>
-                    <p class="text-sm mb-4">Get 10% off your first order</p>
-                    <div class="flex">
-                        <input type="email" placeholder="Enter your email" class="bg-transparent border px-4 py-2 flex-grow">
-                        <button class="bg-white text-black px-4">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Support -->
-                <div>
-                    <h3 class="font-medium mb-4">Support</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>111 Bijay sarani, Dhaka,</p>
-                        <p>DH 1515, Bangladesh.</p>
-                        <p>exclusive@gmail.com</p>
-                        <p>+88015-88888-9999</p>
-                    </div>
-                </div>
-
-                <!-- Account -->
-                <div>
-                    <h3 class="font-medium mb-4">Account</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>My Account</p>
-                        <p>Login / Register</p>
-                        <p>Cart</p>
-                        <p>Wishlist</p>
-                        <p>Shop</p>
-                    </div>
-                </div>
-
-                <!-- Quick Link -->
-                <div>
-                    <h3 class="font-medium mb-4">Quick Link</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>Privacy Policy</p>
-                        <p>Terms Of Use</p>
-                        <p>FAQ</p>
-                        <p>Contact</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Download App Section -->
-            <div class="mt-12">
-                <h3 class="font-medium mb-4">Download App</h3>
-                <div class="flex items-center space-x-4">
-                    <img src="/api/placeholder/120/40" alt="QR Code" class="w-24 h-24">
-                    <div class="space-y-2">
-                        <img src="/api/placeholder/120/40" alt="Google Play" class="h-10">
-                        <img src="/api/placeholder/120/40" alt="App Store" class="h-10">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Social Icons -->
-            <div class="flex space-x-4 mt-8">
-                <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
-            </div>
+    <footer class="bg-black text-white py-6 mt-auto">
+        <div class="text-center">
+            <p class="text-sm">Your perfect pair is just a step away – shop now and elevate your style!</p>
+            <p class="text-xs mt-2">© 2025 LaceUp. All rights reserved.</p>
         </div>
     </footer>
-    
 </body>
 </html>

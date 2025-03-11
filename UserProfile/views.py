@@ -918,6 +918,8 @@ def clear_cart(request):
 ##############################################################################################################################################################################################        
         
 def add_address(request):
+    # Determine source (where the user is coming from)
+    source = request.GET.get('source', 'checkout')  # Default to checkout if not specified
     if request.method == 'POST':
         form = AddressForm(request.POST)
         if form.is_valid():
@@ -933,12 +935,19 @@ def add_address(request):
                 address.is_default = True
                 
             address.save()
-            return redirect('checkout') 
+            
+            messages.success(request, 'Address saved successfully.')
+            # Redirect based on the hidden field value
+            redirect_source = request.POST.get('redirect_source', 'checkout')
+            if redirect_source == 'profile':
+                return redirect('user_address')  # Redirect to user's address book
+            else:
+                return redirect('checkout')  # Redirect to checkout 
             
     else:
         form = AddressForm()
     
-    return render(request, 'user/add_address.html', {'form': form})
+    return render(request, 'user/add_address.html', {'form': form, 'source': source})
 #####################################################################################################################################################################################################
 @login_required
 def apply_coupon(request):
@@ -1473,6 +1482,9 @@ def payment_success(request):
                 
             variant.Stock_Quantity -= quantity
             variant.save()
+            
+            product.product_quantity -= quantity
+            product.save()
             
             discount_info = get_discounted_price(product)
             item_offer = discount_info['offer']

@@ -42,8 +42,10 @@ urlpatterns = [
     path('admin-returns/', views.admin_return_requests, name='admin_return_requests'),
     path('adminreturns/<int:request_id>/', views.admin_return_request_detail, name='admin_return_request_detail'),
     path('adminwallettransactions/', views.admin_wallet_transactions, name='admin_wallet_transactions'),
-    path('adminwalletuser/<int:user_id>/', views.admin_user_wallet_details, name='admin_user_wallet_details'),
-]
+    path('coupons/<int:coupon_id>/delete/', views.delete_coupon, name='delete_coupon'),
+
+
+]   
     
 
     
