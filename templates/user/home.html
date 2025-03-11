@@ -17,14 +17,16 @@
 
     <!-- Top Banner -->
     <div class="bg-black text-white text-xs py-1 text-center">
-        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+        Step into style and comfort – discover the perfect pair of sneakers for every journey!
     </div>
 
     <!-- Navigation -->
     <nav class="border-b relative">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <div class="text-xl font-bold">Sneakers</div>
+                <a href="{% url 'home' %}" class="text-black-600">
+                <div class="text-xl font-bold">LaceUp</div>
+                </a>
                 <div class="flex space-x-6">
                     <a href="#" class="text-gray-600">Home</a>
                     <!-- Shop Dropdown -->
@@ -66,7 +68,7 @@
                             <div class="py-1">
                                 <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
                                 <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
-                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'wishlist_view' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
                                 <a href="{% url 'wallet_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Wallet</a>
                                 <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
                             </div>

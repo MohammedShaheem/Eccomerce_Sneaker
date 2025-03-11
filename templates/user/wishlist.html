@@ -10,10 +10,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="bg-white">
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
     <!-- Top Banner -->
     <div class="bg-black text-white text-xs py-1 text-center">
-        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+        Step into style and comfort – discover the perfect pair of sneakers for every journey!
+        <button onclick="history.back()" class="flex items-center px-3 py-2 bg-gray-600 hover:bg-gray-800 rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back
+        </button>
     </div>
 
     <!-- Navigation -->
@@ -41,8 +47,7 @@
                     <a href="#" class="text-gray-600">Sale</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <input type="text" placeholder="What are you looking for?" class="border rounded-lg px-4 py-2 w-64">
-                    <button class="p-2"><i class="fas fa-search"></i></button>
+                    
                     <button class="p-2"><i class="fas fa-heart"></i></button>
                     <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                         <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
@@ -66,6 +71,7 @@
                 </div>
             </div>
         </div>
+        
         {% if messages %}
         <div class="fixed top-4 right-4 z-50">
         {% for msg in messages %}
@@ -80,151 +86,94 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8">
+    <main class="flex-grow container mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold mb-6">My Wishlist</h1>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {% for item in wishlist_items %}
-            <div class="bg-white rounded-lg shadow-md p-4" id="wishlist-item-{{ item.product.id }}">
-                <!-- Image Section -->
-                {% with variants=item.product.variances.all %}
-                    {% if variants %}
-                        {% with first_variant=variants|first %}
-                            {% with first_image=first_variant.images.first %}
-                                {% if first_image %}
-                                    <img src="{{ first_image.image.url }}" 
-                                         alt="{{ item.product.name }}"
-                                         class="w-full h-48 object-cover rounded-t-lg">
-                                {% else %}
-                                    <!-- Fallback image if no product image is available -->
-                                    <div class="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
-                                        <span class="text-gray-500">No image available</span>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
+    {% for item in wishlist_items %}
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" id="wishlist-item-{{ item.product.id }}">
+        <!-- Image Section -->
+        <div class="relative h-64 overflow-hidden">
+            {% with variants=item.product.variances.all %}
+                {% if variants %}
+                    {% with first_variant=variants|first %}
+                        {% with first_image=first_variant.images.first %}
+                            {% if first_image %}
+                                <img src="{{ first_image.image.url }}" 
+                                     alt="{{ item.product.name }}"
+                                     class="w-full h-full object-cover transition-transform duration-300 hover:scale-105">
+                            {% else %}
+                                <!-- Fallback image if no product image is available -->
+                                <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                    <span class="text-gray-500 font-medium">No image available</span>
+                                </div>
+                            {% endif %}
                         {% endwith %}
-                    {% else %}
-                        <!-- Fallback if no variants exist -->
-                        <div class="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
-                            <span class="text-gray-500">No variants available</span>
-                        </div>
-                    {% endif %}
-                {% endwith %}
+                    {% endwith %}
+                {% else %}
+                    <!-- Fallback if no variants exist -->
+                    <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span class="text-gray-500 font-medium">No variants available</span>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        <div class="p-5">
+            <h2 class="text-xl font-semibold text-gray-800 truncate hover:text-blue-600 transition-colors duration-200">{{ item.product.name }}</h2>
+            
+            <!-- Display discounted price if available, otherwise fall back to sale_Price -->
+            {% if item.discount_data.offer %}
+            <div class="mt-3 flex items-center">
+                <span class="text-xl font-bold text-red-600">₹{{ item.discount_data.final_price|floatformat:2 }}</span>
+                <span class="text-sm line-through text-gray-500 ml-2">₹{{ item.discount_data.original_price|floatformat:2 }}</span>
+                <span class="text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded ml-2">Save ₹{{ item.discount_data.saved_amount|floatformat:2 }}</span>
+            </div>
+            {% else %}
+            <p class="mt-3 text-xl font-bold text-gray-800">₹{{ item.product.sale_Price|floatformat:2 }}</p>
+            {% endif %}
+            
+            <div class="mt-4 space-y-4">
+                <select class="variant-select w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
+                        data-product-id="{{ item.product.id }}">
+                    <option value="">Select Size & Color</option>
+                    {% for variant in item.available_variants %}
+                        <option value="{{ variant.id }}">
+                            {{ variant.size.size }} - {{ variant.color.color }}
+                            {% if variant.Stock_Quantity == 0 %}(Out of Stock){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
                 
-                <div class="mt-4">
-                    <h2 class="text-xl font-semibold">{{ item.product.name }}</h2>
-                    <!-- Display discounted price if available, otherwise fall back to sale_Price -->
-                    {% if item.discount_data.offer %}
-                    <div class="text-lg font-bold mt-2">
-                        <span class="text-red-600">₹{{ item.discount_data.final_price|floatformat:2 }}</span>
-                        <span class="text-sm line-through text-gray-500 ml-2">₹{{ item.discount_data.original_price|floatformat:2 }}</span>
-                        <span class="text-green-600 text-sm ml-2">Save ₹{{ item.discount_data.saved_amount|floatformat:2 }}</span>
-                    </div>
-                    {% else %}
-                    <p class="text-lg font-bold mt-2">₹{{ item.product.sale_Price|floatformat:2 }}</p>
-                    {% endif %}
-                    
-                    <div class="mt-4">
-                        <select class="variant-select w-full p-2 border rounded mb-4" 
-                                data-product-id="{{ item.product.id }}">
-                            <option value="">Select Size & Color</option>
-                            {% for variant in item.available_variants %}
-                                <option value="{{ variant.id }}">
-                                    {{ variant.size.size }} - {{ variant.color.color }}
-                                    {% if variant.Stock_Quantity == 0 %}(Out of Stock){% endif %}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        
-                        <div class="flex space-x-2">
-                            <button onclick="addToCartFromWishlist({{ item.product.id }})"
-                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                Add to Cart
-                            </button>
-                            <button onclick="removeFromWishlist({{ item.product.id }})"
-                                    class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-                                Remove
-                            </button>
-                        </div>
-                    </div>
+                <div class="flex space-x-2">
+                    <button onclick="addToCartFromWishlist({{ item.product.id }})"
+                            class="flex-1 bg-black text-white py-2 rounded text-center font-medium hover:bg-gray-800 transition-colors duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 focus:outline-none">
+                        Add to Cart
+                    </button>
+                    <button onclick="removeFromWishlist({{ item.product.id }})"
+                            class="flex-1 bg-black text-white py-2 rounded text-center font-medium hover:bg-gray-800 transition-colors duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 focus:outline-none">
+                        Remove
+                    </button>
                 </div>
             </div>
-            {% empty %}
-            <p class="col-span-full text-center text-gray-500">Your wishlist is empty.</p>
-            {% endfor %}
         </div>
     </div>
+    {% empty %}
+    <div class="col-span-full text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        </svg>
+        <p class="mt-4 text-xl font-medium text-gray-500">Your wishlist is empty.</p>
+        <p class="mt-2 text-gray-400">Add items to your wishlist to see them here.</p>
+    </div>
+    {% endfor %}
+</div>
+    </main>
 
     <!-- Footer -->
-    <footer class="bg-black text-white mt-16">
-        <div class="container mx-auto px-4 py-12">
-            <div class="grid grid-cols-4 gap-8">
-                <!-- Subscribe -->
-                <div>
-                    <h3 class="font-medium mb-4">Subscribe</h3>
-                    <p class="text-sm mb-4">Get 10% off your first order</p>
-                    <div class="flex">
-                        <input type="email" placeholder="Enter your email" class="bg-transparent border px-4 py-2 flex-grow">
-                        <button class="bg-white text-black px-4">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Support -->
-                <div>
-                    <h3 class="font-medium mb-4">Support</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>111 Bijay sarani, Dhaka,</p>
-                        <p>DH 1515, Bangladesh.</p>
-                        <p>exclusive@gmail.com</p>
-                        <p>+88015-88888-9999</p>
-                    </div>
-                </div>
-
-                <!-- Account -->
-                <div>
-                    <h3 class="font-medium mb-4">Account</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>My Account</p>
-                        <p>Login / Register</p>
-                        <p>Cart</p>
-                        <p>Wishlist</p>
-                        <p>Shop</p>
-                    </div>
-                </div>
-
-                <!-- Quick Link -->
-                <div>
-                    <h3 class="font-medium mb-4">Quick Link</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>Privacy Policy</p>
-                        <p>Terms Of Use</p>
-                        <p>FAQ</p>
-                        <p>Contact</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Download App Section -->
-            <div class="mt-12">
-                <h3 class="font-medium mb-4">Download App</h3>
-                <div class="flex items-center space-x-4">
-                    <img src="/api/placeholder/120/40" alt="QR Code" class="w-24 h-24">
-                    <div class="space-y-2">
-                        <img src="/api/placeholder/120/40" alt="Google Play" class="h-10">
-                        <img src="/api/placeholder/120/40" alt="App Store" class="h-10">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Social Icons -->
-            <div class="flex space-x-4 mt-8">
-                <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
-            </div>
+    <footer class="bg-black text-white py-6">
+        <div class="bg-black text-white text-xs py-1 text-center">
+            Your perfect pair is just a step away – shop now and elevate your style!
         </div>
     </footer>
 

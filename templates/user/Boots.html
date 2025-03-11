@@ -23,15 +23,23 @@
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
     <!-- Top Banner -->
-    <div class="bg-black text-white text-xs py-1.5 text-center font-medium">
-        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+    <div class="bg-black text-white text-xs py-1 text-center">
+        tep into style and comfort – discover the perfect pair of sneakers for every journey!
+        <button onclick="history.back()" class="flex items-center px-3 py-2 bg-gray-600 hover:bg-gray-800 rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back
+        </button>
     </div>
 
     <!-- Navigation -->
     <nav class="border-b">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <div class="text-xl font-bold">Sneakers</div>
+                <a href="{% url 'home' %}" class="text-black-600">
+                    <div class="text-xl font-bold">LaceUp</div>
+                    </a>
                 <div class="flex space-x-6">
                     <a href="{% url 'home' %}" class="text-gray-600 hover:text-black">Home</a>
                     <!-- Shop Dropdown -->
@@ -81,7 +89,8 @@
                             <div class="py-1">
                                 <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
                                 <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
-                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'wishlist_view' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'wallet_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Wallet</a>
                                 <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
                             </div>
                         </div>
@@ -99,6 +108,7 @@
                 </div>
             </div>
         </div>
+       
     </nav>
 
     <!-- Flash Messages -->

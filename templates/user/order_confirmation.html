@@ -13,10 +13,97 @@
 <body class="bg-white">
     <!-- Top Banner -->
     <div class="bg-black text-white text-xs py-1 text-center">
-        Get free Cash On Delivery On orders above Nagpur metro regions - 200 KMS
+        Step into style and comfort – discover the perfect pair of sneakers for every journey!
     </div>
 
     <!-- Navigation -->
+    <nav class="border-b relative">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <a href="{% url 'home' %}" class="text-black-600">
+                <div class="text-xl font-bold">LaceUp</div>
+                </a>
+                <div class="flex space-x-6">
+                    <a href="{% url 'home' %}" class="text-gray-600">Home</a>
+                    <!-- Shop Dropdown -->
+                    <div class="relative">
+                        <button id="shopButton" class="text-gray-600 flex items-center space-x-1">
+                            <span>Shop</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2">
+                            <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
+                            <a href="{% url "Boots" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
+                            <a href="{% url "Runners" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Runners</a>
+                        </div>
+                    </div>
+                    <a href="#" class="text-gray-600">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Wishlist -->
+                    <a href="{% url 'wishlist_view' %}" class="p-2 relative text-gray-600 hover:text-black">
+                        <i class="fas fa-heart"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+                    </a>
+                    <a href="{% url 'cart' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <button class="p-2"><i class="fas fa-shopping-cart"></i></button>
+                    </a>
+                    <div class="relative">
+                        <button id="userDropdownButton" class="p-2 focus:outline-none">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-3 px-4 border-b">
+                                <h3 class="text-lg font-medium">Account</h3>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Orders</a>
+                                <a href="{% url 'wishlist_view' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Favourites</a>
+                                <a href="{% url 'wallet_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Wallet</a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if messages %}
+        <div class="fixed top-4 right-4 z-50">
+            {% for msg in messages %}
+            <div id="message-{{ forloop.counter }}" 
+                class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} 
+                        px-4 py-2 rounded transition-all transform duration-500 ease-in-out opacity-100 mb-2">
+                {{ msg }}
+            </div>
+            {% endfor %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Get all message elements
+                    const messages = document.querySelectorAll('[id^="message-"]');
+                    messages.forEach(function(message) {
+                        // Set a timeout to fade out and remove after 5 seconds
+                        setTimeout(function() {
+                            // Fade out by setting opacity to 0
+                            message.classList.remove('opacity-100');
+                            message.classList.add('opacity-0');
+                            
+                            // Remove the element from the DOM after the transition (500ms)
+                            setTimeout(function() {
+                                message.remove();
+                            }, 500); // Matches the duration-500 class
+                        }, 1000); // 5 seconds delay before starting fade-out
+                    });
+                });
+            </script>
+        </div>
+        {% endif %}
+    </nav>
+
+   
      
     <div class="min-h-screen bg-gray-100 py-8">
         <div class="container mx-auto px-4">
@@ -107,10 +194,11 @@
                     </div>
     
                     <div class="mt-8 text-center">
-                        <a href="{% url 'Sneakers' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md font-medium hover:bg-blue-700">
+                        <a href="{% url 'Sneakers' %}" class="inline-block bg-black text-white py-2 px-6 rounded-md font-medium hover:bg-gray-800">
                             Continue Shopping
                         </a>
                     </div>
+                    
                 </div>
             </div>
         </div>
@@ -118,77 +206,13 @@
         
 
     <!-- Footer -->
-    <footer class="bg-black text-white mt-16">
-        <div class="container mx-auto px-4 py-12">
-            <div class="grid grid-cols-4 gap-8">
-                <!-- Subscribe -->
-                <div>
-                    <h3 class="font-medium mb-4">Subscribe</h3>
-                    <p class="text-sm mb-4">Get 10% off your first order</p>
-                    <div class="flex">
-                        <input type="email" placeholder="Enter your email" class="bg-transparent border px-4 py-2 flex-grow">
-                        <button class="bg-white text-black px-4">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Support -->
-                <div>
-                    <h3 class="font-medium mb-4">Support</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>111 Bijay sarani, Dhaka,</p>
-                        <p>DH 1515, Bangladesh.</p>
-                        <p>exclusive@gmail.com</p>
-                        <p>+88015-88888-9999</p>
-                    </div>
-                </div>
-
-                <!-- Account -->
-                <div>
-                    <h3 class="font-medium mb-4">Account</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>My Account</p>
-                        <p>Login / Register</p>
-                        <p>Cart</p>
-                        <p>Wishlist</p>
-                        <p>Shop</p>
-                    </div>
-                </div>
-
-                <!-- Quick Link -->
-                <div>
-                    <h3 class="font-medium mb-4">Quick Link</h3>
-                    <div class="space-y-2 text-sm">
-                        <p>Privacy Policy</p>
-                        <p>Terms Of Use</p>
-                        <p>FAQ</p>
-                        <p>Contact</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Download App Section -->
-            <div class="mt-12">
-                <h3 class="font-medium mb-4">Download App</h3>
-                <div class="flex items-center space-x-4">
-                    <img src="/api/placeholder/120/40" alt="QR Code" class="w-24 h-24">
-                    <div class="space-y-2">
-                        <img src="/api/placeholder/120/40" alt="Google Play" class="h-10">
-                        <img src="/api/placeholder/120/40" alt="App Store" class="h-10">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Social Icons -->
-            <div class="flex space-x-4 mt-8">
-                <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
-            </div>
+    <footer class="bg-black text-white py-6">
+        <div class="bg-black text-white text-xs py-1 text-center">
+            Your perfect pair is just a step away – shop now and elevate your style!
         </div>
     </footer>
+
+    
     
 </body>
 </html>

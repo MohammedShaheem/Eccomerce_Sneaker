@@ -1758,6 +1758,21 @@ def edit_coupon(request,coupon_id):
         'title': f'Edit Coupon: {coupon.coupon_code}',
         'coupon': coupon  
     })
+    
+def delete_coupon(request,coupon_id):
+    coupon = get_object_or_404(Coupon, id=coupon_id, is_deleted=False)
+    
+    if request.method == 'POST':
+        coupon.is_deleted  = True
+        coupon.is_Active = False
+        coupon.save()
+        
+        messages.success(request, f"Coupon '{coupon.coupon_code}' has been deleted successfully.")
+        return redirect('coupon_list')
+    
+    return redirect('coupon_list')
+
+
 
 #########################################################################################################################################################################################################
 def sales_report(request):
