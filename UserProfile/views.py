@@ -100,23 +100,22 @@ def signin(request):
         form = UserRegForm(request.POST)
         if form.is_valid():
             try:
-                #storing form data in session 
+                # Storing form data in session
                 user_data = {
                     'username': form.cleaned_data['username'],
                     'email': form.cleaned_data['email'],
                     'password': form.cleaned_data['password'],
-                    'Phone_number':form.cleaned_data['Phone_number']
+                    'Phone_number': form.cleaned_data['Phone_number']
                 }
-                
                 request.session['user_registration_data'] = user_data
-                
                 email = form.cleaned_data['email']
                 email_otp = generate_otp(email)
                 print(f"email_otp:{email_otp}")
-                
-                #storing OTP in session
+                # Storing OTP in session
                 request.session['registration_otp'] = email_otp
-                #set session expiry for OTP (e.g., 10 minutes)
+                # Force save the session
+                request.session.modified = True
+                # Set session expiry for OTP (e.g., 10 minutes)
                 request.session.set_expiry(600)
 
                 subject = 'OTP Verification'
@@ -143,6 +142,9 @@ def signin(request):
     return render(request, 'user/signin.html', {'form': form})
 
 def verify_otp(request):
+    
+    print("All session keys:", list(request.session.keys()))
+    print("Session data:", request.session.items())
     #checking the registration data in session
     user_data = request.session.get('user_registration_data')
     
