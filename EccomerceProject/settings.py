@@ -36,7 +36,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['laceup.shop','www.laceup.shop','your-ec2-ip-address','*']
+ALLOWED_HOSTS = ['laceup.shop','www.laceup.shop','13.60.75.81','*']
 
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
