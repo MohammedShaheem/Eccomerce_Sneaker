@@ -36,7 +36,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['laceup.shop','www.laceup.shop','*']
+ALLOWED_HOSTS = ['laceup.shop','www.laceup.shop','13.60.75.81','*']
 
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
@@ -44,6 +44,7 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+CSRF_TRUSTED_ORIGINS = ['https://www.laceup.shop', 'https://laceup.shop']
 
 
 SITE_ID = 1
