@@ -36,7 +36,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['laceup.shop','www.laceup.shop']
+ALLOWED_HOSTS = ['laceup.shop','www.laceup.shop','*']
 
 
 SITE_ID = 1
