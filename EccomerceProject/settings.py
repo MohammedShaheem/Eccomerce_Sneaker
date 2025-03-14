@@ -36,7 +36,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.laceup.shop', 'laceup.shop','*']
+ALLOWED_HOSTS = ['13.60.14.126','laceup.shop','localhost']
 
 
 SITE_ID = 1
@@ -200,9 +200,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
