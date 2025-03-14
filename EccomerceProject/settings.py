@@ -38,15 +38,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['www.laceup.shop', 'laceup.shop','*']
 
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 31536000  # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-CSRF_TRUSTED_ORIGINS = ['https://www.laceup.shop', 'https://laceup.shop']
-
 
 SITE_ID = 1
 
@@ -149,10 +140,10 @@ WSGI_APPLICATION = 'EccomerceProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE'),
-        'NAME': config('DB_NAME'),         # The name of your PostgreSQL database
-        'USER': config('DB_USER'),          # Your PostgreSQL username
-        'PASSWORD': config('DB_PASSWORD'),  # Your PostgreSQL password
-        'HOST': config('DB_HOST'),             # Or the host where PostgreSQL is running
+        'NAME': config('DB_NAME'),         
+        'USER': config('DB_USER'),          
+        'PASSWORD': config('DB_PASSWORD'),  
+        'HOST': config('DB_HOST'),          
         'PORT': config('DB_PORT'), 
     }
 }
@@ -225,11 +216,11 @@ AUTH_USER_MODEL = 'UserProfile.UserTable'
 # Session configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
-SESSION_COOKIE_SECURE = True  # Use only with HTTPS
+# SESSION_COOKIE_SECURE = True  # Use only with HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session expires when browser closes
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_COOKIE_DOMAIN = '.laceup.shop'
+
 
 # Cache settings
 # CACHES = {
