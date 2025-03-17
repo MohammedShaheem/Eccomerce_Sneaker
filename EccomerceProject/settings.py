@@ -213,12 +213,6 @@ AUTH_USER_MODEL = 'UserProfile.UserTable'
 
 # Session configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
-# SESSION_COOKIE_SECURE = True  # Use only with HTTPS
-SESSION_COOKIE_HTTPONLY = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session expires when browser closes
-SESSION_SAVE_EVERY_REQUEST = True
-
 
 # Cache settings
 # CACHES = {
@@ -227,6 +221,18 @@ SESSION_SAVE_EVERY_REQUEST = True
 #         'LOCATION': 'my_cache_table',
 #     }
 # }
+
+# Security settings for HTTPS
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Keep session data for 7 days
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7
+# Session data is kept on the server side even if the browser session is closed
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 
 
@@ -243,7 +249,6 @@ LOGOUT_REDIRECT_URL = 'home_before_login'
 
 #add paypal settings
 #set sandbox to true
-
 
 PAYPAL_RECEIVER_EMAIL = 'mohammedbusiness@gmail.com'#sandbox business account
 PAYPAL_TEST = True
