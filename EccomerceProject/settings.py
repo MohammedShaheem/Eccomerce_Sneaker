@@ -16,6 +16,7 @@ from decouple import config # type: ignore
 
 
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +38,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = True
 
 ALLOWED_HOSTS = ['www.laceup.shop','laceup.shop','*']
+print("Settings file loaded with ALLOWED_HOSTS:", ALLOWED_HOSTS)
 
 
 SITE_ID = 1
