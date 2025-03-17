@@ -167,6 +167,7 @@ def verify_otp(request):
                 user.username = user_data['username']
                 user.email = user_data['email']
                 user.set_password(user_data['password'])
+                user.Phone_number = user_data['Phone_number']
                 user.is_active = True
                 user.is_email_verified = True
                 user.save()
