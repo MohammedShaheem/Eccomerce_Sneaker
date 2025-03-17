@@ -143,6 +143,8 @@ def signin(request):
 
 def verify_otp(request):
     
+    print("OTP Verification View Called")
+    print("Request Method:", request.method)
     print("All session keys:", list(request.session.keys()))
     print("Session data:", request.session.items())
     #checking the registration data in session
