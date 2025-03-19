@@ -1022,6 +1022,7 @@ def remove_coupon(request):
             'message': 'Server error occurred'
         }, status=500)
 
+
 @login_required
 def checkout(request):
     cart = None
@@ -1029,7 +1030,11 @@ def checkout(request):
     coupon_error = None
     applied_coupon = None
     coupon_discount = Decimal('0')
-    coupons = Coupon.objects.all()
+    
+    # Get all active and non-deleted coupons
+    coupons = Coupon.objects.filter(is_active=True, is_deleted=False)
+    user_eligible_coupons = []
+    
     try:
         cart = Cart.objects.get(user=request.user)
         
@@ -1055,6 +1060,22 @@ def checkout(request):
             messages.error(request, "Your cart is empty")
             return redirect('cart')
         
+        # Calculate cart total
+        cart_total = cart_items.aggregate(total=Sum('total_price'))['total'] or Decimal('0')
+        
+        # Determine eligible coupons for this user
+        now = timezone.now()
+        for coupon in coupons:
+            # Check if the coupon is valid (within date range)
+            if coupon.valid_from <= now and coupon.valid_till >= now:
+                # Check if user has already used this coupon
+                if not CouponUsage.objects.filter(user=request.user, coupon=coupon).exists():
+                    # Check if coupon hasn't reached max uses
+                    if coupon.total_uses < coupon.max_uses or coupon.max_uses <= 0:
+                        # Check if cart total meets minimum purchase amount
+                        if cart_total >= coupon.min_purchase_amount:
+                            user_eligible_coupons.append(coupon.id)
+        
     except Cart.DoesNotExist:
         messages.error(request, "Your cart is empty.")
         return redirect('cart')
@@ -1065,7 +1086,7 @@ def checkout(request):
     cart_total = cart_items.aggregate(total=Sum('total_price'))['total'] or Decimal('0')
     delivery_charge = Decimal('0')
     
-    #handleing POST actions
+    # Handling POST actions
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'remove_coupon':
@@ -1073,7 +1094,7 @@ def checkout(request):
                 del request.session['applied_coupon_code']
                 messages.success(request, "Coupon removed successfully!")
                 
-    #validating applied coupon 
+    # Validating applied coupon 
     applied_coupon_code = request.session.get('applied_coupon_code')
     if applied_coupon_code:
         try:
@@ -1105,11 +1126,11 @@ def checkout(request):
         'has_sufficient_balance': has_sufficient_balance,
         'applied_coupon': applied_coupon,
         'coupon_error': coupon_error,
-        'coupons':coupons
+        'coupons': coupons,
+        'user_eligible_coupons': user_eligible_coupons
     }
     
     return render(request, 'user/checkout.html', context)
-
 
             
 
@@ -1207,7 +1228,8 @@ def create_order(request):
                     if coupon.discount_type == 'fixed':
                         coupon_discount = min(coupon.discount,cart_total)
                     else: #percentage
-                        coupon_discount = min((cart_total * coupon_discount / 100),cart_total)
+                        print(f"coupon_type:{coupon.discount_type}")
+                        coupon_discount = min((cart_total * coupon.discount / 100),cart_total)
                     
                     
                                         
@@ -1472,6 +1494,7 @@ def payment_success(request):
             state=address.state,
             pincode=address.pincode
         )
+        
 
         order_items = []
         for item in pending_order['cart_items']:
@@ -1512,7 +1535,20 @@ def payment_success(request):
         cart.items.all().delete()
         
         del request.session['pending_order']
-        
+        if pending_order.get('coupon_id'):
+            try:
+                coupon = Coupon.objects.get(id=pending_order['coupon_id'])
+                order.coupon = coupon
+                order.coupon_discount = Decimal(pending_order['coupon_discount'])
+                order.save()
+                CouponUsage.objects.create(
+                    user=request.user,
+                    coupon=coupon
+                )
+            except Coupon.DoesNotExist:
+                logger.error(f"Coupon with ID {pending_order['coupon_id']} not found")
+        if 'applied_coupon_code' in request.session:
+            del request.session['applied_coupon_code']
         logger.info(f"Order {order_id} created successfully with {len(order_items)} items")
         for item in order.items.all():
             logger.info(f"Created OrderItem - Product ID: {item.product.id}, Variant ID: {item.variant.id}")
@@ -1529,6 +1565,8 @@ def payment_success(request):
 def payment_cancelled(request):
     if 'pending_order' in request.session:
         del request.session['pending_order']
+    if 'applied_coupon_code' in request.session:
+        del request.session['applied_coupon_code']
     messages.warning(request, "Payment was cancelled")
     return redirect('checkout')
 

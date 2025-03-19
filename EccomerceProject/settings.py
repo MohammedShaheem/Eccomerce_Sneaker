@@ -37,7 +37,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.laceup.shop','laceup.shop','*']
+ALLOWED_HOSTS = ['www.laceup.shop','laceup.shop','localhost','*']
 print("Settings file loaded with ALLOWED_HOSTS:", ALLOWED_HOSTS)
 
 

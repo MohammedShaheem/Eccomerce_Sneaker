@@ -81,7 +81,7 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-gray-400 text-sm">Total Orders</p>
-                            <h2 class="text-3xl font-bold text-gray-100">{{ sales_data.orders|length|default:"0" }}</h2>
+                            <h2 class="text-3xl font-bold text-gray-100">{{ total_orders|default:"0" }}</h2>
                         </div>
                         <div class="bg-blue-900 p-2 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

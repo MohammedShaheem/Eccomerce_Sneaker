@@ -266,12 +266,26 @@ def sales_chart_data(request):
 
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import timedelta
+
 @login_required
 def admin_home(request):
-    
-    
     # Get filter parameters
     time_filter = request.GET.get('time_filter', 'month')
+    
+    # Determine start_date based on time_filter (consistent with get_sales_data)
+    now = timezone.now()
+    if time_filter == 'week':
+        start_date = now - timedelta(days=7)
+    elif time_filter == 'month':
+        start_date = now - timedelta(days=30)
+    elif time_filter == 'year':
+        start_date = now - timedelta(days=365)
+    else:
+        start_date = now - timedelta(days=30)
     
     # Get dashboard data
     sales_data = get_sales_data(time_filter)
@@ -279,10 +293,15 @@ def admin_home(request):
     top_categories = get_top_selling_categories()
     revenue_stats = get_revenue_stats(time_filter)
     
-    #calculating average value
+    # Calculate totals
     total_sales = sum(sales_data['sales']) if sales_data['sales'] else 0
-    total_orders = sum(sales_data['orders']) if sales_data['orders'] else 0
-    avg_order_value = total_sales / total_orders if total_orders > 0 else 0
+    # Total orders (all statuses)
+    total_orders = Order.objects.filter(
+        ordered_date__gte=start_date
+    ).count()
+    # Total active orders (for avg_order_value, matching sales_data)
+    total_active_orders = sum(sales_data['orders']) if sales_data['orders'] else 0
+    avg_order_value = total_sales / total_active_orders if total_active_orders > 0 else 0
     
     context = {
         'sales_data': sales_data,
@@ -290,7 +309,8 @@ def admin_home(request):
         'top_categories': top_categories,
         'revenue_stats': revenue_stats,
         'time_filter': time_filter,
-        'avg_order_value': avg_order_value,  
+        'total_orders': total_orders,  # Add this to context
+        'avg_order_value': avg_order_value,
     }
     
     return render(request, 'admin/home.html', context)
@@ -1775,6 +1795,15 @@ def delete_coupon(request,coupon_id):
 
 
 #########################################################################################################################################################################################################
+from django.db.models import Sum, Count, Q
+from django.utils import timezone
+from django.shortcuts import render
+from django.http import HttpResponse
+from datetime import datetime, timedelta
+from io import BytesIO
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+
 def sales_report(request):
     # Default to current month report with proper timezone handling
     today = timezone.now().date()
@@ -1833,32 +1862,25 @@ def sales_report(request):
     product_discount = order_items.aggregate(Sum('discount_amount'))['discount_amount__sum'] or 0
     total_discount += product_discount
     
-    total_revenue = total_order_amount - total_discount
+    # Refunds and cancellations
+    refunded_query = base_query.filter(payment_status='REFUNDED')
+    if order_status != 'ALL':
+        refunded_query = refunded_query.filter(order_status=order_status)
+    total_refund_amount = refunded_query.aggregate(Sum('refund_amount'))['refund_amount__sum'] or 0
+    
+    canceled_query = base_query.filter(order_status='CANCELED')
+    if order_status != 'ALL' and order_status != 'CANCELED':
+        canceled_query = canceled_query.filter(order_status=order_status)
+    total_canceled_count = canceled_query.count()
+    
+    # Adjust total revenue to account for refunds
+    total_revenue = total_order_amount - total_discount - total_refund_amount
     
     # Payment method breakdown
     payment_methods = filtered_orders.values('payment_method').annotate(
         count=Count('id'),
         total=Sum('total_amount')
     ).order_by('-total')
-    
-    # Refunds and cancellations - now apply the same order_status filter when needed
-    refunded_query = base_query.filter(payment_status='REFUNDED')
-    
-    # Apply the same order_status filter if it's not ALL
-    if order_status != 'ALL':
-        refunded_query = refunded_query.filter(order_status=order_status)
-    
-    total_refund_amount = refunded_query.aggregate(Sum('refund_amount'))['refund_amount__sum'] or 0
-    
-    # Apply the same filtering logic for canceled orders
-    canceled_query = base_query.filter(order_status='CANCELED')
-    
-    # If we're filtering for a specific order status and it's not CANCELED
-    # then we should respect that filter (though this might result in zero canceled orders)
-    if order_status != 'ALL' and order_status != 'CANCELED':
-        canceled_query = canceled_query.filter(order_status=order_status)
-    
-    total_canceled_count = canceled_query.count()
     
     # Top selling products
     top_products = OrderItem.objects.filter(
@@ -1891,10 +1913,6 @@ def sales_report(request):
     
     # Check if PDF download is requested
     if 'download_pdf' in request.GET:
-        from django.template.loader import get_template
-        from xhtml2pdf import pisa
-        from io import BytesIO
-        
         # Get the template
         template = get_template('admin/sales_report_pdf.html')
         
