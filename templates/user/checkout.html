@@ -321,22 +321,23 @@
             Your perfect pair is just a step away – shop now and elevate your style!
         </div>
     </footer>
+   {% comment %} coupon modal {% endcomment %}
+<div id="coupons-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Available Coupons</h2>
+                <button id="close-coupons-modal" class="text-gray-600 hover:text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
 
-    <div id="coupons-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-gray-800">Available Coupons</h2>
-                    <button id="close-coupons-modal" class="text-gray-600 hover:text-gray-900">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-    
-                {% if coupons %}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {% for coupon in coupons %}
+            {% if coupons %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for coupon in coupons %}
+                    {% if coupon.is_active and not coupon.is_deleted %}
                     <div class="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow 
                         {% if applied_coupon and applied_coupon.id == coupon.id %}border-green-500{% endif %}">
                         <div class="flex justify-between items-center mb-2">
@@ -346,8 +347,8 @@
                             </span>
                         </div>
                         <div class="text-sm text-gray-700 mb-2">
-                            {% if coupon.minimum_purchase %}
-                            <p>Minimum Purchase: ₹{{ coupon.minimum_purchase }}</p>
+                            {% if coupon.min_purchase_amount %}
+                            <p>Minimum Purchase: ₹{{ coupon.min_purchase_amount }}</p>
                             {% endif %}
                             
                             {% if coupon.discount_type == 'percent' %}
@@ -357,34 +358,40 @@
                             {% endif %}
                         </div>
                         
-                        {% if coupon.expiry_date %}
+                        {% if coupon.valid_till %}
                         <div class="text-xs text-gray-500 mb-2">
-                            Expires: {{ coupon.expiry_date|date:"M d, Y" }}
+                            Expires: {{ coupon.valid_till|date:"M d, Y" }}
                         </div>
                         {% endif %}
                         
-                        <button type="button" 
+                        {% if user_eligible_coupons and coupon.id in user_eligible_coupons %}
+                            <button type="button" 
                                 data-coupon-code="{{ coupon.coupon_code }}" 
                                 class="apply-coupon-btn w-full bg-blue-500 text-white py-2 rounded 
                                 {% if applied_coupon and applied_coupon.id == coupon.id %}bg-green-500 cursor-not-allowed{% else %}hover:bg-blue-600{% endif %}"
                                 {% if applied_coupon and applied_coupon.id == coupon.id %}disabled{% endif %}>
-                            {% if applied_coupon and applied_coupon.id == coupon.id %}
-                                Applied
-                            {% else %}
-                                Apply Coupon
-                            {% endif %}
-                        </button>
+                                {% if applied_coupon and applied_coupon.id == coupon.id %}
+                                    Applied
+                                {% else %}
+                                    Apply Coupon
+                                {% endif %}
+                            </button>
+                        {% else %}
+                            <button type="button" 
+                                class="w-full bg-gray-300 text-gray-600 py-2 rounded cursor-not-allowed">
+                                Not Eligible
+                            </button>
+                        {% endif %}
                     </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-gray-500 text-center">No coupons available at the moment</p>
-                {% endif %}
+                    {% endif %}
+                {% endfor %}
             </div>
+            {% else %}
+            <p class="text-gray-500 text-center">No coupons available at the moment</p>
+            {% endif %}
         </div>
     </div>
-
-
+</div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;

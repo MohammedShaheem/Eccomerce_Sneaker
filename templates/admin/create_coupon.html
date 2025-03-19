@@ -4,203 +4,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Products</title>
+    <title>Add Coupon</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Dark theme overrides for form elements */
+        input[type="text"], 
+        input[type="number"], 
+        input[type="datetime-local"],
+        select {
+            background-color: #333 !important;
+            color: #fff !important;
+            border-color: #555 !important;
+        }
+        
+        input[type="text"]:focus, 
+        input[type="number"]:focus, 
+        input[type="datetime-local"]:focus,
+        select:focus {
+            border-color: #4299e1 !important;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.25) !important;
+        }
+        
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: #333;
+            border-color: #555;
+        }
+        
+        /* Date picker custom styling */
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+        }
+    </style>
 </head>
-<style>
-    /* Dark theme overrides for form elements */
-    input[type="text"], 
-    input[type="number"], 
-    input[type="datetime-local"],
-    select {
-        background-color: #333 !important;
-        color: #fff !important;
-        border-color: #555 !important;
-    }
-    
-    input[type="text"]:focus, 
-    input[type="number"]:focus, 
-    input[type="datetime-local"]:focus,
-    select:focus {
-        border-color: #4299e1 !important;
-        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.25) !important;
-    }
-    
-    /* Checkbox styling */
-    input[type="checkbox"] {
-        background-color: #333;
-        border-color: #555;
-    }
-    
-    /* Date picker custom styling */
-    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-        filter: invert(0.8);
-    }
-</style>
-<div class="py-8 bg-gray-900">
-    <div class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-6 text-gray-100">{{ title }}</h1>
-    
-        
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 p-4 {% if message.tags == 'success' %}bg-green-900 text-green-200 border border-green-700{% else %}bg-red-900 text-red-200 border border-red-700{% endif %} rounded">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        <form method="post" novalidate>
-            {% csrf_token %}
-            
-            <div class="space-y-6">
-                <!-- Coupon Basic Information -->
-                <div>
-                    <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Basic Information</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Coupon Name -->
-                        <div>
-                            <label for="{{ form.coupon_name.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                                Coupon Name*
-                            </label>
-                            {{ form.coupon_name }}
-                            <p id="coupon-name-error" class="text-red-500 text-xs mt-1 hidden"></p>
-                            {% if form.coupon_name.errors %}
-                                <p class="text-red-500 text-xs mt-1">{{ form.coupon_name.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Coupon Code -->
-                        <div>
-                            <label for="{{ form.coupon_code.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                                Coupon Code*
-                            </label>
-                            {{ form.coupon_code }}
-                            <p id="coupon-code-error" class="text-red-500 text-xs mt-1 hidden"></p>
-                            {% if form.coupon_code.errors %}
-                                <p class="text-red-500 text-xs mt-1">{{ form.coupon_code.errors.0 }}</p>
-                            {% endif %}
-                            <p class="text-xs text-gray-400 mt-1">Codes are stored as uppercase (e.g., SUMMER25)</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Is Active -->
-                    <div class="mt-4 flex items-center">
-                        {{ form.is_active }}
-                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 block text-sm text-gray-300">
-                            Active (ready to use)
-                        </label>
-                    </div>
-                </div>
+<body class="bg-gray-900 text-white">
+    <div class="flex">
+        <!-- Side Navigation Bar -->
+        <div class="bg-gray-800 p-6 h-screen w-64 fixed">
+            <h2 class="text-lg font-bold mb-4">Pages</h2>
+            <nav>
+                <a href="{% url 'admin_home' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Dashboard</a>
+                <a href="{% url 'admin_users' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Users</a>
+                <a href="{% url 'category' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Categories</a>
+                <a href="{% url 'products' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Products</a>
+                <a href="{% url 'admin_orders' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Orders</a>
+                <a href="{% url 'coupon_list' %}" class="block py-2 px-4 rounded-md bg-gray-700">Coupons</a>
+                <a href="{% url 'offer_list' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Offers</a>
+                <a href="{% url 'sales_report' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Report</a>
+                <a href="{% url 'admin_wallet_transactions' %}" class="block py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">Wallet</a>
                 
-                <!-- Discount Details -->
-                <div>
-                    <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Discount Details</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Min Purchase Amount -->
-                        <div>
-                            <label for="{{ form.min_purchase_amount.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                                Minimum Purchase*
-                            </label>
-                            {{ form.min_purchase_amount }}
-                            <p id="min-purchase-error" class="text-red-500 text-xs mt-1 hidden"></p>
-                            {% if form.min_purchase_amount.errors %}
-                                <p class="text-red-500 text-xs mt-1">{{ form.min_purchase_amount.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Discount -->
-                        <div>
-                            <label for="{{ form.discount.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                                Discount Amount*
-                            </label>
-                            {{ form.discount }}
-                            <p id="discount-error" class="text-red-500 text-xs mt-1 hidden"></p>
-                            {% if form.discount.errors %}
-                                <p class="text-red-500 text-xs mt-1">{{ form.discount.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Discount Type -->
-                        <div>
-                            <label for="{{ form.discount_type.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                                Discount Type*
-                            </label>
-                            {{ form.discount_type }}
-                            {% if form.discount_type.errors %}
-                                <p class="text-red-500 text-xs mt-1">{{ form.discount_type.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+              </nav>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="ml-64 w-full">
+            <div class="py-8 px-6">
+                <div class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h1 class="text-2xl font-bold mb-6 text-gray-100">{{ title }}</h1>
                 
-                <!-- Validity Period -->
-                <div>
-                    <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Validity Period</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Valid From -->
-                        <div>
-                            <label for="{{ form.valid_from.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                                Valid From*
-                            </label>
-                            {{ form.valid_from }}
-                            {% if form.valid_from.errors %}
-                                <p class="text-red-500 text-xs mt-1">{{ form.valid_from.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Valid Till -->
-                        <div>
-                            <label for="{{ form.valid_till.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                                Valid Until*
-                            </label>
-                            {{ form.valid_till }}
-                            {% if form.valid_till.errors %}
-                                <p class="text-red-500 text-xs mt-1">{{ form.valid_till.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <p id="date-error" class="text-red-500 text-xs mt-1 hidden"></p>
-                    {% if form.non_field_errors %}
-                        <p class="text-red-500 text-sm mt-2">{{ form.non_field_errors.0 }}</p>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="mb-4 p-4 {% if message.tags == 'success' %}bg-green-900 text-green-200 border border-green-700{% else %}bg-red-900 text-red-200 border border-red-700{% endif %} rounded">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
                     {% endif %}
-                </div>
-                
-                <!-- Usage Limits -->
-                <div>
-                    <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Usage Limits</h2>
                     
-                    <div>
-                        <label for="{{ form.max_uses.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
-                            Maximum Uses*
-                        </label>
-                        {{ form.max_uses }}
-                        <p id="max-uses-error" class="text-red-500 text-xs mt-1 hidden"></p>
-                        {% if form.max_uses.errors %}
-                            <p class="text-red-500 text-xs mt-1">{{ form.max_uses.errors.0 }}</p>
-                        {% endif %}
-                        <p class="text-xs text-gray-400 mt-1">Set to 1 if coupon can only be used once globally</p>
-                    </div>
-                </div>
-                
-                <!-- Submit Buttons -->
-                <div class="flex justify-end space-x-4 pt-4 border-t border-gray-700">
-                    <a href="#" class="px-4 py-2 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                        Cancel
-                    </a>
-                    <button type="submit" class="px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        Create Coupon
-                    </button>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="space-y-6">
+                            <!-- Coupon Basic Information -->
+                            <div>
+                                <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Basic Information</h2>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Coupon Name -->
+                                    <div>
+                                        <label for="{{ form.coupon_name.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                            Coupon Name*
+                                        </label>
+                                        {{ form.coupon_name }}
+                                        <p id="coupon-name-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                                        {% if form.coupon_name.errors %}
+                                            <p class="text-red-500 text-xs mt-1">{{ form.coupon_name.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Coupon Code -->
+                                    <div>
+                                        <label for="{{ form.coupon_code.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                            Coupon Code*
+                                        </label>
+                                        {{ form.coupon_code }}
+                                        <p id="coupon-code-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                                        {% if form.coupon_code.errors %}
+                                            <p class="text-red-500 text-xs mt-1">{{ form.coupon_code.errors.0 }}</p>
+                                        {% endif %}
+                                        <p class="text-xs text-gray-400 mt-1">Codes are stored as uppercase (e.g., SUMMER25)</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Is Active -->
+                                <div class="mt-4 flex items-center">
+                                    {{ form.is_active }}
+                                    <label for="{{ form.is_active.id_for_label }}" class="ml-2 block text-sm text-gray-300">
+                                        Active (ready to use)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Discount Details -->
+                            <div>
+                                <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Discount Details</h2>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <!-- Min Purchase Amount -->
+                                    <div>
+                                        <label for="{{ form.min_purchase_amount.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                            Minimum Purchase*
+                                        </label>
+                                        {{ form.min_purchase_amount }}
+                                        <p id="min-purchase-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                                        {% if form.min_purchase_amount.errors %}
+                                            <p class="text-red-500 text-xs mt-1">{{ form.min_purchase_amount.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Discount -->
+                                    <div>
+                                        <label for="{{ form.discount.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                            Discount Amount*
+                                        </label>
+                                        {{ form.discount }}
+                                        <p id="discount-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                                        {% if form.discount.errors %}
+                                            <p class="text-red-500 text-xs mt-1">{{ form.discount.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Discount Type -->
+                                    <div>
+                                        <label for="{{ form.discount_type.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                            Discount Type*
+                                        </label>
+                                        {{ form.discount_type }}
+                                        {% if form.discount_type.errors %}
+                                            <p class="text-red-500 text-xs mt-1">{{ form.discount_type.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Validity Period -->
+                            <div>
+                                <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Validity Period</h2>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Valid From -->
+                                    <div>
+                                        <label for="{{ form.valid_from.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                            Valid From*
+                                        </label>
+                                        {{ form.valid_from }}
+                                        {% if form.valid_from.errors %}
+                                            <p class="text-red-500 text-xs mt-1">{{ form.valid_from.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Valid Till -->
+                                    <div>
+                                        <label for="{{ form.valid_till.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                            Valid Until*
+                                        </label>
+                                        {{ form.valid_till }}
+                                        {% if form.valid_till.errors %}
+                                            <p class="text-red-500 text-xs mt-1">{{ form.valid_till.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <p id="date-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                                {% if form.non_field_errors %}
+                                    <p class="text-red-500 text-sm mt-2">{{ form.non_field_errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Usage Limits -->
+                            <div>
+                                <h2 class="text-lg font-medium mb-4 text-gray-300 border-b border-gray-700 pb-2">Usage Limits</h2>
+                                
+                                <div>
+                                    <label for="{{ form.max_uses.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                                        Maximum Uses*
+                                    </label>
+                                    {{ form.max_uses }}
+                                    <p id="max-uses-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                                    {% if form.max_uses.errors %}
+                                        <p class="text-red-500 text-xs mt-1">{{ form.max_uses.errors.0 }}</p>
+                                    {% endif %}
+                                    <p class="text-xs text-gray-400 mt-1">Set to 1 if coupon can only be used once globally</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Buttons -->
+                            <div class="flex justify-end space-x-4 pt-4 border-t border-gray-700">
+                                <a href="#" class="px-4 py-2 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    Create Coupon
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </form>
+        </div>
     </div>
-</div>
-<script>
+
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Form validation functions
         function validateCouponName(input) {
@@ -399,7 +422,5 @@
         }
     });
     </script>
-
-        
 </body>
 </html>
