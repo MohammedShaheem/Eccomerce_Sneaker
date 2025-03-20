@@ -542,6 +542,7 @@ def Runners(request):
         'user_wishlist_items': user_wishlist_items
     })
 ############################################################################################################################################################################################3
+@login_required
 def single_product_page(request, product_id):
     product = get_object_or_404(ProductTable, id=product_id)#model name and the the id of the product to display whic comes from the url pattern.
     
@@ -589,8 +590,11 @@ def single_product_page(request, product_id):
     
     
      # Get cart count
-    cart = Cart.objects.get(user=request.user, is_active=True)
-    cart_count = cart.total_items
+    try:
+        cart = Cart.objects.get(user=request.user, is_active=True)
+        cart_count = CartItem.objects.filter(cart=cart).count()
+    except Cart.DoesNotExist:
+        cart_count = 0
         
         
     context = {

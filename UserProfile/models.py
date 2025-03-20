@@ -42,7 +42,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class UserTable(AbstractUser):
-    Phone_number = models.CharField(max_length=50, null=False, blank=False)
+    Phone_number = models.CharField(max_length=50, null=True, blank=True)
     is_blocked = models.BooleanField(default=False)
     is_delete = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default = False)
