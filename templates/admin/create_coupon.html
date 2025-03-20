@@ -279,8 +279,8 @@
             if (isNaN(value) || value <= 0) {
                 showError(errorElement, 'Please enter a valid discount greater than 0');
                 return false;
-            } else if (discountType === 'percentage' && value > 100) {
-                showError(errorElement, 'Percentage discount cannot be greater than 100%');
+            } else if (discountType === 'percentage' && value > 95) {
+                showError(errorElement, 'Percentage discount cannot be greater than 95%');
                 return false;
             } else {
                 hideError(errorElement);

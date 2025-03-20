@@ -517,9 +517,9 @@ class CouponCreationForm(forms.ModelForm):
         
         #validate discount based on type
         if discount is not None and discount_type:
-            if discount_type == 'percent' and discount > 100:
+            if discount_type == 'percent' and discount > 95:
                 raise forms.ValidationError({
-                    'discount': "Percentage discount cannot exceed 100%."
+                    'discount': "Percentage discount cannot exceed 95%."
                 })
             elif discount <= 0:
                 raise forms.ValidationError({
@@ -540,3 +540,18 @@ class CouponCreationForm(forms.ModelForm):
             cleaned_data['coupon_code'] = coupon_code.strip().upper()
             
         return cleaned_data
+    
+    def clean_coupon_code(self):
+        code = self.cleaned_data.get('coupon_code', '').strip().upper()
+    
+        # Skip validation if this is an update to an existing coupon
+        if self.instance.pk and self.instance.coupon_code == code:
+            return code
+        
+        # Only check against non-deleted coupons
+        if Coupon.objects.filter(coupon_code=code, is_deleted=False).exists():
+            raise forms.ValidationError(
+                "This coupon code is already in use. Please choose a different code."
+        )   
+    
+        return code

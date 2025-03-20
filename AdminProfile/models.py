@@ -256,10 +256,10 @@ class CartItem(models.Model):
         
 ############################################################################################################################################################################################
 class Coupon(models.Model):
-    coupon_name = models.CharField(max_length=100, unique=True)
-    coupon_code = models.CharField(max_length=20, unique=True)
+    coupon_name = models.CharField(max_length=100)
+    coupon_code = models.CharField(max_length=20)
     min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    discount = models.DecimalField(max_digits=5, decimal_places=2)
+    discount = models.DecimalField(max_digits=8, decimal_places=2)
     discount_type = models.CharField(max_length=10, choices=[('fixed', 'Fixed'), ('percent', 'Percentage')])
     valid_from = models.DateTimeField()
     valid_till = models.DateTimeField()
@@ -309,6 +309,15 @@ class Coupon(models.Model):
         else:
             discount = min((cart_total * self.discount / 100), cart_total)
         return discount, None
+    class Meta:
+        #Add a conditional unique constraint
+        constraints = [
+            models.UniqueConstraint(
+                fields=['coupon_code'],
+                condition=models.Q(is_deleted=False),  # Only enforce uniqueness on non-deleted coupons
+                name='unique_active_coupon_code'
+            )
+        ]
 
 class CouponUsage(models.Model):
     user = models.ForeignKey(UserTable, on_delete=models.CASCADE)

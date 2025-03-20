@@ -225,7 +225,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 # }
 
 # Security settings for HTTPS
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_BROWSER_XSS_FILTER = True
