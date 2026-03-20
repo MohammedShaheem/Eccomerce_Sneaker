@@ -481,7 +481,7 @@ class Order(models.Model):
     )
     
     
-    order_id = models.CharField(max_length=50, unique=True)#custom order id
+    order_id = models.CharField(max_length=50, unique=True)
     user = models.ForeignKey(UserTable,on_delete=models.CASCADE,related_name='orders',null=True,blank=True)
     ordered_date = models.DateTimeField(auto_now_add=True)
     

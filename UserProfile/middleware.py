@@ -1,32 +1,33 @@
-from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import redirect
-from django.urls import reverse
-from django.contrib import messages
-from AdminProfile.models import Cart
+from django.http import HttpResponseForbidden
 
-class NoCacheMiddleware(MiddlewareMixin):
-    def process_response(self, request, response):
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+
+class NoCacheMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         response['Pragma'] = 'no-cache'
         response['Expires'] = '0'
         return response
 
 
 
-# class AuthenticationMiddleware:
-#     def __init__(self, get_response):
-#         self.get_response = get_response
+class AdminAccessMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-#     def __call__(self, request):
-#         # List of URLs that don't require authentication
-#         public_urls = ['/login/', '/signin/', '/', '/home_before_login/']
-        
-#         # Check if user is accessing protected URL without authentication
-#         if not request.user.is_authenticated and request.path not in public_urls:
-#             messages.warning(request, "Please login to access this page.")
-#             return redirect('login')
-            
-#         response = self.get_response(request)
-#         return response
+    def __call__(self, request):
 
+        if request.path.startswith('/admin'):
+            if not request.user.is_authenticated:
+                
+                return redirect('admin_login')
 
+            if not request.user.is_staff:
+                
+                return HttpResponseForbidden("Not allowed")
+
+        return self.get_response(request)

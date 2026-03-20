@@ -36,7 +36,7 @@ def admin_login(request):
             return redirect('admin_home')
         elif not request.user.is_staff:
             messages.error(request, "Please log out from user side first.")
-            return redirect('logout')  # Force logout from user side
+            return redirect('logout')  
 
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -45,7 +45,7 @@ def admin_login(request):
         try:
             user = UserTable.objects.get(email=email)
             
-            if not user.is_staff:  # Check if user is not staff
+            if not user.is_staff:  
                 messages.error(request, f"User {user.username} doesn't have admin permission")
                 return render(request, 'admin/login.html')
                 
@@ -53,7 +53,7 @@ def admin_login(request):
                 
             if auth_user is not None:
                 auth_login(request, auth_user)
-                request.session['user_role'] = 'admin'  # Set role as admin
+                request.session['user_role'] = 'admin'  
                 request.session['userMail'] = email
                 messages.success(request, "Login successful")
                 return redirect("admin_home")

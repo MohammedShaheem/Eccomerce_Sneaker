@@ -46,24 +46,24 @@ class UserRegForm(forms.ModelForm):
         ]
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'id': 'password',
-            'class': 'w-full border rounded px-4 py-2',
-            'placeholder': '••••••••'
-        }),
-        required=True,
-        validators=[
-            RegexValidator(
-                regex=r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$',
-                message='Password must be at least 8 characters long and include a letter and a number.',
-                code='invalid_password'
+    widget=forms.PasswordInput(attrs={
+        'id': 'password',
+        'class': 'w-full border rounded px-4 py-2 pr-10',  # pr-10 for icon spacing
+        'placeholder': '••••••••'
+    }),
+    required=True,
+    validators=[
+        RegexValidator(
+            regex=r'^(?=.*[A-Za-z])(?=.*\d).{8,}$',  # .{8,} instead of [A-Za-z\d]{8,}
+            message='Password must be at least 8 characters and include a letter and a number.',
+            code='invalid_password'
             )
         ]
     )
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'id': 'confirm_password',
-            'class': 'w-full border rounded px-4 py-2',
+            'class': 'w-full border rounded px-4 py-2 pr-10',  # pr-10 for icon spacing
             'placeholder': '••••••••'
         }),
         required=True
