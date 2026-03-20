@@ -37,7 +37,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = False
 
-ALLOWED_HOSTS=["laceup-db.chw660omgz8v.ap-south-1.rds.amazonaws.com"]
+ALLOWED_HOSTS = ['13.233.117.66', 'localhost', '127.0.0.1']
 
 
 
