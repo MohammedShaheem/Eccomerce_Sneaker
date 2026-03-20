@@ -25,9 +25,9 @@ from rest_framework.routers import DefaultRouter
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('dj-admin/', admin.site.urls),
     path("",include("UserProfile.urls")),
-    path("",include("AdminProfile.urls")),
+    path("admin/",include("AdminProfile.urls")),
     path('accounts/', include('allauth.urls')),
     
    

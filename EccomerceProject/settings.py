@@ -35,10 +35,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media') # This creates a physical directory 
 SECRET_KEY = config('SECRET_KEY')
 
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['www.laceup.shop','laceup.shop','localhost','*']
-print("Settings file loaded with ALLOWED_HOSTS:", ALLOWED_HOSTS)
+ALLOWED_HOSTS=["laceup-db.chw660omgz8v.ap-south-1.rds.amazonaws.com"]
+
 
 
 SITE_ID = 1
@@ -69,6 +69,7 @@ EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 #Google authentication
@@ -108,8 +109,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'UserProfile.middleware.NoCacheMiddleware',
-    # 'UserProfile.middleware.AuthenticationMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'UserProfile.middleware.AdminAccessMiddleware',
     
     
 ]

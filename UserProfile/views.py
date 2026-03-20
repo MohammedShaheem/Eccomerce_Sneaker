@@ -37,12 +37,15 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from io import BytesIO
 from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
+
 
 
 
 # Create your views here.
 
-
+@never_cache
 def login(request):
     if request.user.is_authenticated:
         if not request.user.is_staff and request.session.get('user_role') == 'user':
@@ -325,25 +328,55 @@ def reset_password(request, user_id):
         return redirect('forgot_password')
 
 #################################################################################################################################################################################
-@login_required
+def get_home_products():
+    today = now().date()
+    
+    active_offer_filter = Q(
+        offers__is_active=True,
+        offers__valid_from__lte=today,
+        offers__valid_till__gte=today
+    ) | Q(
+        category__offers__is_active=True,
+        category__offers__valid_from__lte=today,
+        category__offers__valid_till__gte=today
+    )
+
+    return (
+        ProductTable.objects
+        .filter(
+            Is_deleted=False,
+            Is_active=True,
+            variances__Stock_Quantity__gt=0,   
+        )
+        .filter(active_offer_filter)           
+        .prefetch_related('variances__images')
+        .distinct()                            
+        [:8]
+    )
+
+
+################################################################################################################################################################################
+@login_required(login_url='/login/')
+@never_cache
 def home(request):
-    # Check both authentication and session
     if request.user.is_authenticated and request.session.get('userMail'):
         context = {
             'user': request.user,
-            'email': request.session.get('userMail')
+            'email': request.session.get('userMail'),
+            'products': get_home_products(),
         }
         return render(request, 'user/home.html', context)
-    
-    # If session is missing but user is authenticated, restore session
+
     elif request.user.is_authenticated:
         request.session['userMail'] = request.user.email
         return redirect('home')
-    
+
     messages.warning(request, "You must log in to access the home page.")
     return redirect('login')
 
-################################################################################################################################################################################
+
+##########################################################################################################################################
+
 
 def logout(request):
     # Clear both authentication and session
@@ -542,39 +575,22 @@ def Runners(request):
         'user_wishlist_items': user_wishlist_items
     })
 ############################################################################################################################################################################################3
-@login_required
+
 def single_product_page(request, product_id):
-    product = get_object_or_404(ProductTable, id=product_id)#model name and the the id of the product to display whic comes from the url pattern.
+    product = get_object_or_404(ProductTable, id=product_id)
     
-    #getting all variants for this product with thier stock informations
     variants = VarianceTable.objects.filter(
         product=product
-    ).select_related(
-        'size',
-    ).prefetch_related(
-        'images'
-    ).order_by(
-        'size__size' # order by size value
-    )
+    ).select_related('size').prefetch_related('images').order_by('size__size')
     
-    #getting the related product of the same category,excluding he same product
     related_products = ProductTable.objects.filter(
-        category = product.category,
+        category=product.category,
         Is_deleted=False
-    ).exclude(
-        id=product.id
-    ).prefetch_related(
-        'variances',
-        'variances__images'
-    )[:4]#limiting 4 related products
+    ).exclude(id=product.id).prefetch_related('variances', 'variances__images')[:4]
     
-    #checking if product is completely out of stock
     is_out_of_stock = not variants.filter(Stock_Quantity__gt=0).exists()
-    
-    #calculatting the discounted proce for the product
     discount_info = get_discounted_price(product)
     
-    #adding discounted price info to related products as well
     related_products_with_offers = [
         {
             'product': related_product,
@@ -582,21 +598,25 @@ def single_product_page(request, product_id):
         }
         for related_product in related_products
     ]
+
+    # ✅ Guard all user-specific queries with is_authenticated
     user_wishlist_items = []
+    wishlist_count = 0
+    cart_count = 0
+
     if request.user.is_authenticated:
-        user_wishlist_items = Wishilist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        user_wishlist_items = Wishilist.objects.filter(
+            user=request.user
+        ).values_list('product_id', flat=True)
         
-    wishlist_count = Wishilist.objects.filter(user=request.user).count()
-    
-    
-     # Get cart count
-    try:
-        cart = Cart.objects.get(user=request.user, is_active=True)
-        cart_count = CartItem.objects.filter(cart=cart).count()
-    except Cart.DoesNotExist:
-        cart_count = 0
+        wishlist_count = Wishilist.objects.filter(user=request.user).count()
         
-        
+        try:
+            cart = Cart.objects.get(user=request.user, is_active=True)
+            cart_count = CartItem.objects.filter(cart=cart).count()
+        except Cart.DoesNotExist:
+            cart_count = 0
+
     context = {
         'product': product,
         'variants': variants,
@@ -604,7 +624,7 @@ def single_product_page(request, product_id):
         'wishlist_count': wishlist_count,
         'user_wishlist_items': user_wishlist_items,
         'is_out_of_stock': is_out_of_stock,
-        'related_products': related_products_with_offers,  
+        'related_products': related_products_with_offers,
         'available_sizes': [
             {
                 'id': variant.id,
@@ -615,19 +635,18 @@ def single_product_page(request, product_id):
             }
             for variant in variants
         ],
-        'discounted_info': discount_info  # Add discount info to context
+        'discounted_info': discount_info
     }
     
     return render(request, 'user/SPPage.html', context)
 ################################################################################################################################################################################
 
 def home_before_login(request):
-     # Redirect authenticated users to home
     if request.user.is_authenticated:
         return redirect('home')
-    return render(request, 'user/home_before_login.html')
 
-
+    products = get_home_products()
+    return render(request, 'user/home_before_login.html', {'products': products})
 ################################################################################################################################################################################
 logger = logging.getLogger(__name__)
 

@@ -22,6 +22,7 @@
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+
     <!-- Top Banner -->
     <div class="bg-black text-white text-xs py-1.5 text-center font-medium">
         Step into style and comfort – discover the perfect pair of sneakers for every journey!
@@ -31,7 +32,8 @@
     <nav class="border-b">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <a href="{% url 'home' %}" class="text-black-600">
+                <!-- FIX 1: text-black-600 → text-black (black has no shade variants) -->
+                <a href="{% url 'home' %}" class="text-black">
                     <div class="text-xl font-bold">LaceUp</div>
                 </a>
                 <div class="flex space-x-6">
@@ -47,7 +49,7 @@
                         <div id="shopDropdown" class="absolute hidden w-32 bg-white border rounded-lg shadow-lg mt-2 py-2 z-10">
                             <a href="{% url 'Sneakers' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sneakers</a>
                             <a href="{% url 'Boots' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Boots</a>
-                            <a href="{% url "Runners" %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Runners</a>
+                            <a href="{% url 'Runners' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Runners</a>
                         </div>
                     </div>
                     <a href="#" class="text-gray-600 hover:text-black">Sale</a>
@@ -56,7 +58,7 @@
                 <div class="flex items-center space-x-4">
                     <!-- Search -->
                     <div class="hidden md:block relative">
-                        <input type="text" placeholder="What are you looking for?" 
+                        <input type="text" placeholder="What are you looking for?"
                                class="border rounded-full px-4 py-2 w-64 focus:outline-none focus:ring-1 focus:ring-gray-400">
                         <button class="absolute right-3 top-1/2 transform -translate-y-1/2">
                             <i class="fas fa-search text-gray-400"></i>
@@ -94,7 +96,7 @@
             <!-- Mobile Search Form -->
             <div id="mobileSearchForm" class="hidden md:hidden w-full bg-white p-4 absolute left-0 top-full z-50 shadow-md">
                 <div class="relative">
-                    <input type="text" placeholder="What are you looking for?" 
+                    <input type="text" placeholder="What are you looking for?"
                            class="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-1 focus:ring-gray-400">
                     <button class="absolute right-3 top-1/2 transform -translate-y-1/2">
                         <i class="fas fa-search text-gray-400"></i>
@@ -108,7 +110,7 @@
     {% if messages %}
     <div class="fixed top-20 right-4 z-50">
         {% for msg in messages %}
-        <div id="message-{{ forloop.counter }}" 
+        <div id="message-{{ forloop.counter }}"
              class="px-4 py-3 rounded-md shadow-md flex justify-between items-center mb-3 transition-all duration-500 {% if msg.tags == 'success' %}bg-green-100 text-green-700 border border-green-300{% else %}bg-red-100 text-red-700 border border-red-300{% endif %}">
             <div>{{ msg }}</div>
             <button onclick="this.parentElement.remove()" class="ml-4 text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
@@ -134,6 +136,7 @@
 
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8 flex-1">
+
         <!-- Featured Offers Section -->
         {% if featured_offers %}
         <div class="mb-12">
@@ -144,8 +147,8 @@
                     <div class="relative">
                         {% with first_variant=item.product.variances.first %}
                         {% if first_variant and first_variant.images.first %}
-                        <img src="{{ first_variant.images.first.image.url }}" 
-                             alt="{{ item.product.name }}" 
+                        <img src="{{ first_variant.images.first.image.url }}"
+                             alt="{{ item.product.name }}"
                              class="w-full h-64 object-cover">
                         {% endif %}
                         {% endwith %}
@@ -165,12 +168,12 @@
                         </div>
                         <div class="text-green-600 text-sm mb-3">Save ₹{{ item.discount_info.saved_amount|floatformat:2 }}</div>
                         {% if item.discount_info.offer.valid_till %}
-                        <div class="offer-timer text-sm text-gray-600 mb-4" 
+                        <div class="offer-timer text-sm text-gray-600 mb-4"
                              data-expires="{{ item.discount_info.offer.valid_till|date:'Y-m-d' }}">
                             <i class="fas fa-clock mr-1"></i> Ends in: <span class="countdown font-medium">Loading...</span>
                         </div>
                         {% endif %}
-                        <a href="{% url 'single_product_page' item.product.id %}" 
+                        <a href="{% url 'single_product_page' item.product.id %}"
                            class="block w-full py-2 bg-black hover:bg-gray-800 text-white text-center rounded-md transition-colors text-sm font-medium">
                             View Details
                         </a>
@@ -206,15 +209,18 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {% for item in products %}
             <div class="group bg-white shadow-md rounded-lg overflow-hidden transform transition duration-200 hover:shadow-xl hover:-translate-y-1 relative">
+
                 <!-- Out of Stock Overlay -->
                 {% if item.product.product_quantity == 0 %}
                 <div class="absolute inset-0 bg-black bg-opacity-50 z-10 flex items-center justify-center">
                     <span class="bg-red-500 text-white px-4 py-2 rounded-md font-medium">Out of Stock</span>
                 </div>
                 {% endif %}
+
                 <div class="relative">
                     <a href="{% url 'single_product_page' item.product.id %}" class="block">
-                        <div class="aspect-w-1 aspect-h-1 overflow-hidden">
+                        <!-- FIX 2: aspect-w-1 aspect-h-1 → aspect-square (plugin not needed) -->
+                        <div class="aspect-square overflow-hidden">
                             {% with first_variant=item.product.variances.first %}
                             {% if first_variant and first_variant.images.first %}
                             <img src="{{ first_variant.images.first.image.url }}"
@@ -228,6 +234,7 @@
                             {% endwith %}
                         </div>
                     </a>
+
                     {% if item.discounted_info.offer %}
                     <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs rounded-full font-bold offer-badge">
                         {% if item.discounted_info.offer.discount_type == 'percentage' %}
@@ -237,20 +244,24 @@
                         {% endif %}
                     </div>
                     {% endif %}
+
                     {% if item.product.product_quantity > 0 %}
                     <button onclick="toggleWishlist('{{ item.product.id }}')"
                             class="wishlist-btn absolute top-3 right-3 p-2 bg-white rounded-full shadow-md"
                             data-product-id="{{ item.product.id }}">
-                        <svg class="w-5 h-5 {% if item.product.id in user_wishlist_items %}text-red-500 fill-current{% else %}text-gray-500{% endif %}"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        <!-- FIX 3: Removed fill="none" so CSS fill classes can take effect -->
+                        <svg class="w-5 h-5 {% if item.product.id in user_wishlist_items %}text-red-500 fill-current{% else %}text-gray-400{% endif %}"
+                             stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
                         </svg>
                     </button>
                     {% endif %}
                 </div>
+
                 <div class="p-4">
                     <h3 class="text-lg font-medium truncate mb-1">{{ item.product.name }}</h3>
+
                     {% if item.discounted_info.offer %}
                     <div class="flex items-center">
                         <span class="text-red-600 font-bold">₹{{ item.discounted_info.final_price|floatformat:2 }}</span>
@@ -260,7 +271,7 @@
                     <div class="text-xs text-green-600 mt-1">{{ item.discounted_info.offer.offer_title }}</div>
                     {% endif %}
                     {% if item.discounted_info.offer.valid_till %}
-                    <div class="text-xs text-gray-600 mt-1 offer-timer" 
+                    <div class="text-xs text-gray-600 mt-1 offer-timer"
                          data-expires="{{ item.discounted_info.offer.valid_till|date:'Y-m-d' }}">
                         <i class="fas fa-clock mr-1"></i> Ends in: <span class="countdown">Loading...</span>
                     </div>
@@ -268,9 +279,14 @@
                     {% else %}
                     <p class="text-red-600 font-bold">₹{{ item.product.sale_Price|floatformat:2 }}</p>
                     {% endif %}
-                    <p class="text-{% if item.product.product_quantity > 0 %}green{% else %}red{% endif %}-600 text-sm mt-1">
-                        {% if item.product.product_quantity > 0 %}In Stock{% else %}Out of Stock{% endif %}
-                    </p>
+
+                    <!-- FIX 4: Full class names used — no dynamic string construction -->
+                    {% if item.product.product_quantity > 0 %}
+                    <p class="text-green-600 text-sm mt-1">In Stock</p>
+                    {% else %}
+                    <p class="text-red-600 text-sm mt-1">Out of Stock</p>
+                    {% endif %}
+
                     <div class="mt-2 flex flex-wrap gap-2">
                         {% with item.product.variances.all|slice:":3" as variants %}
                         {% for variant in variants %}
@@ -280,18 +296,27 @@
                         {% endfor %}
                         {% endwith %}
                     </div>
+
                     <div class="flex space-x-2 mt-4">
-                        <a href="{% url 'single_product_page' item.product.id %}" 
-                           class="flex-grow py-2 {% if item.product.product_quantity == 0 %}bg-gray-400 cursor-not-allowed{% else %}bg-black hover:bg-gray-800{% endif %} text-white text-center rounded-md transition-colors text-sm font-medium">
-                            {% if item.product.product_quantity == 0 %}Out of Stock{% else %}View Details{% endif %}
+                        <!-- FIX 4 (continued): Full class names for button state, no dynamic construction -->
+                        {% if item.product.product_quantity == 0 %}
+                        <a href="{% url 'single_product_page' item.product.id %}"
+                           class="flex-grow py-2 bg-gray-400 cursor-not-allowed text-white text-center rounded-md text-sm font-medium">
+                            Out of Stock
                         </a>
+                        {% else %}
+                        <a href="{% url 'single_product_page' item.product.id %}"
+                           class="flex-grow py-2 bg-black hover:bg-gray-800 text-white text-center rounded-md transition-colors text-sm font-medium">
+                            View Details
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             {% empty %}
             <div class="col-span-full py-16 px-4 flex flex-col items-center justify-center bg-white rounded-lg shadow-md">
                 <svg class="h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 <p class="text-gray-500 text-lg mb-2">No products found</p>
@@ -308,24 +333,25 @@
         <div class="flex justify-center mt-8">
             <nav class="flex items-center space-x-1">
                 {% if products.has_previous %}
-                <a href="?page={{ products.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                <a href="?page={{ products.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
                    class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Previous</a>
                 {% endif %}
                 {% for num in products.paginator.page_range %}
                 {% if num == products.number %}
                 <span class="px-3 py-2 rounded-md bg-black text-white">{{ num }}</span>
                 {% else %}
-                <a href="?page={{ num }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                <a href="?page={{ num }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
                    class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">{{ num }}</a>
                 {% endif %}
                 {% endfor %}
                 {% if products.has_next %}
-                <a href="?page={{ products.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+                <a href="?page={{ products.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
                    class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Next</a>
                 {% endif %}
             </nav>
         </div>
         {% endif %}
+
     </div>
 
     <!-- Footer -->
@@ -335,7 +361,7 @@
                 <h3 class="text-lg font-semibold mb-4">Subscribe to our Newsletter</h3>
                 <p class="text-gray-400 mb-4 text-sm">Get the latest updates, offers and special announcements.</p>
                 <form class="mb-4">
-                    <input type="email" placeholder="Your Email" 
+                    <input type="email" placeholder="Your Email"
                            class="w-full py-2 px-4 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500">
                     <button type="submit" class="w-full mt-2 py-2 bg-white text-black hover:bg-gray-200 rounded-md font-medium transition-colors">
                         Subscribe
@@ -408,8 +434,9 @@
         // Wishlist Toggle
         async function toggleWishlist(productId) {
             const wishlistBtn = document.querySelector(`.wishlist-btn[data-product-id="${productId}"]`);
-            const isOutOfStock = wishlistBtn?.closest('.group')?.querySelector('.text-red-600.text-sm')?.textContent === 'Out of Stock';
-            
+            const stockLabel = wishlistBtn?.closest('.group')?.querySelector('p.text-sm');
+            const isOutOfStock = stockLabel?.textContent?.trim() === 'Out of Stock';
+
             if (isOutOfStock) {
                 showNotification('Cannot add out of stock items to wishlist', 'error');
                 return;
@@ -429,11 +456,11 @@
                     const icon = wishlistBtn.querySelector('svg');
                     if (data.status === 'added') {
                         icon.classList.add('text-red-500', 'fill-current');
-                        icon.classList.remove('text-gray-500');
+                        icon.classList.remove('text-gray-400');
                         showNotification('Added to wishlist', 'success');
                     } else {
                         icon.classList.remove('text-red-500', 'fill-current');
-                        icon.classList.add('text-gray-500');
+                        icon.classList.add('text-gray-400');
                         showNotification('Removed from wishlist', 'success');
                     }
                 }
@@ -452,7 +479,7 @@
             } else {
                 currentUrl.searchParams.set('sort', sortValue);
             }
-            currentUrl.searchParams.set('page', '1'); // Reset to page 1
+            currentUrl.searchParams.set('page', '1');
             window.location.href = currentUrl.toString();
         }
 
