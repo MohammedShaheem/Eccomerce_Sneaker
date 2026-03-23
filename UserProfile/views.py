@@ -214,7 +214,7 @@ def forgot_password(request):
             send_mail(
                 subject,
                 message,
-                'mohammedshaheemtk2@gmail.com',#from eamil
+                settings.EMAIL_HOST_USER,
                 [email],#to eamil
                 fail_silently=False,
             )
@@ -240,8 +240,8 @@ def verify_reset_otp(request, user_id):
         user = UserTable.objects.get(id=user_id)
         
         if request.method == 'POST':
-            submitted_otp = request.POST.get('email_otp')
-            stored_otp = request.session.get(f'pwd_otp_{user_id}')
+            submitted_otp = request.POST.get('email_otp').strip()
+            stored_otp = str(request.session.get(f'pwd_otp_{user_id}')).strip()
             
             print(f"Debug - submitted_otp: {submitted_otp}")
             print(f"Debug - stored_otp: {stored_otp}")

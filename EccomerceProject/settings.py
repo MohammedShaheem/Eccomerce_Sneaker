@@ -143,11 +143,11 @@ WSGI_APPLICATION = 'EccomerceProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE'),
-        'NAME': config('DB_NAME'),         
+        'NAME': 'EccomerceProject',         
         'USER': config('DB_USER'),          
         'PASSWORD': config('DB_PASSWORD'),  
-        'HOST': config('DB_HOST'),          
-        'PORT': config('DB_PORT'), 
+        'HOST': 'localhost',          
+        'PORT': 5433, 
     }
 }
 
@@ -205,6 +205,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 
 

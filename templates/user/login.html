@@ -5,178 +5,557 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Page</title>
-   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>LaceUp — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0a0a0a;
+      --white: #f5f5f0;
+      --mid: #c8c8c0;
+      --accent: #e8e030;
+      --border: #2a2a2a;
+    }
+
+    body {
+      background: var(--white);
+      color: var(--black);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* NOISE TEXTURE OVERLAY */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--black);
+      padding: 10px 0;
+      overflow: hidden;
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 0;
+      animation: marquee 22s linear infinite;
+      white-space: nowrap;
+    }
+
+    .marquee-item {
+      color: var(--accent);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 3px;
+      padding: 0 40px;
+    }
+
+    .marquee-sep {
+      color: var(--white);
+      opacity: 0.3;
+      font-size: 10px;
+    }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--black);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--white);
+      letter-spacing: 6px;
+      text-decoration: none;
+      position: relative;
+    }
+
+    .brand::after {
+      content: '®';
+      font-size: 10px;
+      vertical-align: super;
+      margin-left: 2px;
+      opacity: 0.5;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--mid);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--white); }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 160px);
+    }
+
+    /* LEFT PANEL */
+    .left-panel {
+      background: var(--black);
+      padding: 64px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel::after {
+      content: 'LACE\AUP';
+      white-space: pre;
+      position: absolute;
+      bottom: -20px;
+      right: -20px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 160px;
+      line-height: 0.85;
+      color: white;
+      opacity: 0.04;
+      pointer-events: none;
+      letter-spacing: -4px;
+    }
+
+    .left-eyebrow {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .left-headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(56px, 6vw, 88px);
+      line-height: 0.9;
+      color: var(--white);
+      letter-spacing: 2px;
+    }
+
+    .left-sub {
+      font-size: 12px;
+      color: var(--mid);
+      line-height: 1.8;
+      max-width: 280px;
+      margin-top: 24px;
+    }
+
+    .left-cta {
+      margin-top: auto;
+      padding-top: 48px;
+    }
+
+    .left-cta p {
+      font-size: 11px;
+      color: var(--mid);
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .btn-register {
+      display: inline-block;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--white);
+      padding: 14px 32px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-register::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.25s ease;
+      z-index: 0;
+    }
+
+    .btn-register:hover::before { transform: scaleX(1); }
+    .btn-register:hover { color: var(--black); border-color: var(--accent); }
+    .btn-register span { position: relative; z-index: 1; }
+
+    .google-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 20px;
+      color: var(--mid);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      width: fit-content;
+    }
+
+    .google-btn:hover {
+      border-color: rgba(255,255,255,0.4);
+      color: var(--white);
+    }
+
+    .google-btn img { width: 16px; height: 16px; border-radius: 50%; }
+
+    /* RIGHT PANEL — FORM */
+    .right-panel {
+      padding: 64px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-eyebrow {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 8px;
+    }
+
+    .form-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      letter-spacing: 3px;
+      color: var(--black);
+      margin-bottom: 40px;
+    }
+
+    /* MESSAGES */
+    .messages { margin-bottom: 24px; }
+
+    .msg {
+      padding: 12px 16px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      border-left: 3px solid;
+      margin-bottom: 8px;
+    }
+
+    .msg.success { border-color: #2ecc71; background: #f0fff4; color: #166534; }
+    .msg.error   { border-color: #e74c3c; background: #fff5f5; color: #991b1b; }
+
+    /* FIELD */
+    .field { margin-bottom: 28px; }
+
+    .field label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--black);
+      margin-bottom: 10px;
+    }
+
+    .field input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--black);
+      padding: 12px 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--black);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input::placeholder { color: var(--mid); }
+    .field input:focus { border-color: var(--black); border-bottom-width: 3px; }
+
+    .field-pw { position: relative; }
+
+    .field-pw input { padding-right: 36px; }
+
+    .eye-btn {
+      position: absolute;
+      right: 0;
+      bottom: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--mid);
+      transition: color 0.2s;
+    }
+
+    .eye-btn:hover { color: var(--black); }
+
+    .forgot-link {
+      display: block;
+      text-align: right;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--mid);
+      text-decoration: none;
+      margin-top: -16px;
+      margin-bottom: 32px;
+      transition: color 0.2s;
+    }
+
+    .forgot-link:hover { color: var(--black); }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--black);
+      color: var(--white);
+      border: 2px solid var(--black);
+      padding: 16px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 5px;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+      z-index: 0;
+    }
+
+    .btn-submit:hover::before { transform: translateY(0); }
+    .btn-submit:hover { color: var(--black); }
+    .btn-submit span { position: relative; z-index: 1; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--black);
+      color: var(--white);
+      padding: 40px 48px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .footer-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px;
+      letter-spacing: 6px;
+      color: var(--white);
+    }
+
+    .footer-quotes {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .quote-item {
+      border-left: 1px solid var(--border);
+      padding-left: 20px;
+    }
+
+    .quote-item p {
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--mid);
+      font-style: italic;
+    }
+
+    .quote-item cite {
+      display: block;
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-bottom p {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--mid);
+    }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 40px 24px; }
+      nav { padding: 16px 24px; }
+      .footer-quotes { grid-template-columns: 1fr; }
+      footer { padding: 32px 24px; }
+    }
+  </style>
 </head>
-<body class="bg-white font-sans">
-  <header class="bg-black text-white text-sm">
-    <div class="container mx-auto flex justify-between items-center px-4 py-2">
-      <p>Summer Sale: 20% Off All Swim Suits And Free Express Delivery - Off 50%</p>
-      <a href="#" class="underline">ShopNow</a>
+<body>
+
+  <header>
+    <div class="marquee-track" id="marquee">
+      <span class="marquee-item">FREE SHIPPING ON ORDERS OVER ₹1999 <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">SUMMER DROP NOW LIVE <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">NEW ARRIVALS: AIR FORCE 1 × LACEUP COLLAB <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">FREE SHIPPING ON ORDERS OVER ₹1999 <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">SUMMER DROP NOW LIVE <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">NEW ARRIVALS: AIR FORCE 1 × LACEUP COLLAB <span class="marquee-sep">◆</span></span>
     </div>
   </header>
 
-  <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
-    <div class="text-lg font-bold">Exclusive</div>
-    <ul class="flex space-x-4">
-      <li><a href="#" class="hover:underline">Home</a></li>
-      <li><a href="#" class="hover:underline">Contact</a></li>
-      <li><a href="#" class="hover:underline">About</a></li>
-      <li><a href="#" class="hover:underline">Sign Up</a></li>
+  <nav>
+    <a href="#" class="brand">LaceUp</a>
+    <ul class="nav-links">
+      <li><a href="#">Home</a></li>
+      <li><a href="#">Shop</a></li>
+      <li><a href="#">Drops</a></li>
     </ul>
-    <div class="flex items-center space-x-2">
-      <input type="text" placeholder="What are you looking for?" class="border rounded px-4 py-2">
-      <button class="bg-black text-white px-4 py-2 rounded">Search</button>
-    </div>
   </nav>
 
-  <main class="container mx-auto px-4 py-16">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-      <!-- Login Form Section -->
+  <main>
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
       <div>
-        <h2 class="text-2xl font-bold mb-6">Log in to your account</h2>
-        <form class="space-y-6" method="POST" action="{% url 'login' %}">
-          {% csrf_token %}
-          {% if messages %}
-            {% for msg in messages %}
-              <div class="{% if msg.tags == 'success' %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %} px-4 py-2 rounded">
-                {{ msg }}
-              </div>
-            {% endfor %}
-          {% endif %}
-  
-          <!-- Email or Phone Number -->
-          <div>
-            <label for="email" class="block text-sm font-medium">
-              Email or Phone Number
-            </label>
-            <input 
-              type="text" 
-              id="email" 
-              name="email" 
-              class="w-full border rounded px-4 py-2" 
-              placeholder="Enter your email or phone number" 
-              required 
-            />
-          </div>
-  
-          <!-- Password -->
-          <div>
-            <label for="password" class="block text-sm font-medium">
-              Password
-            </label>
-            <div class="relative">
-              <input 
-                type="password" 
-                id="password" 
-                name="password" 
-                class="w-full border rounded px-4 py-2" 
-                placeholder="Enter your password" 
-                required 
-              />
-              <button 
-                type="button" 
-                class="absolute inset-y-0 right-2 text-sm text-gray-500"
-                onclick="togglePasswordVisibility('password')"
-              >
-                👁
-              </button>
-            </div>
-          </div>
-  
-          <!-- Forgot Password Link -->
-          <div class="text-right">
-            <a href="{% url 'forgot_password' %}"  class="text-sm text-blue-500 hover:underline">
-              Forgot your password?
-            </a>
-          </div>
-  
-          <!-- Submit Button -->
-          <button type="submit" class="w-full bg-black text-white py-2 rounded">
-            Log in
-          </button>
-        </form>
+        <p class="left-eyebrow">Welcome back, Sneakerhead</p>
+        <h1 class="left-headline">STEP<br>BACK<br>IN.</h1>
+        <p class="left-sub">Your kicks are waiting. Log in to track orders, save wishlists, and never miss a drop.</p>
       </div>
-  
-      <!-- Registration Prompt Section -->
-      <div class="text-center">
-        <p class="text-lg">Need an Account?</p>
-        <a href="{% url 'signin' %}" class="inline-block mt-4 bg-black text-white px-6 py-2 rounded"> 
-          Register
+      <div class="left-cta">
+        <p>New to LaceUp?</p>
+        <a href="{% url 'signin' %}" class="btn-register"><span>Create Account →</span></a>
+        <br>
+        <a href="{% provider_login_url 'google' %}" class="google-btn">
+          <img src="https://www.google.com/favicon.ico" alt="Google">
+          <span>Continue with Google</span>
         </a>
       </div>
-      
-        
-      
-        
-        <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-          <img src="https://www.google.com/favicon.ico" alt="Google" class="h-5 w-5 mr-2">
-          Sign in with Google
-      </a> 
-      
+    </div>
+
+    <!-- RIGHT PANEL — FORM -->
+    <div class="right-panel">
+      <p class="form-eyebrow">Account Access</p>
+      <h2 class="form-title">LOG IN</h2>
+
+      <form method="POST" action="{% url 'login' %}">
+        {% csrf_token %}
+
+        {% if messages %}
+        <div class="messages">
+          {% for msg in messages %}
+            <div class="msg {% if msg.tags == 'success' %}success{% else %}error{% endif %}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="field">
+          <label for="email">Email or Phone</label>
+          <input type="text" id="email" name="email" placeholder="you@example.com" required>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="field-pw">
+            <input type="password" id="password" name="password" placeholder="••••••••" required>
+            <button type="button" class="eye-btn" onclick="togglePw('password', this)">👁</button>
+          </div>
+        </div>
+
+        <a href="{% url 'forgot_password' %}" class="forgot-link">Forgot password?</a>
+
+        <button type="submit" class="btn-submit"><span>LACE UP & LOG IN</span></button>
+      </form>
     </div>
   </main>
-  
-  {% comment %} <script>
-    // Toggle Password Visibility
-    function togglePasswordVisibility(fieldId) {
-      const passwordInput = document.getElementById(fieldId);
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-      } else {
-        passwordInput.type = 'password';
-      }
-    }
-  </script> {% endcomment %}
-  
 
-  <footer class="bg-black text-white py-8">
-    <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 px-4">
-      <div>
-        <h3 class="text-lg font-bold mb-2">Subscribe</h3>
-        <p class="text-sm mb-4">Get 10% off your first order</p>
-        <form class="flex space-x-2">
-          <input type="email" placeholder="Enter your email" class="w-full border rounded px-4 py-2">
-          <button type="submit" class="bg-white text-black px-4 py-2 rounded">&rarr;</button>
-        </form>
-      </div>
-      <div>
-        <h3 class="text-lg font-bold mb-2">Support</h3>
-        <ul class="text-sm space-y-2">
-          <li>11 Bijoy Canon, Dhaka, DH 1515, Bangladesh</li>
-          <li>Email: exclusive@gmail.com</li>
-          <li>Phone: +880-123456789</li>
-        </ul>
-      </div>
-      <div>
-        <h3 class="text-lg font-bold mb-2">Account</h3>
-        <ul class="text-sm space-y-2">
-          <li><a href="#" class="hover:underline">My Account</a></li>
-          <li><a href="#" class="hover:underline">Login / Register</a></li>
-          <li><a href="#" class="hover:underline">Cart</a></li>
-          <li><a href="#" class="hover:underline">Wishlist</a></li>
-          <li><a href="#" class="hover:underline">Shop</a></li>
-        </ul>
-      </div>
-      <div>
-        <h3 class="text-lg font-bold mb-2">Download App</h3>
-        <p class="text-sm mb-4">Save $3 with App New User Only</p>
-        <div class="flex space-x-2">
-          <a href="#"><img src="https://via.placeholder.com/120x40" alt="Google Play"></a>
-          <a href="#"><img src="https://via.placeholder.com/120x40" alt="App Store"></a>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">LACEUP</div>
+      <div class="footer-quotes">
+        <div class="quote-item">
+          <p>"Life is too short to wear boring shoes — and too long to wear the wrong ones."</p>
+          <cite>— LaceUp Wisdom</cite>
         </div>
-        <div class="flex space-x-4 mt-4">
-          <a href="#" class="text-white">Facebook</a>
-          <a href="#" class="text-white">Twitter</a>
-          <a href="#" class="text-white">Instagram</a>
-          <a href="#" class="text-white">LinkedIn</a>
+        <div class="quote-item">
+          <p>"I don't have a sneaker problem. I have a sneaker solution to all of my problems."</p>
+          <cite>— Every Sneakerhead Ever</cite>
+        </div>
+        <div class="quote-item">
+          <p>"My therapist says I have too many shoes. My therapist has clearly never seen a limited drop."</p>
+          <cite>— Anonymous Collector</cite>
         </div>
       </div>
     </div>
-    <div class="text-center text-sm mt-8">
-      &copy; Copyright Brand 2023. All rights reserved.
+    <div class="footer-bottom">
+      <p>© 2025 LaceUp. All kicks reserved.</p>
+      <p>Walk hard. Lace up.</p>
     </div>
   </footer>
+
+  <script>
+    function togglePw(id, btn) {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+    }
+
+    // Duplicate marquee for seamless loop
+    const track = document.getElementById('marquee');
+    track.innerHTML += track.innerHTML;
+  </script>
 </body>
 </html>
