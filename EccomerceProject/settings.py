@@ -143,11 +143,11 @@ WSGI_APPLICATION = 'EccomerceProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE'),
-        'NAME': 'EccomerceProject',         
+        'NAME': config('DB_NAME'),         
         'USER': config('DB_USER'),          
         'PASSWORD': config('DB_PASSWORD'),  
-        'HOST': 'localhost',          
-        'PORT': 5433, 
+        'HOST': config('DB_HOST'),          
+        'PORT': config('DB_PORT'), 
     }
 }
 
