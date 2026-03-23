@@ -1,128 +1,666 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Code</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-white min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-black p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="text-white font-bold">Exclusive</div>
-            <div class="flex space-x-4">
-                <a href="#" class="text-white">Home</a>
-                <a href="#" class="text-white">Contact</a>
-                <a href="#" class="text-white">About</a>
-                <a href="#" class="text-white">Sign up</a>
-            </div>
-        </div>
-    </nav>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaceUp — Verify OTP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- Main Content -->
-    <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-        <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Verify OTP</h2>
-          <p class="mt-2 text-center text-sm text-gray-600">
-            We've sent a verification code to your email
-          </p>
-        </div>
-      
-        <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          {% if messages %}
-          <div class="mb-4">
-            {% for message in messages %}
-            <div class="p-4 mb-4 text-sm {% if message.tags == 'success' %}text-green-800 bg-green-50{% else %}text-red-800 bg-red-50{% endif %} rounded-lg" role="alert">
-              {{ message }}
-            </div>
-            {% endfor %}
+    :root {
+      --black: #0a0a0a;
+      --white: #f5f5f0;
+      --mid: #c8c8c0;
+      --accent: #e8e030;
+      --border: #2a2a2a;
+    }
+
+    body {
+      background: var(--white);
+      color: var(--black);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* NOISE TEXTURE */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── HEADER MARQUEE ── */
+    header {
+      background: var(--black);
+      padding: 10px 0;
+      overflow: hidden;
+    }
+
+    .marquee-track {
+      display: flex;
+      animation: marquee 22s linear infinite;
+      white-space: nowrap;
+    }
+
+    .marquee-item {
+      color: var(--accent);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 3px;
+      padding: 0 40px;
+    }
+
+    .marquee-sep { color: var(--white); opacity: 0.3; font-size: 10px; }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--black);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--white);
+      letter-spacing: 6px;
+      text-decoration: none;
+    }
+
+    .brand::after {
+      content: '®';
+      font-size: 10px;
+      vertical-align: super;
+      margin-left: 2px;
+      opacity: 0.5;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+
+    .nav-links a {
+      color: var(--mid);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--white); }
+
+    /* ── MAIN SPLIT LAYOUT ── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 160px);
+    }
+
+    /* ── LEFT PANEL ── */
+    .left-panel {
+      background: var(--black);
+      padding: 64px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel::after {
+      content: 'RESET\PASS';
+      white-space: pre;
+      position: absolute;
+      bottom: -20px;
+      right: -20px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 140px;
+      line-height: 0.85;
+      color: white;
+      opacity: 0.04;
+      pointer-events: none;
+      letter-spacing: -4px;
+    }
+
+    .left-eyebrow {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .left-headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(52px, 5.5vw, 80px);
+      line-height: 0.9;
+      color: var(--white);
+      letter-spacing: 2px;
+    }
+
+    .left-sub {
+      font-size: 12px;
+      color: var(--mid);
+      line-height: 1.8;
+      max-width: 280px;
+      margin-top: 24px;
+    }
+
+    /* Countdown ring */
+    .countdown-wrap {
+      margin-top: 48px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .countdown-ring {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      flex-shrink: 0;
+    }
+
+    .countdown-ring svg {
+      width: 88px;
+      height: 88px;
+      transform: rotate(-90deg);
+    }
+
+    .countdown-ring circle { fill: none; stroke-width: 2; }
+    .ring-bg   { stroke: var(--border); }
+    .ring-fill {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .countdown-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--white);
+      letter-spacing: 2px;
+    }
+
+    .countdown-label {
+      font-size: 11px;
+      color: var(--mid);
+      line-height: 1.7;
+      letter-spacing: 0.5px;
+    }
+
+    .countdown-label strong {
+      display: block;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: 2px;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    /* Steps */
+    .steps {
+      margin-top: 40px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .steps li { display: flex; align-items: flex-start; gap: 16px; }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      color: var(--accent);
+      letter-spacing: 1px;
+    }
+
+    .step-text {
+      font-size: 11px;
+      color: var(--mid);
+      line-height: 1.7;
+      letter-spacing: 0.5px;
+      padding-top: 4px;
+    }
+
+    /* Back link */
+    .left-back { margin-top: auto; padding-top: 48px; }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--mid);
+      padding: 13px 28px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-back::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.06);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.25s ease;
+      z-index: 0;
+    }
+
+    .btn-back:hover::before { transform: scaleX(1); }
+    .btn-back:hover { color: var(--white); border-color: rgba(255,255,255,0.35); }
+
+    .btn-back svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      position: relative;
+      z-index: 1;
+      transition: transform 0.2s;
+    }
+
+    .btn-back:hover svg { transform: translateX(-3px); }
+    .btn-back span { position: relative; z-index: 1; }
+
+    /* ── RIGHT PANEL ── */
+    .right-panel {
+      padding: 64px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-eyebrow {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 8px;
+    }
+
+    .form-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      letter-spacing: 3px;
+      color: var(--black);
+      margin-bottom: 12px;
+    }
+
+    .form-desc {
+      font-size: 12px;
+      color: var(--mid);
+      line-height: 1.8;
+      margin-bottom: 40px;
+      max-width: 340px;
+    }
+
+    /* MESSAGES */
+    .messages { margin-bottom: 24px; }
+
+    .msg {
+      padding: 12px 16px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      border-left: 3px solid;
+      margin-bottom: 8px;
+    }
+
+    .msg.success { border-color: #2ecc71; background: #f0fff4; color: #166534; }
+    .msg.error   { border-color: #e74c3c; background: #fff5f5; color: #991b1b; }
+
+    /* FIELD */
+    .field { margin-bottom: 36px; }
+
+    .field label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--black);
+      margin-bottom: 10px;
+    }
+
+    .field input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--black);
+      padding: 12px 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      letter-spacing: 8px;
+      color: var(--black);
+      outline: none;
+      transition: border-bottom-width 0.1s;
+    }
+
+    .field input::placeholder { color: var(--mid); font-size: 14px; letter-spacing: 2px; }
+    .field input:focus { border-bottom-width: 3px; }
+
+    /* Submit */
+    .btn-submit {
+      width: 100%;
+      background: var(--black);
+      color: var(--white);
+      border: 2px solid var(--black);
+      padding: 16px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 5px;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+      z-index: 0;
+    }
+
+    .btn-submit:hover::before { transform: translateY(0); }
+    .btn-submit:hover { color: var(--black); }
+    .btn-submit span { position: relative; z-index: 1; }
+
+    /* Try again link */
+    .try-again-line {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--mid);
+      text-align: center;
+    }
+
+    .try-again-line a {
+      color: var(--black);
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+      padding-bottom: 1px;
+      transition: color 0.2s;
+    }
+
+    .try-again-line a:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--black);
+      color: var(--white);
+      padding: 40px 48px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .footer-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px;
+      letter-spacing: 6px;
+      color: var(--white);
+    }
+
+    .footer-quotes {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .quote-item { border-left: 1px solid var(--border); padding-left: 20px; }
+    .quote-item p { font-size: 12px; line-height: 1.7; color: var(--mid); font-style: italic; }
+
+    .quote-item cite {
+      display: block;
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-bottom p {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--mid);
+    }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 40px 24px; }
+      nav { padding: 16px 24px; }
+      .footer-quotes { grid-template-columns: 1fr; }
+      footer { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="marquee-track" id="marquee">
+      <span class="marquee-item">FREE SHIPPING ON ORDERS OVER ₹1999 <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">SUMMER DROP NOW LIVE <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">NEW ARRIVALS: AIR FORCE 1 × LACEUP COLLAB <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">FREE SHIPPING ON ORDERS OVER ₹1999 <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">SUMMER DROP NOW LIVE <span class="marquee-sep">◆</span></span>
+      <span class="marquee-item">NEW ARRIVALS: AIR FORCE 1 × LACEUP COLLAB <span class="marquee-sep">◆</span></span>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#" class="brand">LaceUp</a>
+    <ul class="nav-links">
+      <li><a href="#">Home</a></li>
+      <li><a href="#">Shop</a></li>
+      <li><a href="#">Drops</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div>
+        <p class="left-eyebrow">Password Reset</p>
+        <h1 class="left-headline">ALMOST<br>THERE.</h1>
+        <p class="left-sub">Verify your identity with the OTP we just sent you, then you can set a brand new password.</p>
+
+        <div class="countdown-wrap">
+          <div class="countdown-ring">
+            <svg viewBox="0 0 88 88">
+              <circle class="ring-bg"   cx="44" cy="44" r="39"/>
+              <circle class="ring-fill" cx="44" cy="44" r="39" id="ring-arc"/>
+            </svg>
+            <div class="countdown-number" id="countdown">58</div>
           </div>
-          {% endif %}
-      
-          <form class="space-y-6" action="{% url 'verify_reset_otp' user.id %}" method="POST">
-            {% csrf_token %}
-            <div>
-              <label for="email_otp" class="block text-sm font-medium leading-6 text-gray-900">Enter OTP</label>
-              <div class="mt-2">
-                <input id="email_otp" name="email_otp" type="text" required 
-                       class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-2"
-                       placeholder="Enter 6-digit OTP">
-              </div>
-            </div>
-      
-            <div>
-              <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Verify OTP</button>
-            </div>
-          </form>
-      
-          <p class="mt-10 text-center text-sm text-gray-500">
-            Didn't receive OTP?
-            <a href="{% url 'forgot_password' %}" class="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">Try again</a>
-          </p>
+          <div class="countdown-label">
+            <strong>Code Expires In</strong>
+            Enter the OTP before the timer runs out. It won't work after expiry.
+          </div>
         </div>
+
+        <ul class="steps">
+          <li>
+            <div class="step-num">1</div>
+            <p class="step-text">Check your inbox for the 6-digit reset code we just sent.</p>
+          </li>
+          <li>
+            <div class="step-num">2</div>
+            <p class="step-text">Enter the code on the right before the timer hits zero.</p>
+          </li>
+          <li>
+            <div class="step-num">3</div>
+            <p class="step-text">You'll be redirected to set a strong new password.</p>
+          </li>
+        </ul>
       </div>
 
-    <!-- Footer -->
-    <footer class="bg-black text-white mt-20 py-12">
-        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-            <!-- Subscribe Section -->
-            <div>
-                <h3 class="font-bold mb-4">Exclusive</h3>
-                <p class="mb-4">Subscribe</p>
-                <p class="text-sm mb-4">Get 10% off your first order</p>
-                <div class="flex">
-                    <input type="email" placeholder="Enter your email" class="p-2 bg-gray-800 rounded-l">
-                    <button class="bg-gray-800 px-4 rounded-r">→</button>
-                </div>
-            </div>
+      <div class="left-back">
+        <a href="{% url 'forgot_password' %}" class="btn-back">
+          <svg viewBox="0 0 24 24">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          <span>Back to Forgot Password</span>
+        </a>
+      </div>
+    </div>
 
-            <!-- Support Section -->
-            <div>
-                <h3 class="font-bold mb-4">Support</h3>
-                <p class="text-sm">111 Bijoy sarani, Dhaka, DH 1515, Bangladesh.</p>
-                <p class="text-sm">exclusive@gmail.com</p>
-                <p class="text-sm">+88015-88888-9999</p>
-            </div>
+    <!-- RIGHT PANEL — FORM (all original logic preserved) -->
+    <div class="right-panel">
+      <p class="form-eyebrow">Identity Check</p>
+      <h2 class="form-title">VERIFY<br>OTP</h2>
+      <p class="form-desc">We've sent a verification code to your email. Enter it below to continue resetting your password.</p>
 
-            <!-- Account Section -->
-            <div>
-                <h3 class="font-bold mb-4">Account</h3>
-                <ul class="space-y-2 text-sm">
-                    <li><a href="#" class="hover:underline">My Account</a></li>
-                    <li><a href="#" class="hover:underline">Login / Register</a></li>
-                    <li><a href="#" class="hover:underline">Cart</a></li>
-                    <li><a href="#" class="hover:underline">Shop</a></li>
-                </ul>
-            </div>
-
-            <!-- Quick Link Section -->
-            <div>
-                <h3 class="font-bold mb-4">Quick Link</h3>
-                <ul class="space-y-2 text-sm">
-                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
-                    <li><a href="#" class="hover:underline">Terms Of Use</a></li>
-                    <li><a href="#" class="hover:underline">FAQ</a></li>
-                    <li><a href="#" class="hover:underline">Contact</a></li>
-                </ul>
-            </div>
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+        <div class="msg {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+          {{ message }}
         </div>
-    </footer>
+        {% endfor %}
+      </div>
+      {% endif %}
 
-    <script>
-        // Countdown Timer
-        let timeLeft = 58;
-        const countdownElement = document.getElementById('countdown');
-        
-        const timer = setInterval(() => {
-            timeLeft--;
-            countdownElement.textContent = timeLeft;
-            
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                countdownElement.textContent = '0';
-            }
-        }, 1000);
-    </script>
+      <form class="space-y-6" action="{% url 'verify_reset_otp' user.id %}" method="POST">
+        {% csrf_token %}
+
+        <div class="field">
+          <label for="email_otp">Enter OTP</label>
+          <input
+            id="email_otp"
+            name="email_otp"
+            type="text"
+            required
+            placeholder="6-digit code"
+            maxlength="6"
+          >
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <span>VERIFY OTP →</span>
+        </button>
+
+        <p class="try-again-line">
+          Didn't receive OTP? <a href="{% url 'forgot_password' %}">Try again</a>
+        </p>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">LACEUP</div>
+      <div class="footer-quotes">
+        <div class="quote-item">
+          <p>"Life is too short to wear boring shoes — and too long to wear the wrong ones."</p>
+          <cite>— LaceUp Wisdom</cite>
+        </div>
+        <div class="quote-item">
+          <p>"I don't have a sneaker problem. I have a sneaker solution to all of my problems."</p>
+          <cite>— Every Sneakerhead Ever</cite>
+        </div>
+        <div class="quote-item">
+          <p>"My therapist says I have too many shoes. My therapist has clearly never seen a limited drop."</p>
+          <cite>— Anonymous Collector</cite>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 LaceUp. All kicks reserved.</p>
+      <p>Walk hard. Lace up.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* ── COUNTDOWN TIMER (original logic preserved) ── */
+    const TOTAL = 58;
+    let timeLeft = TOTAL;
+    const countdownElement = document.getElementById('countdown');
+    const ringArc          = document.getElementById('ring-arc');
+    const circumference    = 2 * Math.PI * 39; // ≈ 245
+
+    ringArc.style.strokeDasharray  = circumference;
+    ringArc.style.strokeDashoffset = 0;
+
+    const timer = setInterval(() => {
+      timeLeft--;
+      countdownElement.textContent = timeLeft;
+
+      const progress = timeLeft / TOTAL;
+      ringArc.style.strokeDashoffset = circumference * (1 - progress);
+
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        countdownElement.textContent = '0';
+        ringArc.style.stroke = '#e74c3c';
+      }
+    }, 1000);
+
+    /* ── MARQUEE LOOP ── */
+    const track = document.getElementById('marquee');
+    track.innerHTML += track.innerHTML;
+  </script>
 </body>
 </html>
